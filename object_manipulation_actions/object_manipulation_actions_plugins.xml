@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library path="lib/libobject_manipulation_actions">
+  <class name="object_manipulation_actions/action_executor_pickup_object" type="object_manipulation_actions::ActionExecutorPickupObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for picking up objects</description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_putdown_object" type="object_manipulation_actions::ActionExecutorPutdownObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for putting down objects</description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_detect_objects" type="object_manipulation_actions::ActionExecutorDetectObjects" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for detecting objects on a table</description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_detect_expected_objects" type="object_manipulation_actions::ActionExecutorDetectExpectedObjects" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>
+      Action executor for detecting objects on a table. 
+      Objects already in the symbolic state are expected to be redetected, thus preserving the object id.
+          </description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_arm_to_side" type="object_manipulation_actions::ActionExecutorArmToSide" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for moving an arm to the side</description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_arm_to_inspect_object" type="object_manipulation_actions::ActionExecutorArmToInspectObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for moving an arm with an object in front of the camera.</description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_arm_to_carry" type="object_manipulation_actions::ActionExecutorArmToCarry" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>An action executor that moves an arm to a carry position.</description>
+  </class>
+</library>

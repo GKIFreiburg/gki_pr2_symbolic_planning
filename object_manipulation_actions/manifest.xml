@@ -1,0 +1,27 @@
+<package>
+  <description brief="object_manipulation_actions">
+     object_manipulation_actions contains action executors to interact with small objects on tables.
+  </description>
+  <author>Christian Dornhege, Andreas Hertle</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/object_manipulation_actions</url>
+  <depend package="tidyup_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="arm_navigation_msgs"/>
+  <depend package="tidyup_utils"/>
+  <depend package="continual_planning_executive"/>
+  <depend package="tfd_modules"/>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="visualization_msgs"/>
+  <depend package="state_transformer"/>     <!-- from sushi -->
+  <depend package="pr2_controllers_msgs"/>
+
+  <export>
+      <continual_planning_executive plugin="${prefix}/object_manipulation_actions_plugins.xml" />
+  </export>
+
+</package>
+
+

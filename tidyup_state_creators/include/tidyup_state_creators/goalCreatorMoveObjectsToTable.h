@@ -1,0 +1,22 @@
+#ifndef GOAL_CREATOR_MOVE_OBJECTS_TO_TABLE_H
+#define GOAL_CREATOR_MOVE_OBJECTS_TO_TABLE_H
+
+#include "continual_planning_executive/goalCreator.h"
+
+namespace tidyup_state_creators
+{
+
+    class GoalCreatorMoveObjectsObjectsToTable : public continual_planning_executive::GoalCreator
+    {
+    private:
+        public:
+            GoalCreatorMoveObjectsObjectsToTable();
+            ~GoalCreatorMoveObjectsObjectsToTable();
+
+            virtual bool fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal);
+    };
+
+};
+
+#endif
+

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library path="lib/libtidyup_state_creators">
+  <class name="tidyup_state_creators/goal_creator_reset_world" type="tidyup_state_creators::GoalCreatorResetWorld" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Resets the world interface, deleting all known objects from the environment server.</description>
+  </class>
+  <class name="tidyup_state_creators/goal_creator_tidyup_initialize" type="tidyup_state_creators::GoalCreatorTidyupInitialize" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Loads manipulation locations from a config file for static objects and doors and assigns them to their respective rooms.</description>
+  </class>
+  <class name="tidyup_state_creators/goal_creator_from_planning_scene" type="tidyup_state_creators::GoalCreatorFromPlanningScene" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Asks the environment server for known collision objects and adds them to the initial state.</description>
+  </class>
+    <class name="tidyup_state_creators/goal_creator_move_objects_to_table" type="tidyup_state_creators::GoalCreatorMoveObjectsToTable" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Sets goal condition to move all objects to a certain table.</description>
+  </class>
+  <class name="tidyup_state_creators/state_creator_robot_pose" type="tidyup_state_creators::StateCreatorRobotPose" base_class_type="continual_planning_executive::StateCreator">
+    <description>Sets the current robot pose in the state and possible at-style predicates.</description>
+  </class>
+  <class name="tidyup_state_creators/state_creator_robot_location_in_room" type="tidyup_state_creators::StateCreatorRobotLocationInRoom" base_class_type="continual_planning_executive::StateCreator">
+    <description>Sets location-in-room for the robot pose if it is not set.</description>
+  </class>
+  <class name="tidyup_state_creators/state_creator_object_reachable" type="tidyup_state_creators::StateCreatorObjectReachable" base_class_type="continual_planning_executive::StateCreator">
+    <description>Estimates whether objects are in reach of the robot, when standing at specific locations.</description>
+  </class>
+  <class name="tidyup_state_creators/state_creator_arms_at_side" type="tidyup_state_creators::StateCreatorArmsAtSide" base_class_type="continual_planning_executive::StateCreator">
+    <description>Sets arm-at-side for both arms.</description>
+  </class>
+</library>
