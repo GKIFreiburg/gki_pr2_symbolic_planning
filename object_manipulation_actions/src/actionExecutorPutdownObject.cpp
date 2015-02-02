@@ -1,13 +1,15 @@
 #include "object_manipulation_actions/actionExecutorPutdownObject.h"
 #include <pluginlib/class_list_macros.h>
 #include "tidyup_msgs/GetPutdownPose.h"
-#include "arm_navigation_msgs/ArmNavigationErrorCodes.h"
-#include <arm_navigation_msgs/convert_messages.h>
+//#include "arm_navigation_msgs/ArmNavigationErrorCodes.h"
+//#include <arm_navigation_msgs/convert_messages.h>
+#include <moveit_msgs/MoveItErrorCodes.h>
 #include "tidyup_utils/planning_scene_interface.h"
 
-PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_putdown_object,
-        object_manipulation_actions::ActionExecutorPutdownObject,
-        continual_planning_executive::ActionExecutorInterface)
+//PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_putdown_object,
+//        object_manipulation_actions::ActionExecutorPutdownObject,
+//        continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorPutdownObject, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
 {

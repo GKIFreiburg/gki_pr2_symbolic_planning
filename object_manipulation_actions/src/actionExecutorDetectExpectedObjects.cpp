@@ -3,9 +3,10 @@
 #include <tidyup_msgs/RequestObjectsGraspability.h>
 #include "tidyup_utils/planning_scene_interface.h"
 
-PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_detect_expected_objects,
-        object_manipulation_actions::ActionExecutorDetectExpectedObjects,
-        continual_planning_executive::ActionExecutorInterface)
+//PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_detect_expected_objects,
+//        object_manipulation_actions::ActionExecutorDetectExpectedObjects,
+//        continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorDetectExpectedObjects, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
 {

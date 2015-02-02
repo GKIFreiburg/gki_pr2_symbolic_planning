@@ -6,12 +6,12 @@
 namespace tidyup_state_creators
 {
 
-    class GoalCreatorMoveObjectsObjectsToTable : public continual_planning_executive::GoalCreator
+    class GoalCreatorMoveObjectsToTable : public continual_planning_executive::GoalCreator
     {
     private:
         public:
-            GoalCreatorMoveObjectsObjectsToTable();
-            ~GoalCreatorMoveObjectsObjectsToTable();
+            GoalCreatorMoveObjectsToTable();
+            ~GoalCreatorMoveObjectsToTable();
 
             virtual bool fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal);
     };

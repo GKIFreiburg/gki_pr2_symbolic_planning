@@ -3,8 +3,9 @@
 #include "tidyup_utils/geometryPoses.h"
 #include <ros/ros.h>
 
-PLUGINLIB_DECLARE_CLASS(planner_navigation_actions, goal_creator_ros_navigation,
-        planner_navigation_actions::GoalCreatorROSNavigation, continual_planning_executive::GoalCreator)
+//PLUGINLIB_DECLARE_CLASS(planner_navigation_actions, goal_creator_ros_navigation,
+//        planner_navigation_actions::GoalCreatorROSNavigation, continual_planning_executive::GoalCreator)
+PLUGINLIB_EXPORT_CLASS(planner_navigation_actions::GoalCreatorROSNavigation, continual_planning_executive::GoalCreator)
 
 namespace planner_navigation_actions
 {

@@ -7,8 +7,9 @@
 #include <set>
 #include <std_srvs/Empty.h>
 
-PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, goal_creator_tidyup_initialize,
-        tidyup_state_creators::GoalCreatorTidyupInitialize, continual_planning_executive::GoalCreator)
+//PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, goal_creator_tidyup_initialize,
+//        tidyup_state_creators::GoalCreatorTidyupInitialize, continual_planning_executive::GoalCreator)
+PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::GoalCreatorTidyupInitialize, continual_planning_executive::GoalCreator)
 
 namespace tidyup_state_creators
 {

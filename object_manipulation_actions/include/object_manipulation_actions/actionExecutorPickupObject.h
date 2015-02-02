@@ -23,4 +23,3 @@ namespace object_manipulation_actions
 };
 
 #endif
-

@@ -2,7 +2,8 @@
 #define ROBOT_POSE_VISUALIZATION_H
 
 #include <ros/ros.h>
-#include <arm_navigation_msgs/RobotState.h>
+//#include <arm_navigation_msgs/RobotState.h>
+#include <moveit_msgs/RobotState.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <geometry_msgs/PoseStamped.h>
 
@@ -42,8 +43,8 @@ class RobotPoseVisualization
       bool currentStateInitialized() const;
 
    private:
-      arm_navigation_msgs::RobotState _initState;       ///< the initialized state
-      arm_navigation_msgs::RobotState _currentState;    ///< the current state after updates
+      //arm_navigation_msgs::RobotState _initState;       ///< the initialized state
+      //arm_navigation_msgs::RobotState _currentState;    ///< the current state after updates
 
       ros::ServiceClient _srvGetRobotMarker;
 };

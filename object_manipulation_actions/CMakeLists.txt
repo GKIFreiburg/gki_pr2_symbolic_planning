@@ -1,22 +1,40 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(object_manipulation_actions)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_init()
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+roscpp
+tf
+pluginlib
+actionlib
+continual_planning_executive
+tfd_modules
+tidyup_utils
+tidyup_msgs
+moveit_msgs
+visualization_msgs
+std_srvs
+#state_transformer
+#pr2_controller_msgs
+)
 
 #set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rosbuild_add_library(object_manipulation_actions
+catkin_package(
+INCLUDE_DIRS include
+LIBRARIES object_manipulation_actions
+)
+
+include_directories(
+  include ${catkin_INCLUDE_DIRS}
+)
+
+add_library(object_manipulation_actions
     src/actionExecutorArmToSide.cpp
     src/actionExecutorArmToInspectObject.cpp
     src/actionExecutorArmToCarry.cpp
@@ -24,3 +42,7 @@ rosbuild_add_library(object_manipulation_actions
     src/actionExecutorPutdownObject.cpp
     src/actionExecutorDetectObjects.cpp
     src/actionExecutorDetectExpectedObjects.cpp)
+
+target_link_libraries(object_manipulation_actions
+  ${catkin_LIBRARIES}
+)

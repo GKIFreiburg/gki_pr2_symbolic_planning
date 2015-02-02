@@ -4,7 +4,10 @@
 #include "tidyup_utils/planning_scene_interface.h"
 #include <set>
 
-PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_detect_objects, object_manipulation_actions::ActionExecutorDetectObjects, continual_planning_executive::ActionExecutorInterface)
+//PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_detect_objects,
+//		object_manipulation_actions::ActionExecutorDetectObjects,
+//		continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorDetectObjects, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
 {

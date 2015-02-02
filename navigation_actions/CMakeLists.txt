@@ -28,4 +28,3 @@ add_library(navigation_actions
     src/stateCreatorROSNavigation.cpp
     src/actionExecutorROSNavigation.cpp
     src/goalCreatorROSNavigation.cpp)
-

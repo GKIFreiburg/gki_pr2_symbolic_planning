@@ -3,8 +3,10 @@
 #include <pluginlib/class_list_macros.h>
 //#include <sstream>
 
-PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_object_reachable,
-        tidyup_state_creators::StateCreatorObjectReachable, continual_planning_executive::StateCreator)
+//PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_object_reachable,
+//        tidyup_state_creators::StateCreatorObjectReachable, continual_planning_executive::StateCreator)
+PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorObjectReachable, continual_planning_executive::StateCreator)
+
 
 namespace tidyup_state_creators
 {

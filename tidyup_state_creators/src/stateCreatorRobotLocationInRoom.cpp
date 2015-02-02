@@ -1,8 +1,9 @@
 #include "tidyup_state_creators/stateCreatorRobotLocationInRoom.h"
 #include <pluginlib/class_list_macros.h>
 
-PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_robot_location_in_room,
-        tidyup_state_creators::StateCreatorRobotLocationInRoom, continual_planning_executive::StateCreator)
+//PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_robot_location_in_room,
+//        tidyup_state_creators::StateCreatorRobotLocationInRoom, continual_planning_executive::StateCreator)
+PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorRobotLocationInRoom, continual_planning_executive::StateCreator)
 
 namespace tidyup_state_creators
 {

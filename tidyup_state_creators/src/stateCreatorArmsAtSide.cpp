@@ -1,8 +1,9 @@
 #include "tidyup_state_creators/stateCreatorArmsAtSide.h"
 #include <pluginlib/class_list_macros.h>
 
-PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_arms_at_side,
-        tidyup_state_creators::StateCreatorArmsAtSide, continual_planning_executive::StateCreator)
+//PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_arms_at_side,
+//        tidyup_state_creators::StateCreatorArmsAtSide, continual_planning_executive::StateCreator)
+PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorArmsAtSide, continual_planning_executive::StateCreator)
 
 namespace tidyup_state_creators
 {
@@ -19,8 +20,8 @@ namespace tidyup_state_creators
         predicate_name = arguments[1];
         predicate_value = arguments[2];
         ros::NodeHandle nh;
-        client = nh.serviceClient<tidyup_msgs::ArmsAtSide>(service_name);
-        client.waitForExistence();
+//        client = nh.serviceClient<tidyup_msgs::ArmsAtSide>(service_name);
+//        client.waitForExistence();
     }
 
     bool StateCreatorArmsAtSide::fillState(SymbolicState & state)

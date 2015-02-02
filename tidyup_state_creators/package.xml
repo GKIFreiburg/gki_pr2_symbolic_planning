@@ -1,0 +1,39 @@
+<package>
+  <name>tidyup_state_creators</name>
+  <version>0.0.0</version>
+  <description>
+    tidyup_state_creators contains goal and state creators for the tidyup domain.
+  </description>
+  <maintainer email="dornhege@informatik.uni-freiburg.de">Christian Dornhege, Andreas Hertle</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/tidyup_actions</url>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>cmake_modules</build_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>continual_planning_executive</build_depend>
+  <build_depend>tidyup_utils</build_depend>
+  <build_depend>std_srvs</build_depend>
+#  <build_depend>state_transformer</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+#  <build_depend>tidyup_msgs</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>pluginlib</run_depend>
+  <run_depend>continual_planning_executive</run_depend>
+  <run_depend>tidyup_utils</run_depend>
+  <run_depend>std_srvs</run_depend>
+#  <run_depend>state_transformer</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+#  <run_depend>tidyup_msgs</run_depend>
+
+  <export>
+      <continual_planning_executive plugin="${prefix}/tidyup_state_creators_plugins.xml" />
+  </export>
+
+</package>
+
+

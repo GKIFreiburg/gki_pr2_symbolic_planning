@@ -7,21 +7,22 @@
 #include <set>
 #include <std_srvs/Empty.h>
 
-PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, goal_creator_move_objects_to_table,
-        tidyup_state_creators::GoalCreatorMoveObjectsObjectsToTable, continual_planning_executive::GoalCreator)
+//PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, goal_creator_move_objects_to_table,
+//        tidyup_state_creators::GoalCreatorMoveObjectsToTable, continual_planning_executive::GoalCreator)
+PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::GoalCreatorMoveObjectsToTable, continual_planning_executive::GoalCreator)
 
 namespace tidyup_state_creators
 {
 
-    GoalCreatorMoveObjectsObjectsToTable::GoalCreatorMoveObjectsObjectsToTable()
+    GoalCreatorMoveObjectsToTable::GoalCreatorMoveObjectsToTable()
     {
     }
 
-    GoalCreatorMoveObjectsObjectsToTable::~GoalCreatorMoveObjectsObjectsToTable()
+    GoalCreatorMoveObjectsToTable::~GoalCreatorMoveObjectsToTable()
     {
     }
 
-    bool GoalCreatorMoveObjectsObjectsToTable::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
+    bool GoalCreatorMoveObjectsToTable::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
     {
         goal.setForEachGoalStatement("manipulation_location", "searched", true);
         goal.setForEachGoalStatement("movable_object", "tidy", true);

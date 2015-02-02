@@ -2,9 +2,10 @@
 #include <pluginlib/class_list_macros.h>
 #include "tidyup_utils/planning_scene_interface.h"
 
-PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_arm_to_inspect_object,
-        object_manipulation_actions::ActionExecutorArmToInspectObject,
-        continual_planning_executive::ActionExecutorInterface)
+//PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_arm_to_inspect_object,
+//        object_manipulation_actions::ActionExecutorArmToInspectObject,
+//        continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToInspectObject, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
 {
