@@ -13,6 +13,7 @@ namespace tidyup_state_creators
             GoalCreatorMoveObjectsToTable();
             ~GoalCreatorMoveObjectsToTable();
 
+            virtual void initialize(const std::deque<std::string> & arguments);
             virtual bool fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal);
     };
 

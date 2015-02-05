@@ -2,6 +2,14 @@
 #define ROBOT_POSE_VISUALIZATION_H
 
 #include <ros/ros.h>
+// MoveIt!
+#include <moveit/robot_model_loader/robot_model_loader.h>
+#include <moveit/robot_model/robot_model.h>
+#include <moveit/robot_state/robot_state.h>
+// Robot state publishing
+#include <moveit/robot_state/conversions.h>
+#include <moveit_msgs/DisplayRobotState.h>
+
 //#include <arm_navigation_msgs/RobotState.h>
 #include <moveit_msgs/RobotState.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -43,8 +51,11 @@ class RobotPoseVisualization
       bool currentStateInitialized() const;
 
    private:
-      //arm_navigation_msgs::RobotState _initState;       ///< the initialized state
-      //arm_navigation_msgs::RobotState _currentState;    ///< the current state after updates
+
+      moveit_msgs::RobotState _initState;				///< the initialized state
+      moveit_msgs::RobotState _currentState;			///< the current state after updates
+      //arm_navigation_msgs::RobotState _initState;
+      //arm_navigation_msgs::RobotState _currentState;
 
       ros::ServiceClient _srvGetRobotMarker;
 };

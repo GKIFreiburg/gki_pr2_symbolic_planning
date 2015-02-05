@@ -1,6 +1,18 @@
 #include "tidyup_state_creators/robotPoseVisualization.h"
+#include <moveit_msgs/RobotState.h>
 //#include "state_transformer/GetRobotMarker.h"
 //#include "arm_navigation_msgs/GetRobotState.h"
+
+#include <moveit_msgs/PlanningScene.h>
+#include <moveit_msgs/GetPlanningScene.h>
+#include <moveit_msgs/PlanningSceneComponents.h>
+#include <moveit_msgs/DisplayRobotState.h>
+
+#include <moveit/robot_model_loader/robot_model_loader.h>
+#include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_state/conversions.h>
+
+
 
 RobotPoseVisualization::RobotPoseVisualization()
 {
@@ -39,12 +51,48 @@ bool RobotPoseVisualization::initialize()
 //        ret = false;
 //    }
 
+
+/*
+	ros::ServiceClient getPlanningSceneClient =
+			nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene", true);
+	if (!getPlanningSceneClient.exists()) {
+		ROS_FATAL("Service /get_planning_scene does not seem to exist.");
+		ret = false;
+	} else {
+		moveit_msgs::GetPlanningScene srv;
+		srv.request.components.ROBOT_STATE;
+		if (!getPlanningSceneClient.call(srv)) {
+			ROS_FATAL("Call for ROBOT_STATE using service /get_planning_scene failed.");
+			ret = false;
+		} else {
+			_initState = srv.response.scene.robot_state;
+			_currentState = _initState;
+		}
+	}
+
+
+	ros::Publisher robot_state_publisher = nh.advertise<moveit_msgs::DisplayRobotState>( "tutorial_robot_state", 1 );
+
+	robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
+	robot_state::RobotState robot_state(robot_model_loader.getModel());
+*/
+    // Alternative: visit: https://github.com/ros-planning/moveit_pr2/blob/hydro-devel/pr2_moveit_tutorials/state_display/src/state_display_tutorial.cpp
+
+
+
+
+
+
+
+
+
+
     return ret;
 }
 
 void RobotPoseVisualization::resetRobotState()
 {
-//    _currentState = _initState;
+    _currentState = _initState;
 }
 
 void RobotPoseVisualization::updateRobotStateJoints(const sensor_msgs::JointState & js)

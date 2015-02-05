@@ -22,12 +22,17 @@ namespace tidyup_state_creators
     {
     }
 
+    void GoalCreatorMoveObjectsToTable::initialize(const std::deque<std::string> & arguments)
+    {
+    }
+
     bool GoalCreatorMoveObjectsToTable::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
     {
-        goal.setForEachGoalStatement("manipulation_location", "searched", true);
-        goal.setForEachGoalStatement("movable_object", "tidy", true);
+        //goal.setForEachGoalStatement("manipulation_location", "searched", true);
+    	goal.setForEachGoalStatement("manipulation_location", "inspected", true);
+        //goal.setForEachGoalStatement("movable_object", "tidy", true);
+    	goal.setForEachGoalStatement("movable_object", "object-inspected", true);
         goal.setForEachGoalStatement("arm", "hand-free", true);
-        goal.setForEachGoalStatement("wipe_point", "wiped", true);
 
         return true;
     }

@@ -34,28 +34,30 @@ namespace tidyup_state_creators
         currentState.addSuperType("frameid", "frameid");
         currentState.addSuperType("location", "pose");
         currentState.addSuperType("manipulation_location", "location");
-        currentState.addSuperType("door_location", "location");
-        currentState.addSuperType("door_in_location", "door_location");
-        currentState.addSuperType("door_out_location", "door_location");
-        currentState.addSuperType("room", "room");
-        currentState.addSuperType("static_object", "static_object");
-        currentState.addSuperType("door", "door");
+        currentState.addSuperType("table", "pose");
         currentState.addSuperType("movable_object", "pose");
         currentState.addSuperType("arm", "arm");
         currentState.addSuperType("arm_state", "arm_state");
+//        currentState.addSuperType("door_location", "location");
+//        currentState.addSuperType("door_in_location", "door_location");
+//        currentState.addSuperType("door_out_location", "door_location");
+//        currentState.addSuperType("room", "room");
+//        currentState.addSuperType("static_object", "static_object");
+//        currentState.addSuperType("door", "door");
         goal.addSuperType("pose", "pose");
         goal.addSuperType("frameid", "frameid");
         goal.addSuperType("location", "pose");
         goal.addSuperType("manipulation_location", "location");
-        goal.addSuperType("door_location", "location");
-        goal.addSuperType("door_in_location", "door_location");
-        goal.addSuperType("door_out_location", "door_location");
-        goal.addSuperType("room", "room");
-        goal.addSuperType("static_object", "static_object");
-        goal.addSuperType("door", "door");
+        goal.addSuperType("table", "pose");
         goal.addSuperType("movable_object", "pose");
         goal.addSuperType("arm", "arm");
         goal.addSuperType("arm_state", "arm_state");
+//        goal.addSuperType("door_location", "location");
+//        goal.addSuperType("door_in_location", "door_location");
+//        goal.addSuperType("door_out_location", "door_location");
+//        goal.addSuperType("room", "room");
+//        goal.addSuperType("static_object", "static_object");
+//        goal.addSuperType("door", "door");
 
         currentState.printSuperTypes();
 
@@ -67,16 +69,19 @@ namespace tidyup_state_creators
             return false;
         }
         ROS_INFO("%s: file_name: %s", __PRETTY_FUNCTION__, locationsFile.c_str());
+        // GeometryPoses contains std::map<std::string, geometry_msgs::PoseStamped> poses
         GeometryPoses locations = GeometryPoses();
         if(!locations.load(locationsFile)) {
             ROS_ERROR("Could not load locations from \"%s\".", locationsFile.c_str());
             return false;
         }
 
+        // TODO: why these sets? They are filled but never used.
         std::set<string> rooms;
         std::set<string> doors;
         std::set<string> static_objects;
-        forEach(const GeometryPoses::NamedPose & np, locations.getPoses()) {
+        forEach(const GeometryPoses::NamedPose & np, locations.getPoses())
+        {
             const string& location = np.first;
             currentState.setNumericalFluent("timestamp", location, np.second.header.stamp.toSec());
             currentState.addObject(np.second.header.frame_id, "frameid");
@@ -89,6 +94,7 @@ namespace tidyup_state_creators
             currentState.setNumericalFluent("qz", location, np.second.pose.orientation.z);
             currentState.setNumericalFluent("qw", location, np.second.pose.orientation.w);
 
+            // When using different rooms
             // additional fluents
             // location name scheme: <type>typeName_AdditionalName_<room>roomName
             const vector<string>& nameParts = StringUtil::split(location, "_");
@@ -105,7 +111,6 @@ namespace tidyup_state_creators
             {
                 doors.insert(name);
                 currentState.addObject(name, "door");
-
 
                 // door_in_location
                 currentState.setObjectFluent("belongs-to-door", location, name);

@@ -21,4 +21,3 @@ namespace tidyup_state_creators
 };
 
 #endif
-

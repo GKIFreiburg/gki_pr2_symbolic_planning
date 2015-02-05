@@ -15,7 +15,7 @@ namespace tidyup_state_creators
         ros::NodeHandle nhPriv("~");
         ros::NodeHandle nh;
         nhPriv.param("nav_target_tolerance_xy", _goalToleranceXY, 0.15);
-        nhPriv.param("nav_target_tolerance_yaw", _goalToleranceYaw, 0.26);  //15deg
+        nhPriv.param("nav_target_tolerance_yaw", _goalToleranceYaw, 0.26);  // corresponds 15deg
 
         bool relative;
         nhPriv.param("nav_target_tolerance_relative_to_move_base", relative, false);
@@ -91,6 +91,7 @@ namespace tidyup_state_creators
         if(_locationType == "-")
             _locationType = "";
 
+        // Visualization with marker array
         if(!_robotPoseVis.initialize()) {
             ROS_ERROR("Failed to initialized RobotPoseVisualization.");
         }
@@ -139,8 +140,10 @@ namespace tidyup_state_creators
             geometry_msgs::PoseStamped targetPose;
             if(!extractPoseStamped(state, target, targetPose)) {
                 ROS_ERROR("%s: could not extract pose for target object: %s.", __func__, target.c_str());
-                continue; 
+                continue;
             }
+
+            // TODO: All poses should be in frame /map or?
             if(targetPose.header.frame_id != "/map") {
                 ROS_ERROR("Target pose %s had frame-id: %s - should be /map.",
                         target.c_str(), targetPose.header.frame_id.c_str());
@@ -335,6 +338,7 @@ namespace tidyup_state_creators
         bool arm_param_ok = true;
         ros::NodeHandle nh;
         XmlRpc::XmlRpcValue xmlRpcRight;
+        //TODO: convert to moveit
         if(!nh.getParam("/arm_configurations/side_tuck/position/right_arm", xmlRpcRight)) {
             ROS_WARN("Could not load /arm_configurations/side_tuck/position/right_arm.");
             arm_param_ok = false;
@@ -345,6 +349,7 @@ namespace tidyup_state_creators
                 arm_param_ok = false;
         }
         XmlRpc::XmlRpcValue xmlRpcLeft;
+        // TODO: convert to moveit
         if(!nh.getParam("/arm_configurations/side_tuck/position/left_arm", xmlRpcLeft)) {
             ROS_WARN("Could not load /arm_configurations/side_tuck/position/left_arm.");
             arm_param_ok = false;
