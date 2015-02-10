@@ -20,8 +20,8 @@ namespace tidyup_state_creators
         predicate_name = arguments[1];
         predicate_value = arguments[2];
         ros::NodeHandle nh;
-//        client = nh.serviceClient<tidyup_msgs::ArmsAtSide>(service_name);
-//        client.waitForExistence();
+        client = nh.serviceClient<tidyup_msgs::ArmsAtSide>(service_name);
+        client.waitForExistence();
     }
 
     bool StateCreatorArmsAtSide::fillState(SymbolicState & state)

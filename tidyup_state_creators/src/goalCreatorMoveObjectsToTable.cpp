@@ -32,8 +32,9 @@ namespace tidyup_state_creators
     	goal.setForEachGoalStatement("manipulation_location", "inspected", true);
         //goal.setForEachGoalStatement("movable_object", "tidy", true);
     	goal.setForEachGoalStatement("movable_object", "object-inspected", true);
-        goal.setForEachGoalStatement("arm", "hand-free", true);
+    	goal.setForEachGoalStatement("arm", "hand-free", true); // derived predicate
 
+    	//goal.setStringGoalStatement("(forall (?o - movable_object) (object-on ?o table2))");
         return true;
     }
 

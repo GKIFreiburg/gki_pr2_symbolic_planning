@@ -6,6 +6,9 @@
   <class name="tidyup_state_creators/goal_creator_tidyup_initialize" type="tidyup_state_creators::GoalCreatorTidyupInitialize" base_class_type="continual_planning_executive::GoalCreator">
     <description>Loads manipulation locations from a config file for static objects and doors and assigns them to their respective rooms.</description>
   </class>
+  <class name="tidyup_state_creators/goal_creator_load_tables_into_planning_scene" type="tidyup_state_creators::GoalCreatorLoadTablesIntoPlanningScene" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Load the tables from tables.dat file and add them as collision objects into the planning scene.</description>
+  </class>
   <class name="tidyup_state_creators/goal_creator_from_planning_scene" type="tidyup_state_creators::GoalCreatorFromPlanningScene" base_class_type="continual_planning_executive::GoalCreator">
     <description>Asks the environment server for known collision objects and adds them to the initial state.</description>
   </class>
