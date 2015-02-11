@@ -7,15 +7,16 @@ project(object_manipulation_actions)
 find_package(catkin REQUIRED COMPONENTS
 roscpp
 tf
-pluginlib
-actionlib
-continual_planning_executive
-tfd_modules
-tidyup_utils
+
 tidyup_msgs
 moveit_msgs
 visualization_msgs
 std_srvs
+tidyup_utils
+pluginlib
+actionlib
+continual_planning_executive
+tfd_modules
 #state_transformer
 #pr2_controller_msgs
 )
@@ -42,6 +43,10 @@ add_library(object_manipulation_actions
     src/actionExecutorPutdownObject.cpp
     src/actionExecutorDetectObjects.cpp
     src/actionExecutorDetectExpectedObjects.cpp)
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+add_dependencies(object_manipulation_actions tidyup_msgs_generate_messages_cpp)
 
 target_link_libraries(object_manipulation_actions
   ${catkin_LIBRARIES}
