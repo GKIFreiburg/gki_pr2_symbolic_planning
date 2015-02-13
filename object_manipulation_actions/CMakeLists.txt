@@ -5,20 +5,21 @@ project(object_manipulation_actions)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-roscpp
-tf
-
-tidyup_msgs
-moveit_msgs
-visualization_msgs
-std_srvs
-tidyup_utils
-pluginlib
-actionlib
-continual_planning_executive
-tfd_modules
-#state_transformer
-#pr2_controller_msgs
+	roscpp
+	tf
+	tidyup_msgs
+	moveit_msgs
+	moveit_core
+	visualization_msgs
+	std_srvs
+	tidyup_utils
+	pluginlib
+	actionlib
+	continual_planning_executive
+	tfd_modules
+	tidyup # TODO move arms-to-side to tidyup utils
+	#state_transformer
+	#pr2_controller_msgs
 )
 
 #set the default path for built executables to the "bin" directory
@@ -27,12 +28,12 @@ tfd_modules
 #set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 catkin_package(
-INCLUDE_DIRS include
-LIBRARIES object_manipulation_actions
+	INCLUDE_DIRS include
+	LIBRARIES object_manipulation_actions
 )
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+	include ${catkin_INCLUDE_DIRS}
 )
 
 add_library(object_manipulation_actions
@@ -49,5 +50,5 @@ add_library(object_manipulation_actions
 add_dependencies(object_manipulation_actions tidyup_msgs_generate_messages_cpp)
 
 target_link_libraries(object_manipulation_actions
-  ${catkin_LIBRARIES}
+	${catkin_LIBRARIES}
 )

@@ -30,7 +30,7 @@ bool StateCreatorROSNavigation::fillState(SymbolicState & state)
       _tf.lookupTransform("/map", "/base_link",  
             ros::Time(0), transform);
    }
-   catch (tf::TransformException ex){
+   catch (tf::TransformException& ex){
       ROS_ERROR("%s",ex.what());
       return false;
    }

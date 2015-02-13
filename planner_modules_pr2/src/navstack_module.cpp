@@ -127,9 +127,10 @@ void navstack_init(int argc, char** argv)
     // init service query for make plan
     string service_name = "move_base/make_plan";
     g_NodeHandle = new ros::NodeHandle();
-    while(!ros::service::waitForService(service_name, ros::Duration(3.0))) {
-        ROS_ERROR("Service %s not available - waiting.", service_name.c_str());
-    }
+//TODO:
+//    while(!ros::service::waitForService(service_name, ros::Duration(3.0))) {
+//        ROS_ERROR("Service %s not available - waiting.", service_name.c_str());
+//    }
 
     g_GetPlan = g_NodeHandle->serviceClient<nav_msgs::GetPlan>(service_name, true);
     if(!g_GetPlan) {

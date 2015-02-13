@@ -58,10 +58,11 @@ void putdown_init(int argc, char** argv)
     g_NodeHandle = new ros::NodeHandle();
     string service_name = "/tidyup/request_putdown_pose";
 
-    while (!ros::service::waitForService(service_name, ros::Duration(3.0)))
-    {
-        ROS_ERROR("%s Service %s not available - waiting.", logName.c_str(), service_name.c_str());
-    }
+// TODO:
+//    while (!ros::service::waitForService(service_name, ros::Duration(3.0)))
+//    {
+//        ROS_ERROR("%s Service %s not available - waiting.", logName.c_str(), service_name.c_str());
+//    }
 
     g_GetPutdownPose = g_NodeHandle->serviceClient<tidyup_msgs::GetPutdownPose>(service_name, true);
     if (!g_GetPutdownPose)
