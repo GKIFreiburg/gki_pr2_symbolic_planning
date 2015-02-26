@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 	tidyup_msgs
 	moveit_msgs
 	moveit_core
+	moveit_ros_planning_interface
 	visualization_msgs
 	std_srvs
 	tidyup_utils
@@ -17,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 	actionlib
 	continual_planning_executive
 	tfd_modules
-	tidyup # TODO move arms-to-side to tidyup utils
+	#tidyup # TODO move arms-to-side to tidyup utils
 	#state_transformer
 	#pr2_controller_msgs
 )
@@ -37,7 +38,8 @@ include_directories(
 ) 
 
 add_library(object_manipulation_actions
-    src/actionExecutorArmToSide.cpp
+    src/actionExecutorArmToSideNOTworking.cpp
+#    src/actionExecutorArmToSide.cpp
     src/actionExecutorArmToInspectObject.cpp
     src/actionExecutorArmToCarry.cpp
     src/actionExecutorPickupObject.cpp
