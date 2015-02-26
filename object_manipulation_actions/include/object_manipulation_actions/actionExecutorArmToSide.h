@@ -1,33 +1,35 @@
-#ifndef ACTION_EXECUTOR_ARM_TO_SIDE_H
-#define ACTION_EXECUTOR_ARM_TO_SIDE_H
+#ifndef ACTION_EXECUTOR_TUCK_ARMS_H
+#define ACTION_EXECUTOR_TUCK_ARMS_H
 
-#include "continual_planning_executive/actionExecutorInterface.h"
+#include "continual_planning_executive/actionExecutorActionlib.hpp"
 #include "continual_planning_executive/symbolicState.h"
 #include <tidyup_msgs/ArmToSideAction.h>
-#include <moveit/move_group_interface/move_group.h>
 
 namespace object_manipulation_actions
 {
 
-    class ActionExecutorArmToSide : public continual_planning_executive::ActionExecutorInterface
+    class ActionExecutorArmToSide : public ActionExecutorActionlib<tidyup_msgs::ArmToSideAction,
+    tidyup_msgs::ArmToSideGoal, tidyup_msgs::ArmToSideResult>
     {
         public:
+            /**
+             * Initialize the ArmToSide action using the following parameters:
+             * action_plan_name action_server_name [armStatePredicate [armAtSideConstant]]
+             *
+             * armStatePredicate and armAtSideConstant give the predicate that is set to the at side
+             * constant when the action succeeds.
+             */
+            virtual void initialize(const std::deque<std::string> & arguments);
 
-			virtual void initialize(const std::deque<std::string> & arguments);
+            virtual bool fillGoal(tidyup_msgs::ArmToSideGoal & goal,
+                    const DurativeAction & a, const SymbolicState & current);
 
-			virtual bool canExecute(const DurativeAction & a, const SymbolicState & currentState) const;
-
-			virtual bool executeBlocking(const DurativeAction & a, SymbolicState & currentState);
-
-			virtual void cancelAction();
+            virtual void updateState(const actionlib::SimpleClientGoalState & actionReturnState, const tidyup_msgs::ArmToSideResult & result,
+                    const DurativeAction & a, SymbolicState & current);
 
         private:
-
             std::string _armStatePredicateName;     // the arm state predicate name
             std::string _armAtSideConstantName;     // the arm at side position constant name
-
-    		moveit::planning_interface::MoveGroup* right_arm_group_;
-    		moveit::planning_interface::MoveGroup* left_arm_group_;
 
     };
 

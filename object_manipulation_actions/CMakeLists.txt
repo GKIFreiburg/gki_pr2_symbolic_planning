@@ -34,7 +34,7 @@ catkin_package(
 
 include_directories(
 	include ${catkin_INCLUDE_DIRS}
-)
+) 
 
 add_library(object_manipulation_actions
     src/actionExecutorArmToSide.cpp

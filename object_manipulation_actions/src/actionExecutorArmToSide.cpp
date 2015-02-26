@@ -1,8 +1,6 @@
 #include "object_manipulation_actions/actionExecutorArmToSide.h"
 #include <pluginlib/class_list_macros.h>
 #include "tidyup_utils/planning_scene_interface.h"
-#include <tidyup/arms_at_side.h>
-#include <moveit/move_group_interface/move_group.h>
 
 //PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_arm_to_side,
 //        object_manipulation_actions::ActionExecutorArmToSide,
@@ -12,80 +10,55 @@ PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToSide, con
 namespace object_manipulation_actions
 {
 
-	void ActionExecutorArmToSide::initialize(const std::deque<std::string> & arguments)
-	{
+    void ActionExecutorArmToSide::initialize(const std::deque<std::string> & arguments)
+    {
+        ActionExecutorActionlib<tidyup_msgs::ArmToSideAction, tidyup_msgs::ArmToSideGoal,
+            tidyup_msgs::ArmToSideResult>::initialize(arguments);
+
         _armStatePredicateName = "arm-state";
         _armAtSideConstantName = "arm_at_side";
 
-//		right_arm_group_ = new moveit::planning_interface::MoveGroup("right_arm");
-//		left_arm_group_ = new moveit::planning_interface::MoveGroup("left_arm");
-//		moveit::planning_interface::MoveGroup r("right_arm");
-//		moveit::planning_interface::MoveGroup l("left_arm");
-//		right_arm_group_ = &r;
-//		left_arm_group_  = &l;
+        if(arguments.size() >= 3) {     // 3rd param: arm-state predicate name
+            _armStatePredicateName = arguments[2];
+        }
+        if(arguments.size() >= 4) {     // 4th param: arm_at_side constant name
+            _armAtSideConstantName = arguments[3];
+        }
+    }
 
-        // TODO: ????
-//        if(arguments.size() >= 3) {     // 3rd param: arm-state predicate name
-//            _armStatePredicateName = arguments[2];
-//        }
-//        if(arguments.size() >= 4) {     // 4th param: arm_at_side constant name
-//            _armAtSideConstantName = arguments[3];
-//        }
-	}
+    bool ActionExecutorArmToSide::fillGoal(tidyup_msgs::ArmToSideGoal & goal,
+                        const DurativeAction & a, const SymbolicState & current)
+     {
+//        if(!PlanningSceneInterface::instance()->resetPlanningScene())   // FIXME try anyways?
+//            ROS_ERROR("%s: PlanningScene reset failed.", __PRETTY_FUNCTION__);
+//
+        ROS_ASSERT(a.parameters.size() == 1);
+        if(a.parameters[0] == "left_arm") {
+            goal.left_arm = true;
+        }
+        if(a.parameters[0] == "right_arm") {
+            goal.right_arm = true;
+        }
 
-	bool ActionExecutorArmToSide::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
-	{
-//		ROS_ASSERT(a.parameters.size() == 1);
-//		if(a.parameters[0] == left_arm_group_->getName()) {
-//			std::vector<double> jointValues;
-//			if (!tidyup::armsAtSide::loadJointValues(left_arm_group_->getName(), jointValues))
-//			{
-//				ROS_ERROR("ActionExecutorArmToSide::%s: Could not load joint values for left arm"
-//						"from param server", __func__);
-//				return false;
-//			}
-//
-//			left_arm_group_->setJointValueTarget(jointValues);
-//
-//			// Call the planner to compute a plan.
-//			// Note that we are just planning, not asking move_group
-//			// to actually move the robot.
-//			moveit::planning_interface::MoveGroup::Plan my_plan;
-//			bool result = left_arm_group_->plan(my_plan);
-//			return result;
-//
-//		} else if(a.parameters[0] == right_arm_group_->getName()) {
-//			std::vector<double> jointValues;
-//			if (!tidyup::armsAtSide::loadJointValues(right_arm_group_->getName(), jointValues))
-//			{
-//				ROS_ERROR("ActionExecutorArmToSide::%s: Could not load joint values for right arm"
-//						"from param server", __func__);
-//				return false;
-//			}
-//
-//			right_arm_group_->setJointValueTarget(jointValues);
-//
-//			// Call the planner to compute a plan.
-//			// Note that we are just planning, not asking move_group
-//			// to actually move the robot.
-//			moveit::planning_interface::MoveGroup::Plan my_plan;
-//			bool result = right_arm_group_->plan(my_plan);
-//			return result;
-//		}
-//		ROS_ERROR("ActionExecutorArmToSide::%s: Something went wrong. Got wrong durativeAction!", __func__);
-		return false;
-	}
+        return true;
+    }
 
-	bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
-	{
-		ROS_WARN("EVERYTHING IS WORKING!");
-		return true;
-	}
-
-	void ActionExecutorArmToSide::cancelAction()
-	{
-
-	}
+    void ActionExecutorArmToSide::updateState(const actionlib::SimpleClientGoalState & actionReturnState,
+    		const tidyup_msgs::ArmToSideResult & result,
+            const DurativeAction & a, SymbolicState & current)
+    {
+        ROS_INFO("ArmToSide returned result: %s", result.result.c_str());
+        ROS_ASSERT(a.parameters.size() == 1);
+        string arm = a.parameters[0];
+        if(actionReturnState == actionlib::SimpleClientGoalState::SUCCEEDED)
+        {
+            ROS_INFO("Arm Side Position succeeded.");
+            current.setObjectFluent(_armStatePredicateName, arm, _armAtSideConstantName);
+            // arm at side state estimator now sets this predicate
+        } else {
+            current.setObjectFluent(_armStatePredicateName, arm, "arm_unknown");
+        }
+    }
 
 };
 
