@@ -1,11 +1,9 @@
-#include "object_manipulation_actions/actionExecutorArmToSideNOTworking.h"
+#include "object_manipulation_actions/actionExecutorArmToSideInterface.h"
 #include <pluginlib/class_list_macros.h>
 //#include "tidyup_utils/planning_scene_interface.h"
 #include <tidyup_msgs/ArmsAtSide.h>
 #include <moveit/move_group_interface/move_group.h>
 #include <tidyup_utils/arms_at_side.h>
-
-
 
 #include <pluginlib/class_loader.h>
 #include <ros/ros.h>
@@ -36,6 +34,8 @@ namespace object_manipulation_actions
 		left_arm_group_ = new moveit::planning_interface::MoveGroup("left_arm");
 
 		// TODO: ????
+	    _actionName = arguments.at(0);
+	    ROS_INFO("Initializing ActionExecutor for action %s...", _actionName.c_str());
         if(arguments.size() >= 3) {     // 3rd param: arm-state predicate name
             _armStatePredicateName = arguments[2];
         }
@@ -46,67 +46,41 @@ namespace object_manipulation_actions
 
 	bool ActionExecutorArmToSide::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
 	{
-		ROS_ASSERT(a.parameters.size() == 1);
-		if(a.parameters[0] == left_arm_group_->getName()) {
-			std::vector<double> jointValues;
-			if (!tidyup::ArmsAtSideServiceServer::loadJointValues(left_arm_group_->getName(), jointValues))
-			{
-				ROS_ERROR("ActionExecutorArmToSide::%s: Could not load joint values for left arm "
-						"from param server", __func__);
-				return false;
-			}
-            ROS_INFO("setting joint values");
-			left_arm_group_->setJointValueTarget(jointValues);
-
-			// Call the planner to compute a plan.
-			// Note that we are just planning, not asking move_group
-			// to actually move the robot.
-			moveit::planning_interface::MoveGroup::Plan my_plan;
-            ROS_INFO("planning arm motion...");
-//			bool result = left_arm_group_->plan(my_plan);
-//            ROS_INFO("plan found, action ready");
-//			return result;
-            return true;
-
-		} else if(a.parameters[0] == right_arm_group_->getName()) {
-			std::vector<double> jointValues;
-			if (!tidyup::ArmsAtSideServiceServer::loadJointValues(right_arm_group_->getName(), jointValues))
-			{
-				ROS_ERROR("ActionExecutorArmToSide::%s: Could not load joint values for right arm "
-						"from param server", __func__);
-				return false;
-			}
-
-            ROS_INFO("setting joint values");
-			right_arm_group_->setJointValueTarget(jointValues);
-			// Call the planner to compute a plan.
-			// Note that we are just planning, not asking move_group
-			// to actually move the robot.
-			moveit::planning_interface::MoveGroup::Plan my_plan;
-            ROS_INFO("planning arm motion...");
-//            moveit::planning_interface::MoveItErrorCode error_code = right_arm_group_->plan(my_plan);
-//            ROS_INFO("plan found, action ready");
-//			return moveit::planning_interface::MoveItErrorCode::SUCCESS == error_code;
-            return true;
-		}
-		ROS_ERROR("ActionExecutorArmToSide::%s: Something went wrong. Got wrong durativeAction!", __func__);
-		return false;
+	    return a.name == _actionName;
 	}
 
 bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 {
-    if (a.parameters[0] == left_arm_group_->getName())
-    {
-        moveit::planning_interface::MoveItErrorCode error_code = left_arm_group_->asyncMove();
-        return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
-    }
-    else if (a.parameters[0] == right_arm_group_->getName())
-    {
-    	moveit::planning_interface::MoveItErrorCode error_code = right_arm_group_->asyncMove();
-        return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
-    }
+    ROS_ASSERT(a.parameters.size() == 1);
+    if(a.parameters[0] == left_arm_group_->getName()) {
+        std::vector<double> jointValues;
+        if (!tidyup::ArmsAtSideServiceServer::loadJointValues(left_arm_group_->getName(), jointValues))
+        {
+            ROS_ERROR("ActionExecutorArmToSide::%s: Could not load joint values for left arm "
+                    "from param server", __func__);
+            return false;
+        }
+        ROS_INFO("setting joint values");
+        left_arm_group_->setJointValueTarget(jointValues);
 
-    return true;
+        moveit::planning_interface::MoveItErrorCode error_code = left_arm_group_->move();
+        return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
+
+    } else if(a.parameters[0] == right_arm_group_->getName()) {
+        std::vector<double> jointValues;
+        if (!tidyup::ArmsAtSideServiceServer::loadJointValues(right_arm_group_->getName(), jointValues))
+        {
+            ROS_ERROR("ActionExecutorArmToSide::%s: Could not load joint values for right arm "
+                    "from param server", __func__);
+            return false;
+        }
+
+        ROS_INFO("setting joint values");
+        right_arm_group_->setJointValueTarget(jointValues);
+        moveit::planning_interface::MoveItErrorCode error_code = right_arm_group_->move();
+        return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
+    }
+    return false;
 }
 
 	void ActionExecutorArmToSide::cancelAction()

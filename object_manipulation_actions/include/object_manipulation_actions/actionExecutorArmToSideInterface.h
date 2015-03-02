@@ -1,5 +1,5 @@
-#ifndef ACTION_EXECUTOR_ARM_TO_SIDE_H
-#define ACTION_EXECUTOR_ARM_TO_SIDE_H
+#ifndef ACTION_EXECUTOR_ARM_TO_SIDE_INTERFACE_H
+#define ACTION_EXECUTOR_ARM_TO_SIDE_INTERFACE_H
 
 #include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"
@@ -22,7 +22,7 @@ namespace object_manipulation_actions
 			virtual void cancelAction();
 
         private:
-
+			std::string _actionName;
             std::string _armStatePredicateName;     // the arm state predicate name
             std::string _armAtSideConstantName;     // the arm at side position constant name
 
