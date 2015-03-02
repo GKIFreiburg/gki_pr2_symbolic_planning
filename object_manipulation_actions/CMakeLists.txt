@@ -38,8 +38,8 @@ include_directories(
 ) 
 
 add_library(object_manipulation_actions
-    src/actionExecutorArmToSideNOTworking.cpp
-#    src/actionExecutorArmToSide.cpp
+#    src/actionExecutorArmToSideInterface.cpp
+    src/actionExecutorArmToSideActionServer.cpp
     src/actionExecutorArmToInspectObject.cpp
     src/actionExecutorArmToCarry.cpp
     src/actionExecutorPickupObject.cpp
