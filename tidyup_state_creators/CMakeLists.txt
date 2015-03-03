@@ -40,5 +40,5 @@ add_library(tidyup_state_creators
     src/StateAccessException.cpp)
     
 target_link_libraries(tidyup_state_creators
-  ${catkin_LIBRARIES} tidyup_utils
+  ${catkin_LIBRARIES}
 )
