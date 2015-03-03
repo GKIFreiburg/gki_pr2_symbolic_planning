@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
 	actionlib
 	continual_planning_executive
 	tfd_modules
-	#tidyup # TODO move arms-to-side to tidyup utils
 	#state_transformer
 	#pr2_controller_msgs
 )
@@ -34,12 +33,12 @@ catkin_package(
 )
 
 include_directories(
-	include ${catkin_INCLUDE_DIRS}
+	include
+	${catkin_INCLUDE_DIRS}
 ) 
 
 add_library(object_manipulation_actions
-    src/actionExecutorArmToSideInterface.cpp
-#    src/actionExecutorArmToSideActionServer.cpp
+    src/actionExecutorArmToSide.cpp
     src/actionExecutorArmToInspectObject.cpp
     src/actionExecutorArmToCarry.cpp
     src/actionExecutorPickupObject.cpp
