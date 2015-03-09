@@ -39,9 +39,17 @@ namespace object_manipulation_actions
 		std::string table = a.parameters[1];
 
 		goal.verify_planning_scene_update = verify_planning_scene_update_;
-		goal.expected_objects.insert(goal.expected_objects.end(), expected_objects_.begin(), expected_objects_.end());
+		//goal.expected_objects.insert(goal.expected_objects.end(), expected_objects_.begin(), expected_objects_.end());
 		goal.add_tables = add_tables_;
 		goal.table_prefix = table;
+
+		const multimap<string, string> objects = current.getTypedObjects();
+		std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators =
+		        objects.equal_range("movable_object");
+		for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
+		{
+		    goal.expected_objects.push_back(it->second);
+		}
 
 		return true;
 	}
