@@ -18,6 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
 	actionlib
 	continual_planning_executive
 	tfd_modules
+	ork_to_planning_scene
+	ork_to_planning_scene_msgs
 	#state_transformer
 	#pr2_controller_msgs
 )
@@ -48,7 +50,10 @@ add_library(object_manipulation_actions
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(object_manipulation_actions tidyup_msgs_generate_messages_cpp)
+add_dependencies(object_manipulation_actions
+	tidyup_msgs_generate_messages_cpp
+	ork_to_planning_scene_msgs_generate_messages_cpp
+)
 
 target_link_libraries(object_manipulation_actions
 	${catkin_LIBRARIES}
