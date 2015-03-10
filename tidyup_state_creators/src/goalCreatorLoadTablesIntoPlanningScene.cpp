@@ -72,11 +72,8 @@ namespace tidyup_state_creators
             currentState.setNumericalFluent("qw", tablename, tl.pose.pose.orientation.w);
 		}
 
-
-
-
 		// using hack
-		fillObjectIntoState(currentState);
+//		fillObjectIntoState(currentState);
 
 
 		return true;

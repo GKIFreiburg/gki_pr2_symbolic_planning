@@ -1,18 +1,14 @@
-#ifndef ACTION_EXECUTOR_DETECT_OBJECTS_H
-#define ACTION_EXECUTOR_DETECT_OBJECTS_H
+#ifndef ACTION_EXECUTOR_INSPECT_LOCATION_H
+#define ACTION_EXECUTOR_INSPECT_LOCATION_H
 
 #include "continual_planning_executive/actionExecutorActionlib.hpp"
 #include "continual_planning_executive/symbolicState.h"
 #include <actionlib/client/simple_action_client.h>
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
 
-//#include <pr2_controllers_msgs/PointHeadAction.h>
-
 namespace object_manipulation_actions
 {
-//	class ActionExecutorDetectObjects : public ActionExecutorActionlib<tidyup_msgs::GraspObjectAction,
-//       tidyup_msgs::GraspObjectGoal, tidyup_msgs::GraspObjectResult>
-    class ActionExecutorDetectObjects : public ActionExecutorActionlib<
+    class ActionExecutorInspectLocation : public ActionExecutorActionlib<
     ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction,
     ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkGoal,
     ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkResult>

@@ -1,15 +1,15 @@
-#include "object_manipulation_actions/actionExecutorDetectObjects.h"
+#include "object_manipulation_actions/actionExecutorInspectLocation.h"
 #include <pluginlib/class_list_macros.h>
 #include <set>
 
 //PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_detect_objects,
-//		object_manipulation_actions::ActionExecutorDetectObjects,
+//		object_manipulation_actions::ActionExecutorInspectLocation,
 //		continual_planning_executive::ActionExecutorInterface)
-PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorDetectObjects, continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorInspectLocation, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
 {
-	void ActionExecutorDetectObjects::initialize(const std::deque<std::string> & arguments)
+	void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & arguments)
 	{
 		ActionExecutorActionlib<
 				ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction,
@@ -26,12 +26,12 @@ namespace object_manipulation_actions
 		return;
 	}
 
-	bool ActionExecutorDetectObjects::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
+	bool ActionExecutorInspectLocation::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
 	{
 	    return a.name == action_name_;
 	}
 
-	bool ActionExecutorDetectObjects::fillGoal(ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkGoal & goal,
+	bool ActionExecutorInspectLocation::fillGoal(ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkGoal & goal,
 			const DurativeAction & a, const SymbolicState & current)
 	{
 		ROS_ASSERT(a.parameters.size() == 2);
@@ -54,7 +54,7 @@ namespace object_manipulation_actions
 		return true;
 	}
 
-	void ActionExecutorDetectObjects::updateState(const actionlib::SimpleClientGoalState & actionReturnState,
+	void ActionExecutorInspectLocation::updateState(const actionlib::SimpleClientGoalState & actionReturnState,
     		const ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkResult & result,
             const DurativeAction & a, SymbolicState & current)
 	{
