@@ -48,7 +48,16 @@ namespace object_manipulation_actions
 		        objects.equal_range("movable_object");
 		for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
 		{
-		    goal.expected_objects.push_back(it->second);
+		    Predicate on;
+		    on.name = "object-on";
+		    on.parameters.push_back(it->second);
+		    on.parameters.push_back(table);
+		    bool value = false;
+		    current.hasBooleanPredicate(on, &value);
+		    if (value)
+		    {
+		        goal.expected_objects.push_back(it->second);
+		    }
 		}
 
 		return true;
