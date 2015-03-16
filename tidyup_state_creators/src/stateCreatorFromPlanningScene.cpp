@@ -223,11 +223,11 @@ namespace tidyup_state_creators
     void StateCreatorFromPlanningScene::addObjectToState(SymbolicState & state, const moveit_msgs::CollisionObject& co,
     		const std::string& objectType)
     {
+        ROS_DEBUG_STREAM("object: " << co.id << " has frame: " << co.header.frame_id);
+        ROS_ASSERT(co.header.frame_id == "/map" || co.header.frame_id == "map");
     	state.addObject(co.id, objectType);
         state.setNumericalFluent("timestamp", co.id, co.header.stamp.toSec());
         state.addObject(co.header.frame_id, "frameid");
-        ROS_DEBUG_STREAM("object: " << co.id << " has frame: " << co.header.frame_id);
-        ROS_ASSERT(co.header.frame_id == "/map" || co.header.frame_id == "map");
         state.setObjectFluent("frame-id", co.id, co.header.frame_id);
 
         geometry_msgs::Pose pose;

@@ -5,10 +5,10 @@
 #include <moveit_msgs/PlanningScene.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <set>
+#include <gtest/gtest.h>
 
 namespace tidyup_state_creators
 {
-
 	class StateCreatorFromPlanningScene: public continual_planning_executive::StateCreator
 	{
 		public:
@@ -29,13 +29,16 @@ namespace tidyup_state_creators
              *
              * \returns true if all fluents were available
              */
+            FRIEND_TEST(stateCreatorFromPlanningSceneTest, extractPoseStampedFromSymbolicState);
             bool extractPoseStampedFromSymbolicState(const SymbolicState & state, const string & object,
                     geometry_msgs::PoseStamped & pose) const;
 
             // the same as in ork_to_planning_scene
+            FRIEND_TEST(stateCreatorFromPlanningSceneTest, extractPoseStampedFromCollisionObject);
             bool extractPoseStampedFromCollisionObject(const moveit_msgs::CollisionObject &co,
             		geometry_msgs::PoseStamped & pose) const;
 
+            FRIEND_TEST(stateCreatorFromPlanningSceneTest, distanceBetweenTwoPoses);
             std::pair<double, double> distanceBetweenTwoPoses(const geometry_msgs::PoseStamped & posePS,
                     const geometry_msgs::PoseStamped & poseState);
 
@@ -48,6 +51,7 @@ namespace tidyup_state_creators
             void initializePlanningScene();
             void setInitialScene(const moveit_msgs::PlanningScene& scene);
 
+            FRIEND_TEST(stateCreatorFromPlanningSceneTest, checkIfTableInState);
             bool checkIfTableInState(const SymbolicState& state, const std::string& table);
 
             inline bool isMatch(const std::pair<double, double>& distance, double match_distance,
@@ -55,6 +59,7 @@ namespace tidyup_state_creators
             	return (distance.first <= match_distance && distance.second <= z_match_distance);
             }
 
+            FRIEND_TEST(stateCreatorFromPlanningSceneTest, addObjectToState);
             void addObjectToState(SymbolicState & state, const moveit_msgs::CollisionObject& co,
             		const std::string& objectType);
 
