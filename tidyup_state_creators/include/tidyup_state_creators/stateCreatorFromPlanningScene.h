@@ -2,9 +2,11 @@
 #define STATE_CREATOR_FROM_PLANNING_SCENE_H
 
 #include "continual_planning_executive/stateCreator.h"
-#include <moveit_msgs/PlanningScene.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <ros/ros.h>
 #include <set>
+#include <moveit_msgs/PlanningScene.h>
+#include <moveit_msgs/GetPlanningScene.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <gtest/gtest.h>
 
 namespace tidyup_state_creators
@@ -45,11 +47,12 @@ namespace tidyup_state_creators
 		private:
 
             moveit_msgs::PlanningScene planning_scene_;
+            ros::ServiceClient srvPlanningScene_;
             double object_match_distance_;
             double object_z_match_distance_;
 
             void initializePlanningScene();
-            void setInitialScene(const moveit_msgs::PlanningScene& scene);
+            void setPlanningScene(const moveit_msgs::PlanningScene& scene);
 
             FRIEND_TEST(stateCreatorFromPlanningSceneTest, checkIfTableInState);
             bool checkIfTableInState(const SymbolicState& state, const std::string& tableName);

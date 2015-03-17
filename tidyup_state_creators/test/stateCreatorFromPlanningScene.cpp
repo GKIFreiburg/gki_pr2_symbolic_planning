@@ -89,28 +89,45 @@ TEST_F(stateCreatorFromPlanningSceneTest, addObjectToState){
 
     // Test 2: object containing wrong frame should not be added to state
     //			Aborted by ROS_ASSERT
-    {
-    	state_.clear();
-    	coTable_.header.frame_id = "/base_link";
-    	//pub_co_.publish(coTable_);
-    	::testing::FLAGS_gtest_death_test_style = "threadsafe";
-    	EXPECT_DEATH_IF_SUPPORTED(scfps.addObjectToState(state_, coTable_, objectType), "");
-    }
+//    {
+//    	state_.clear();
+//    	coTable_.header.frame_id = "/base_link";
+//    	//pub_co_.publish(coTable_);
+//    	::testing::FLAGS_gtest_death_test_style = "threadsafe";
+//    	EXPECT_DEATH_IF_SUPPORTED(scfps.addObjectToState(state_, coTable_, objectType), "");
+//    }
 
     // Test 3: add object without pose
     {
     	state_.clear();
-    	coTable_.primitive_poses.clear();
-    	coTable_.header.frame_id = "/map";
+    	moveit_msgs::CollisionObject co = coTable_;
+    	co.primitive_poses.clear();
+    	co.header.frame_id = "/map";
     	//pub_co_.publish(coTable_);
 		Predicate pred;
-		pred.parameters.push_back(coTable_.id);
+		pred.parameters.push_back(co.id);
 		pred.name = "x";
 		double val = -1;
-		scfps.addObjectToState(state_, coTable_, objectType);
+		scfps.addObjectToState(state_, co, objectType);
 		EXPECT_FALSE(state_.hasNumericalFluent(pred, &val));
 		// verify that value has not been changed
 		EXPECT_EQ(-1, val);
+    }
+
+    // Test 4: add object with different pose - test if state is updated
+    {
+    	state_.clear();
+    	scfps.addObjectToState(state_, coTable_, objectType);
+    	moveit_msgs::CollisionObject co = coTable_;
+    	co.primitive_poses[0].position.x = -2.0;
+    	scfps.addObjectToState(state_, co, objectType);
+		Predicate pred;
+		pred.parameters.push_back(co.id);
+		pred.name = "x";
+		double val;
+		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_EQ(-2.0, val);
+
     }
 }
 
