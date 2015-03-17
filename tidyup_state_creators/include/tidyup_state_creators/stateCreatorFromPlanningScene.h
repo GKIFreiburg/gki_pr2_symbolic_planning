@@ -52,7 +52,7 @@ namespace tidyup_state_creators
             void setInitialScene(const moveit_msgs::PlanningScene& scene);
 
             FRIEND_TEST(stateCreatorFromPlanningSceneTest, checkIfTableInState);
-            bool checkIfTableInState(const SymbolicState& state, const std::string& table);
+            bool checkIfTableInState(const SymbolicState& state, const std::string& tableName);
 
             inline bool isMatch(const std::pair<double, double>& distance, double match_distance,
             		double z_match_distance) {

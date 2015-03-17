@@ -93,7 +93,7 @@ namespace tidyup_state_creators
     }
 
     bool StateCreatorFromPlanningScene::checkIfTableInState(
-    		const SymbolicState& state, const std::string& table)
+    		const SymbolicState& state, const std::string& tableName)
     {
         pair<SymbolicState::TypedObjectConstIterator, SymbolicState::TypedObjectConstIterator> tablesRange =
                 state.getTypedObjects().equal_range("table");
@@ -101,13 +101,13 @@ namespace tidyup_state_creators
                 tablesIterator != tablesRange.second; tablesIterator++)
         {
         	ROS_DEBUG_STREAM("processing "<<tablesIterator->second);
-        	if (table.compare(tablesIterator->second) == 0) // equal
+        	if (tableName.compare(tablesIterator->second) == 0) // equal
         	{
-
+        		return true;
         	}
 
         }
-    	return true;
+    	return false;
     }
 
 
@@ -124,58 +124,58 @@ namespace tidyup_state_creators
         p.name = "x";
         if(!state.hasNumericalFluent(p, &posX)) {
             ROS_ERROR("%s: object: %s - no x-location in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
         double posY = 0;
         p.name = "y";
         if(!state.hasNumericalFluent(p, &posY)) {
             ROS_ERROR("%s: object: %s - no y-location in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
         double posZ = 0;
         p.name = "z";
         if(!state.hasNumericalFluent(p, &posZ)) {
             ROS_ERROR("%s: object: %s - no z-location in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
 
         double qx;
         p.name = "qx";
         if(!state.hasNumericalFluent(p, &qx)) {
             ROS_ERROR("%s: object: %s - no qx in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
         double qy;
         p.name = "qy";
         if(!state.hasNumericalFluent(p, &qy)) {
             ROS_ERROR("%s: object: %s - no qy in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
         double qz;
         p.name = "qz";
         if(!state.hasNumericalFluent(p, &qz)) {
             ROS_ERROR("%s: object: %s - no qz in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
         double qw;
         p.name = "qw";
         if(!state.hasNumericalFluent(p, &qw)) {
             ROS_ERROR("%s: object: %s - no qw in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
 
         double timestamp;
         p.name = "timestamp";
         if(!state.hasNumericalFluent(p, &timestamp)) {
             ROS_ERROR("%s: object: %s - no timestamp in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
 
         string frameid;
         p.name = "frame-id";
         if(!state.hasObjectFluent(p, &frameid)) {
             ROS_ERROR("%s: object: %s - no frameid in state.", __func__, object.c_str());
-            ret = false;;
+            ret = false;
         }
 
         pose.header.frame_id = frameid;
