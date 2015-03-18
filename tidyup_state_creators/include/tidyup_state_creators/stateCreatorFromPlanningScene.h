@@ -2,12 +2,14 @@
 #define STATE_CREATOR_FROM_PLANNING_SCENE_H
 
 #include "continual_planning_executive/stateCreator.h"
-#include <ros/ros.h>
 #include <set>
+
+#include <ros/ros.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <gtest/gtest.h>
+#include <tf/transform_listener.h>
 
 namespace tidyup_state_creators
 {
@@ -50,6 +52,7 @@ namespace tidyup_state_creators
             ros::ServiceClient srvPlanningScene_;
             double object_match_distance_;
             double object_z_match_distance_;
+            tf::TransformListener tf_;
 
             void initializePlanningScene();
             void setPlanningScene(const moveit_msgs::PlanningScene& scene);

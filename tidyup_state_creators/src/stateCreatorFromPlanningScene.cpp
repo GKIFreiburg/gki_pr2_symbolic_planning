@@ -16,10 +16,6 @@ namespace tidyup_state_creators
     	ros::NodeHandle nh;
     	srvPlanningScene_ = nh.serviceClient<moveit_msgs::GetPlanningScene>(move_group::GET_PLANNING_SCENE_SERVICE_NAME);
 
-        ROS_DEBUG("StateCreatorFromPlanningScene::%s: Waiting for %s service.",
-        		__func__, move_group::GET_PLANNING_SCENE_SERVICE_NAME.c_str());
-        srvPlanningScene_.waitForExistence();
-
     	ros::NodeHandle nhOrk("/ork_to_planning_scene");
     	nhOrk.param("object_match_distance", object_match_distance_, 0.15);
     	nhOrk.param("object_z_match_distance", object_z_match_distance_, 0.15);
@@ -91,6 +87,10 @@ namespace tidyup_state_creators
 
     void StateCreatorFromPlanningScene::initializePlanningScene()
     {
+        ROS_INFO("StateCreatorFromPlanningScene::%s: Waiting for %s service.",
+        		__func__, move_group::GET_PLANNING_SCENE_SERVICE_NAME.c_str());
+        srvPlanningScene_.waitForExistence();
+
         moveit_msgs::GetPlanningScene::Request request;
         moveit_msgs::GetPlanningScene::Response response;
         //request.components.WORLD_OBJECT_NAMES; IMPORTANT: This declaration does not work!
@@ -270,6 +270,16 @@ namespace tidyup_state_creators
     std::pair<double, double> StateCreatorFromPlanningScene::distanceBetweenTwoPoses(const geometry_msgs::PoseStamped & posePS,
             const geometry_msgs::PoseStamped & poseState)
     {
+        // OR poses might be in a sensor frame -> transform to PS frame first
+        geometry_msgs::PoseStamped poseOR_transformed;
+        try {
+            tf_.waitForTransform(posePS.header.frame_id, poseState.header.frame_id, poseState.header.stamp,
+                    ros::Duration(0.5));
+            tf_.transformPose(posePS.header.frame_id, poseState, poseOR_transformed);
+        } catch (tf::TransformException &ex) {
+            ROS_ERROR("%s", ex.what());
+        }
+
 		ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": frame ObjPlanningScene: "
 				<< posePS.header.frame_id << ": frame ObjSymbolicState: "
 				<< poseState.header.frame_id);

@@ -127,7 +127,6 @@ TEST_F(stateCreatorFromPlanningSceneTest, addObjectToState){
 		double val;
 		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
 		EXPECT_EQ(-2.0, val);
-
     }
 }
 

@@ -53,6 +53,6 @@ target_link_libraries(tidyup_state_creators
 #target_link_libraries(simple_test ${catkin_LIBRARIES} ${GTEST_LIBRARIES} pthread)
 
 if (CATKIN_ENABLE_TESTING)
-	catkin_add_gtest(${PROJECT_NAME}-test test/stateCreatorFromPlanningScene.cpp src/stateCreatorFromPlanningScene.cpp)
+	catkin_add_gtest(${PROJECT_NAME}-test test/stateCreatorFromPlanningSceneTest.cpp src/stateCreatorFromPlanningScene.cpp)
 	target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} ${GTEST_LIBRARIES} pthread)
 endif()
