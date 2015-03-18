@@ -48,14 +48,32 @@ class stateCreatorFromPlanningSceneTest : public ::testing::Test {
 		coTable_.primitive_poses.push_back(p);
 //		coTable_.operation = coTable_.ADD;
 //		pub_co_.publish(coTable_);
+
+		coObject_.header.frame_id = "/head_mount_kinect";
+		coObject_.header.stamp = header_.stamp;
+		coObject_.id = "cokeTest";
+		coObject_.primitives.resize(1);
+		coObject_.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+		coObject_.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+		coObject_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.067;
+		coObject_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.067;
+		coObject_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.12;
+		p.position.x = 0.50;
+		p.position.y = 0.25;
+		p.position.z = 0.58;
+		p.orientation.x = 0.12;
+		p.orientation.y = 0.28;
+		p.orientation.z = 0.89;
+		p.orientation.w = 1;
+		coObject_.primitive_poses.push_back(p);
 	}
 
 	// virtual void SetUp() {}
 	// virtual void TearDown() {}
 	SymbolicState state_;
 	const std::string tableName_;
-	moveit_msgs::CollisionObject coTable_;
 	std_msgs::Header header_;
+	moveit_msgs::CollisionObject coTable_;
 	moveit_msgs::CollisionObject coObject_;
 	ros::Publisher pub_co_;
 };
@@ -117,9 +135,12 @@ TEST_F(stateCreatorFromPlanningSceneTest, addObjectToState){
     // Test 4: add object with different pose - test if state is updated
     {
     	state_.clear();
+    	// first add object to state
     	scfps.addObjectToState(state_, coTable_, objectType);
+    	// modify object
     	moveit_msgs::CollisionObject co = coTable_;
     	co.primitive_poses[0].position.x = -2.0;
+    	// re-add it
     	scfps.addObjectToState(state_, co, objectType);
 		Predicate pred;
 		pred.parameters.push_back(co.id);
@@ -128,6 +149,44 @@ TEST_F(stateCreatorFromPlanningSceneTest, addObjectToState){
 		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
 		EXPECT_EQ(-2.0, val);
     }
+
+    // Test 5: add object coke
+    {
+    	scfps.addObjectToState(state_, coObject_, "movable_object");
+		Predicate pred;
+		pred.parameters.push_back(coObject_.id);
+		pred.name = "x";
+		double val;
+		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_EQ(coObject_.primitive_poses[0].position.x, val);
+		pred.name = "y";
+		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_EQ(coObject_.primitive_poses[0].position.y, val);
+		pred.name = "qy";
+		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_EQ(coObject_.primitive_poses[0].orientation.y, val);
+		pred.name = "qw";
+		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_EQ(coObject_.primitive_poses[0].orientation.w, val);
+    }
+}
+
+TEST_F(stateCreatorFromPlanningSceneTest, isMatch)
+{
+	StateCreatorFromPlanningScene scfps;
+	std::pair<double, double> dist;
+	// if dist under threshold: here (0.15, 0.15) then match
+	dist = std::make_pair(0.12, 0.1);
+	EXPECT_TRUE(scfps.isMatch(dist, scfps.object_match_distance_, scfps.object_z_match_distance_));
+
+	dist = std::make_pair(0.25, 0.1);
+	EXPECT_FALSE(scfps.isMatch(dist, scfps.object_match_distance_, scfps.object_z_match_distance_));
+
+	dist = std::make_pair(0.12, 0.29);
+	EXPECT_FALSE(scfps.isMatch(dist, scfps.object_match_distance_, scfps.object_z_match_distance_));
+
+	dist = std::make_pair(0.63, 0.74);
+	EXPECT_FALSE(scfps.isMatch(dist, scfps.object_match_distance_, scfps.object_z_match_distance_));
 }
 
 TEST_F(stateCreatorFromPlanningSceneTest, checkIfTableInState)

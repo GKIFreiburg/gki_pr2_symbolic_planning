@@ -60,6 +60,7 @@ namespace tidyup_state_creators
             FRIEND_TEST(stateCreatorFromPlanningSceneTest, checkIfTableInState);
             bool checkIfTableInState(const SymbolicState& state, const std::string& tableName);
 
+            FRIEND_TEST(stateCreatorFromPlanningSceneTest, isMatch);
             inline bool isMatch(const std::pair<double, double>& distance, double match_distance,
             		double z_match_distance) {
             	return (distance.first <= match_distance && distance.second <= z_match_distance);

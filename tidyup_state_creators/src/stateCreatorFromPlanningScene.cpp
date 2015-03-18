@@ -39,47 +39,55 @@ namespace tidyup_state_creators
     	forEach(const moveit_msgs::CollisionObject& object, planning_scene_.world.collision_objects)
 		{
     		ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": processing object: " << object.id);
-    		if (StringUtil::startsWith(object.id, "table"))
-    		{
-                geometry_msgs::PoseStamped poseTable;
-                if (!extractPoseStampedFromSymbolicState(state, object.id, poseTable))
-                {
-                	ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ <<
-                			": Symbolic state does not have object: " << object.id);
-                	// add object to state
-                	addObjectToState(state, object, "table");
-                	continue;
-                }
+			geometry_msgs::PoseStamped poseFromState;
+			if (!extractPoseStampedFromSymbolicState(state, object.id, poseFromState))
+			{
+				ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ <<
+						": Symbolic state does not have object. Add Object to symbolic state: " << object.id);
+				// add object to state
+				if (StringUtil::startsWith(object.id, "table"))
+					addObjectToState(state, object, "table");
+				else // object is a movable object
+					addObjectToState(state, object, "movable_object");
 
-                geometry_msgs::PoseStamped poseTablePS;
-                if (!extractPoseStampedFromCollisionObject(object, poseTablePS))
+				ROS_INFO_STREAM("StateCreatorFromPlanningScene::" << __func__ <<
+					": Added object:" << object.id << " to symbolic state.");
+				continue;
+			}
+
+			geometry_msgs::PoseStamped poseFromPS;
+			// get pose of object from planning scene
+			if (!extractPoseStampedFromCollisionObject(object, poseFromPS))
+			{
+				ROS_ERROR_STREAM("StateCreatorFromPlanningScene::" << __func__ <<
+						"PoseStamped could not be extracted from object:%s" << object.id);
+				continue;
+			}
+
+			// compute distance between the two poses
+			std::pair<double, double> dist;
+			dist = distanceBetweenTwoPoses(poseFromPS, poseFromState);
+			ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": Distance: " <<
+					dist.first << " Height difference: " << dist.second);
+			bool result;
+			result = isMatch(dist, object_match_distance_, object_z_match_distance_);
+			if (result) // match found
+			{
+				ROS_INFO_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": Object: " <<
+						object.id << " is already in symbolic state!");
+				continue;
+			}
+			else
+			{
+				if (StringUtil::startsWith(object.id, "table"))
 				{
-                	ROS_ERROR_STREAM("StateCreatorFromPlanningScene::" << __func__ <<
-                			"PoseStamped could not be extracted from object:%s" << object.id);
-                	continue;
-				}
-
-                // compute distance between the two poses
-    			std::pair<double, double> dist;
-    			dist = distanceBetweenTwoPoses(poseTablePS, poseTable);
-    			ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": Distance: " <<
-    					dist.first << " Height difference: " << dist.second);
-    			bool result;
-    			result = isMatch(dist, object_match_distance_, object_z_match_distance_);
-    			if (result)
-    			{
-    				ROS_WARN("StateCreatorFromPlanningScene::%s: object: %s already in symbolic state!",
-    						__func__, object.id.c_str());
-    				// table is already in symbolic state
+					ROS_ERROR_STREAM("StateCreatorFromPlanningScene::" << __func__ << " Object: " <<
+							object.id << " was moved! - should not happen");
 					continue;
-    			}
-    			else
-    			{
-    				ROS_ERROR("StateCreatorFromPlanningScene::%s: object: %s was moved! - should not happen",
-    						__func__, object.id.c_str());
-    				return false;
-    			}
-    		}
+				}
+				// update position of object
+				addObjectToState(state, object, "movable_object");
+			}
 		}
 
         return true;
@@ -126,7 +134,6 @@ namespace tidyup_state_creators
         	{
         		return true;
         	}
-
         }
     	return false;
     }
