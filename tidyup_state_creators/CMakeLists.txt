@@ -34,7 +34,6 @@ add_library(tidyup_state_creators
     src/stateCreatorArmsAtSide.cpp
     src/stateCreatorObjectReachable.cpp
     src/stateCreatorRobotPose.cpp
-    src/stateCreatorRobotLocationInRoom.cpp
     src/stateCreatorFromPlanningScene.cpp
     src/goalCreatorResetWorld.cpp
     src/goalCreatorTidyupInitialize.cpp
