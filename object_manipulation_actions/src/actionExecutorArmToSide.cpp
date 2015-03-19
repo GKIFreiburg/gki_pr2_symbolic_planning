@@ -25,8 +25,6 @@ namespace object_manipulation_actions
 
 	void ActionExecutorArmToSide::initialize(const std::deque<std::string> & arguments)
 	{
-		debug_ = false;
-
         armStatePredicateName_ = "arm-state";
         armAtSideConstantName_ = "arm_at_side";
 
@@ -92,8 +90,7 @@ bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, Symbolic
 		// Note that we are just planning, not asking move_group
 		// to actually move the robot.
 		moveit::planning_interface::MoveGroup::Plan my_plan;
-		if (debug_)
-			ROS_INFO("ActionExecutorArmToSide::%s: planning arm motion...", __func__);
+		ROS_DEBUG("ActionExecutorArmToSide::%s: planning arm motion...", __func__);
 
         error_code = group->plan(my_plan);
 		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
@@ -103,8 +100,7 @@ bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, Symbolic
 		}
 
 		// planning was successful
-		if (debug_)
-			ROS_INFO("ActionExecutorArmToSide::%s: executing arm motion...", __func__);
+		ROS_DEBUG("ActionExecutorArmToSide::%s: executing arm motion...", __func__);
 		error_code = group->execute(my_plan);
 		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
 		{

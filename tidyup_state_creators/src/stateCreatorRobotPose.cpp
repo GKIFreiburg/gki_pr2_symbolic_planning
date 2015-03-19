@@ -3,8 +3,6 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <angles/angles.h>
 
-//PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_robot_pose,
-//        tidyup_state_creators::StateCreatorRobotPose, continual_planning_executive::StateCreator)
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorRobotPose, continual_planning_executive::StateCreator)
 
 namespace tidyup_state_creators
@@ -133,6 +131,8 @@ namespace tidyup_state_creators
 
         int atLocations = 0;
         for(SymbolicState::TypedObjectConstIterator it = targets.first; it != targets.second; it++) {
+        	ROS_DEBUG_STREAM("StateCreatorRobotPose::" << __func__ << ": ObjectType: " << it->first <<
+        			" ObjectName: " << it->second);
             string target = it->second;
             if(target == _robotPoseObject)  // skip current robot location
                 continue;

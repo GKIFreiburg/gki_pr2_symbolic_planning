@@ -23,7 +23,6 @@ namespace object_manipulation_actions
 
         private:
 
-			bool debug_;
 			std::string actionName_;
             std::string armStatePredicateName_;     // the arm state predicate name
             std::string armAtSideConstantName_;     // the arm at side position constant name

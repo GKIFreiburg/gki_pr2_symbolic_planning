@@ -18,9 +18,6 @@
   <class name="tidyup_state_creators/state_creator_robot_pose" type="tidyup_state_creators::StateCreatorRobotPose" base_class_type="continual_planning_executive::StateCreator">
     <description>Sets the current robot pose in the state and possible at-style predicates.</description>
   </class>
-  <class name="tidyup_state_creators/state_creator_robot_location_in_room" type="tidyup_state_creators::StateCreatorRobotLocationInRoom" base_class_type="continual_planning_executive::StateCreator">
-    <description>Sets location-in-room for the robot pose if it is not set.</description>
-  </class>
   <class name="tidyup_state_creators/state_creator_object_reachable" type="tidyup_state_creators::StateCreatorObjectReachable" base_class_type="continual_planning_executive::StateCreator">
     <description>Estimates whether objects are in reach of the robot, when standing at specific locations.</description>
   </class>
