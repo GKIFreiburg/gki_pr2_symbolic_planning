@@ -15,9 +15,6 @@
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit_msgs/PlanningScene.h>
 
-//PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_arm_to_side,
-//        object_manipulation_actions::ActionExecutorArmToSide,
-//        continual_planning_executive::ActionExecutorInterface)
 PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToSide, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
@@ -46,23 +43,23 @@ namespace object_manipulation_actions
 	    return a.name == actionName_;
 	}
 
-bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
-{
-    ROS_ASSERT(a.parameters.size() == 1);
-    moveit::planning_interface::MoveItErrorCode error_code;
+	bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
+	{
+		ROS_ASSERT(a.parameters.size() == 1);
+		moveit::planning_interface::MoveItErrorCode error_code;
 
-    if(a.parameters[0] == left_arm_group_->getName())
-    {
-    	error_code = armToSide(left_arm_group_);
-    	return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
-    }
-    else if(a.parameters[0] == right_arm_group_->getName())
-    {
-    	error_code = armToSide(right_arm_group_);
-    	return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
-    }
-    return false;
-}
+		if(a.parameters[0] == left_arm_group_->getName())
+		{
+			error_code = armToSide(left_arm_group_);
+			return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
+		}
+		else if(a.parameters[0] == right_arm_group_->getName())
+		{
+			error_code = armToSide(right_arm_group_);
+			return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
+		}
+		return false;
+	}
 
 	void ActionExecutorArmToSide::cancelAction()
 	{

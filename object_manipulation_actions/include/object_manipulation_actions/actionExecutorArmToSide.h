@@ -3,12 +3,11 @@
 
 #include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"
-#include <tidyup_msgs/ArmToSideAction.h>
 #include <moveit/move_group_interface/move_group.h>
+#include <tidyup_msgs/ArmToSideAction.h>
 
 namespace object_manipulation_actions
 {
-
     class ActionExecutorArmToSide : public continual_planning_executive::ActionExecutorInterface
     {
         public:
