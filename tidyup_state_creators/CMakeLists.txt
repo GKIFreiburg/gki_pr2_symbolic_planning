@@ -17,8 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   #state_transformer
 )
 
-find_package(GTest REQUIRED)
-
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES tidyup_state_creators
@@ -47,11 +45,9 @@ target_link_libraries(tidyup_state_creators
   ${catkin_LIBRARIES}
 )
 
-# Link runTests with what we want to test and the GTest and pthread library
-#catkin_add_gtest(simple_test test/simple_test.cpp)
-#target_link_libraries(simple_test ${catkin_LIBRARIES} ${GTEST_LIBRARIES} pthread)
-
 if (CATKIN_ENABLE_TESTING)
+	find_package(GTest REQUIRED)
+	
 	catkin_add_gtest(${PROJECT_NAME}-test test/stateCreatorFromPlanningSceneTest.cpp src/stateCreatorFromPlanningScene.cpp)
 	target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} ${GTEST_LIBRARIES} pthread)
 endif()

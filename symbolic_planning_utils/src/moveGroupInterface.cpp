@@ -2,7 +2,8 @@
 
 namespace symbolic_planning_utils
 {
-MoveGroupInterface* MoveGroupInterface::instance = new MoveGroupInterface();
+//MoveGroupInterface* MoveGroupInterface::instance = new MoveGroupInterface();
+MoveGroupInterface* MoveGroupInterface::instance = NULL;
 
 MoveGroupInterface::MoveGroupInterface()
 {
@@ -32,6 +33,8 @@ MoveGroupInterface::~MoveGroupInterface()
 
 MoveGroupInterface* MoveGroupInterface::getInstance()
 {
+	if (MoveGroupInterface::instance == NULL)
+		MoveGroupInterface::instance = new MoveGroupInterface();
     return MoveGroupInterface::instance;
 }
 

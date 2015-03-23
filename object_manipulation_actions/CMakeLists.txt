@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 	tfd_modules
 	ork_to_planning_scene
 	ork_to_planning_scene_msgs
+	symbolic_planning_utils
 	#state_transformer
 	#pr2_controller_msgs
 )

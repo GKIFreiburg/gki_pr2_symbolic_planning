@@ -1,13 +1,13 @@
 #include "object_manipulation_actions/actionExecutorArmToSide.h"
 #include <pluginlib/class_list_macros.h>
-//#include "tidyup_utils/planning_scene_interface.h"
 #include <tidyup_msgs/ArmsAtSide.h>
-#include <moveit/move_group_interface/move_group.h>
 #include <tidyup_utils/arms_at_side.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
 
 #include <pluginlib/class_loader.h>
 #include <ros/ros.h>
 // MoveIt!
+#include <moveit/move_group_interface/move_group.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/planning_interface/planning_interface.h>
@@ -25,8 +25,8 @@ namespace object_manipulation_actions
         armStatePredicateName_ = "arm-state";
         armAtSideConstantName_ = "arm_at_side";
 
-		right_arm_group_ = new moveit::planning_interface::MoveGroup("right_arm");
-		left_arm_group_ = new moveit::planning_interface::MoveGroup("left_arm");
+		right_arm_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+		left_arm_group_  = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
 
 	    actionName_ = arguments.at(0);
 	    ROS_INFO("Initializing ActionExecutor for action %s...", actionName_.c_str());

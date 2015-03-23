@@ -5,16 +5,16 @@ project(symbolic_planning_utils)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  continual_planning_executive
-  geometry_msgs
-  moveit_core
-  moveit_msgs
-  tf
+	continual_planning_executive
+	geometry_msgs
+	moveit_core
+	moveit_msgs
+	moveit_ros_planning_interface
+	tf
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -98,6 +98,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${GTEST_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -157,10 +158,21 @@ target_link_libraries(symbolic_planning_utils
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_symbolic_planning_utils.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+#catkin_add_gtest(${PROJECT_NAME}-test 
+#	test/moveGroupInterfaceTest.cpp)
+if(CATKIN_ENABLE_TESTING)
+	find_package(GTest REQUIRED)
+	find_package(rostest REQUIRED)
+	
+	add_rostest_gtest(${PROJECT_NAME}-test test/symbolic_planning_utils.launch test/moveGroupInterfaceTest.cpp)
+	# Link runTests with what we want to test and the GTest and pthread library
+	target_link_libraries(${PROJECT_NAME}-test
+		${catkin_LIBRARIES}
+		${GTEST_LIBRARIES}
+		pthread
+		symbolic_planning_utils
+	)
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

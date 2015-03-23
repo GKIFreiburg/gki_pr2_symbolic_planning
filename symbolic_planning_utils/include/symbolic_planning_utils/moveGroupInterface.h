@@ -2,17 +2,9 @@
 #define MOVEGROUPINTERFACE_H_
 
 #include <moveit/move_group_interface/move_group.h>
+#include <gtest/gtest.h>
 
-/* A thread-safe eagerly created instance for moveGroupInterface
- * Using an eagerly method, because it is thread safe, easy to implement
- * and the most important the interface is being used in almost every
- * actionExecutor.
- * Other possibility would be to use a double-checked locking - requires
- * a mutex variable
- *
- * http://silviuardelean.ro/category/software/programming/c/c-11/
- */
-
+/* THIS IMPLENTATION IS NOT THREAD SAFE */
 namespace symbolic_planning_utils
 {
 	class MoveGroupInterface
@@ -25,12 +17,15 @@ namespace symbolic_planning_utils
 		moveit::planning_interface::MoveGroup* head_group_;
 
 		// Constructor: creating all moveit::planning_interfaces
+//		FRIEND_TEST(moveGroupInterfaceTest, MoveGroupInterface);
 		MoveGroupInterface();
 
 		// Copy constructor must be private to prevent any additional creation of the object
+		FRIEND_TEST(moveGroupInterfaceTest, copyConstructor);
 		MoveGroupInterface(const MoveGroupInterface* mgi);
 
 		// Assignment operator must also be private to prevent any additional creation of the object
+		FRIEND_TEST(moveGroupInterfaceTest, assignmentOperator);
 		MoveGroupInterface* operator= (const MoveGroupInterface* mgi);
 
 		// The destructor is private in order to prevent clients that hold a pointer to the
@@ -45,7 +40,6 @@ namespace symbolic_planning_utils
 		moveit::planning_interface::MoveGroup* getLeftArmGroup();
 		moveit::planning_interface::MoveGroup* getArmsGroup();
 		moveit::planning_interface::MoveGroup* getHeadGroup();
-
 	};
 };
 

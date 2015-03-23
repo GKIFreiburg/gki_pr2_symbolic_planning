@@ -1,0 +1,9 @@
+<!-- -->
+<launch>
+
+	<include file="$(find tidyup_executive)/launch/pr2_move_group.launch">
+	</include>
+
+	<test pkg="symbolic_planning_utils" type="symbolic_planning_utils-test" 
+		test-name="moveGroupInterfaceTest" />
+</launch>
