@@ -82,8 +82,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES symbolic_planning_utils
+  INCLUDE_DIRS include
+  LIBRARIES symbolic_planning_utils
 #  CATKIN_DEPENDS continual_planning_executive geometry_msgs moveit_core moveit_msgs tf
 #  DEPENDS system_lib
 )
@@ -96,13 +96,14 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(symbolic_planning_utils
-#   src/${PROJECT_NAME}/symbolic_planning_utils.cpp
-# )
+add_library(symbolic_planning_utils
+  src/moveGroupInterface.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(symbolic_planning_utils_node src/symbolic_planning_utils_node.cpp)
@@ -112,9 +113,9 @@ include_directories(
 # add_dependencies(symbolic_planning_utils_node symbolic_planning_utils_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(symbolic_planning_utils_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(symbolic_planning_utils
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
