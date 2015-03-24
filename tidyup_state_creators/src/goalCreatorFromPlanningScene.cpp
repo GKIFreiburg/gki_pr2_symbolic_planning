@@ -17,11 +17,6 @@ namespace tidyup_state_creators
     {
     }
 
-    void GoalCreatorFromPlanningScene::setInitialScene(const moveit_msgs::PlanningScene& scene)
-    {
-        initial_scene_ = scene;
-    }
-
     void GoalCreatorFromPlanningScene::initializePlanningScene()
     {
         moveit_msgs::GetPlanningScene srv;
@@ -35,6 +30,11 @@ namespace tidyup_state_creators
             ROS_ERROR("GoalCreatorFromPlanningScene::%s: Failed to get initial planning scene.", __func__);
         }
         setInitialScene(srv.response.scene);
+    }
+
+    void GoalCreatorFromPlanningScene::setInitialScene(const moveit_msgs::PlanningScene& scene)
+    {
+        initial_scene_ = scene;
     }
 
     void GoalCreatorFromPlanningScene::initializeTables(const SymbolicState & currentState)
@@ -52,7 +52,7 @@ namespace tidyup_state_creators
             for (SymbolicState::TypedObjectConstIterator locationsIterator = locationsRange.first;
                     locationsIterator != locationsRange.second; locationsIterator++)
             {
-                // (static-object-at-location ?s - static_object ?g - manipulation_location)
+                // (location-near-table ?l - manipulation-location ?t - table)
                 Predicate pAt;
                 pAt.name = "location-near-table";
                 pAt.parameters.push_back(locationsIterator->second);

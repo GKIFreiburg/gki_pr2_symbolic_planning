@@ -15,15 +15,20 @@ namespace tidyup_state_creators
 			GoalCreatorFromPlanningScene();
 			~GoalCreatorFromPlanningScene();
 
-			void setInitialScene(const moveit_msgs::PlanningScene& scene);
-			void initializePlanningScene();
-
 			virtual void initialize(const std::deque<std::string> & arguments);
 			virtual bool fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal);
 
 		private:
+			// Use rosservice to fetch planning scene msg
+			void initializePlanningScene();
 
+			// set membervariable initial_scene_ with planning scene msg
+			void setInitialScene(const moveit_msgs::PlanningScene& scene);
+
+			// Fetching table and tableLocations from currentState and store them in member variables tables_
+			// and tableLocations_
 			void initializeTables(const SymbolicState & currentState);
+
 			void findMatchingTable(SymbolicState & currentState, const string& object, const geometry_msgs::Pose& pose);
 
 			moveit_msgs::PlanningScene initial_scene_;
