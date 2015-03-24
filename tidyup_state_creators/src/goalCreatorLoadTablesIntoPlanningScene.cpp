@@ -72,7 +72,7 @@ namespace tidyup_state_creators
             currentState.setNumericalFluent("qw", tablename, tl.pose.pose.orientation.w);
 		}
 
-		// using hack
+//		// using hack
 //		fillObjectIntoState(currentState);
 
 
@@ -145,61 +145,61 @@ namespace tidyup_state_creators
 		}
 	}
 
-	bool GoalCreatorLoadTablesIntoPlanningScene::loadObjectIntoPlanningScene(moveit_msgs::CollisionObject& co)
-	{
-		if (tables_.size() == 0)
-		{
-			ROS_WARN("GoalCreatorLoadTablesIntoPlanningScene::%s: No tables were loaded, so no object created", __func__);
-			return false;
-		}
-
-		co.header.stamp = ros::Time::now();
-		co.header.frame_id = tables_[0].pose.header.frame_id;
-
-		co.id = "coke";
-		co.primitives.resize(1);
-		co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
-		co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
-		co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.067;
-		co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.067;
-		co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.12;
-
-		// load pose of table[0] and add 20 cm to z coordinate
-		// object hover over table[0]
-		geometry_msgs::Pose poseCoke = tables_[0].pose.pose;
-		poseCoke.position.z += 0.2;
-		co.primitive_poses.push_back(poseCoke);
-
-		co.operation = co.ADD;
-		pub_co_.publish(co);
-		return true;
-	}
-
-	void GoalCreatorLoadTablesIntoPlanningScene::fillObjectIntoState(SymbolicState& currentState)
-	{
-		moveit_msgs::CollisionObject co;
-		if (!loadObjectIntoPlanningScene(co))
-		{
-			ROS_WARN("GoalCreatorLoadTablesIntoPlanningScene::%s: Failed to load Object into Planning Scene", __func__);
-			return;
-		}
-		geometry_msgs::Pose poseCoke;
-		const string& objectname = co.id;
-		currentState.addObject(objectname, "movable_object");
-		currentState.setNumericalFluent("timestamp", objectname, co.header.stamp.toSec());
-        currentState.addObject(co.header.frame_id, "frameid");
-        currentState.setObjectFluent("frame-id", objectname, co.header.frame_id);
-        currentState.setNumericalFluent("x", objectname, co.primitive_poses[0].position.x);
-        currentState.setNumericalFluent("y", objectname, co.primitive_poses[0].position.y);
-        currentState.setNumericalFluent("z", objectname, co.primitive_poses[0].position.z);
-        currentState.setNumericalFluent("qx", objectname, co.primitive_poses[0].orientation.x);
-        currentState.setNumericalFluent("qy", objectname, co.primitive_poses[0].orientation.y);
-        currentState.setNumericalFluent("qz", objectname, co.primitive_poses[0].orientation.z);
-        currentState.setNumericalFluent("qw", objectname, co.primitive_poses[0].orientation.w);
-
-        currentState.setBooleanPredicate("object-on", objectname + " " + tables_[0].name, "true");
-
-	}
+//	bool GoalCreatorLoadTablesIntoPlanningScene::loadObjectIntoPlanningScene(moveit_msgs::CollisionObject& co)
+//	{
+//		if (tables_.size() == 0)
+//		{
+//			ROS_WARN("GoalCreatorLoadTablesIntoPlanningScene::%s: No tables were loaded, so no object created", __func__);
+//			return false;
+//		}
+//
+//		co.header.stamp = ros::Time::now();
+//		co.header.frame_id = tables_[0].pose.header.frame_id;
+//
+//		co.id = "coke";
+//		co.primitives.resize(1);
+//		co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+//		co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+//		co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.067;
+//		co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.067;
+//		co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.12;
+//
+//		// load pose of table[0] and add 20 cm to z coordinate
+//		// object hover over table[0]
+//		geometry_msgs::Pose poseCoke = tables_[0].pose.pose;
+//		poseCoke.position.z += 0.2;
+//		co.primitive_poses.push_back(poseCoke);
+//
+//		co.operation = co.ADD;
+//		pub_co_.publish(co);
+//		return true;
+//	}
+//
+//	void GoalCreatorLoadTablesIntoPlanningScene::fillObjectIntoState(SymbolicState& currentState)
+//	{
+//		moveit_msgs::CollisionObject co;
+//		if (!loadObjectIntoPlanningScene(co))
+//		{
+//			ROS_WARN("GoalCreatorLoadTablesIntoPlanningScene::%s: Failed to load Object into Planning Scene", __func__);
+//			return;
+//		}
+//		geometry_msgs::Pose poseCoke;
+//		const string& objectname = co.id;
+//		currentState.addObject(objectname, "movable_object");
+//		currentState.setNumericalFluent("timestamp", objectname, co.header.stamp.toSec());
+//        currentState.addObject(co.header.frame_id, "frameid");
+//        currentState.setObjectFluent("frame-id", objectname, co.header.frame_id);
+//        currentState.setNumericalFluent("x", objectname, co.primitive_poses[0].position.x);
+//        currentState.setNumericalFluent("y", objectname, co.primitive_poses[0].position.y);
+//        currentState.setNumericalFluent("z", objectname, co.primitive_poses[0].position.z);
+//        currentState.setNumericalFluent("qx", objectname, co.primitive_poses[0].orientation.x);
+//        currentState.setNumericalFluent("qy", objectname, co.primitive_poses[0].orientation.y);
+//        currentState.setNumericalFluent("qz", objectname, co.primitive_poses[0].orientation.z);
+//        currentState.setNumericalFluent("qw", objectname, co.primitive_poses[0].orientation.w);
+//
+//        currentState.setBooleanPredicate("object-on", objectname + " " + tables_[0].name, "true");
+//
+//	}
 };
 
 

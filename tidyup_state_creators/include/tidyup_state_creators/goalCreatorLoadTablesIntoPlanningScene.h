@@ -52,11 +52,11 @@ namespace tidyup_state_creators
 
 
 			// HACK FOR TEST PURPOSES.
-				// Create imaginary collision object (=graspable object) and publish it into the planning scene
-				// Hack to test planner
-				bool loadObjectIntoPlanningScene(moveit_msgs::CollisionObject& co);
-				// Hack to test planner
-				void fillObjectIntoState(SymbolicState& currentState);
+//				// Create imaginary collision object (=graspable object) and publish it into the planning scene
+//				// Hack to test planner
+//				bool loadObjectIntoPlanningScene(moveit_msgs::CollisionObject& co);
+//				// Hack to test planner
+//				void fillObjectIntoState(SymbolicState& currentState);
 	};
 
 };
