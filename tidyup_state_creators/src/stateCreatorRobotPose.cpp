@@ -2,6 +2,7 @@
 #include <pluginlib/class_list_macros.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <angles/angles.h>
+#include <symbolic_planning_utils/extractPose.h>
 
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorRobotPose, continual_planning_executive::StateCreator)
 
@@ -138,7 +139,7 @@ namespace tidyup_state_creators
                 continue;
 
             geometry_msgs::PoseStamped targetPose;
-            if(!extractPoseStamped(state, target, targetPose)) {
+            if(!symbolic_planning_utils::extractPoseStampedFromSymbolicState(state, target, targetPose)) {
                 ROS_ERROR("%s: could not extract pose for target object: %s.", __func__, target.c_str());
                 continue;
             }
@@ -193,86 +194,6 @@ namespace tidyup_state_creators
             publishLocationsAsMarkers(state);
 
         return true;
-    }
-
-    bool StateCreatorRobotPose::extractPoseStamped(const SymbolicState & state, const string & object,
-            geometry_msgs::PoseStamped & pose) const
-    {
-        bool ret = true;
-
-        // first get xyz, qxyzw from state
-        Predicate p;
-        p.parameters.push_back(object);
-
-        double posX = 0;
-        p.name = "x";
-        if(!state.hasNumericalFluent(p, &posX)) {
-            ROS_ERROR("%s: object: %s - no x-location in state.", __func__, object.c_str());
-            ret = false;;
-        }
-        double posY = 0;
-        p.name = "y";
-        if(!state.hasNumericalFluent(p, &posY)) {
-            ROS_ERROR("%s: object: %s - no y-location in state.", __func__, object.c_str());
-            ret = false;;
-        }
-        double posZ = 0;
-        p.name = "z";
-        if(!state.hasNumericalFluent(p, &posZ)) {
-            ROS_ERROR("%s: object: %s - no z-location in state.", __func__, object.c_str());
-            ret = false;;
-        }
-
-        double qx;
-        p.name = "qx";
-        if(!state.hasNumericalFluent(p, &qx)) {
-            ROS_ERROR("%s: object: %s - no qx in state.", __func__, object.c_str());
-            ret = false;;
-        }
-        double qy;
-        p.name = "qy";
-        if(!state.hasNumericalFluent(p, &qy)) {
-            ROS_ERROR("%s: object: %s - no qy in state.", __func__, object.c_str());
-            ret = false;;
-        }
-        double qz;
-        p.name = "qz";
-        if(!state.hasNumericalFluent(p, &qz)) {
-            ROS_ERROR("%s: object: %s - no qz in state.", __func__, object.c_str());
-            ret = false;;
-        }
-        double qw;
-        p.name = "qw";
-        if(!state.hasNumericalFluent(p, &qw)) {
-            ROS_ERROR("%s: object: %s - no qw in state.", __func__, object.c_str());
-            ret = false;;
-        }
-
-        double timestamp;
-        p.name = "timestamp";
-        if(!state.hasNumericalFluent(p, &timestamp)) {
-            ROS_ERROR("%s: object: %s - no timestamp in state.", __func__, object.c_str());
-            ret = false;;
-        }
-
-        string frameid;
-        p.name = "frame-id";
-        if(!state.hasObjectFluent(p, &frameid)) {
-            ROS_ERROR("%s: object: %s - no frameid in state.", __func__, object.c_str());
-            ret = false;;
-        }
-
-        pose.header.frame_id = frameid;
-        pose.header.stamp = ros::Time(timestamp);
-        pose.pose.position.x = posX;
-        pose.pose.position.y = posY;
-        pose.pose.position.z = posZ;
-        pose.pose.orientation.x = qx;
-        pose.pose.orientation.y = qy;
-        pose.pose.orientation.z = qz;
-        pose.pose.orientation.w = qw;
-
-        return ret;
     }
 
     std_msgs::ColorRGBA StateCreatorRobotPose::getLocationColor(
@@ -407,7 +328,7 @@ namespace tidyup_state_creators
         visualization_msgs::MarkerArray ma;
 
         geometry_msgs::PoseStamped locationPose;
-        if(!extractPoseStamped(state, location, locationPose)) {
+        if(!symbolic_planning_utils::extractPoseStampedFromSymbolicState(state, location, locationPose)) {
             ROS_ERROR("%s: could not extract pose for location object: %s.", __func__, location.c_str());
             return ma; 
         }

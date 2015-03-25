@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   continual_planning_executive
   tidyup_utils
+  symbolic_planning_utils
   visualization_msgs
   tidyup_msgs
   geometry_msgs

@@ -43,14 +43,6 @@ namespace tidyup_state_creators
             virtual bool fillState(SymbolicState & state);
 
         protected:
-            /// Extract a PoseStamped for object from state.
-            /**
-             * The fluents that are queried are: x,y,z, qx,qy,qz,qw, frame-id, timestamp
-             *
-             * \returns true if all fluents were available
-             */
-            bool extractPoseStamped(const SymbolicState & state, const string & object,
-                    geometry_msgs::PoseStamped & pose) const;
 
             /// Get the color that location should have based on the fact that
             /// it is the robot location or another and if the robot is actually at that location.

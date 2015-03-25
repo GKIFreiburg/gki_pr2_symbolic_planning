@@ -1,6 +1,7 @@
 #include "tidyup_state_creators/stateCreatorObjectReachable.h"
 #include "tidyup_state_creators/StateAccessException.h"
 #include <pluginlib/class_list_macros.h>
+#include <symbolic_planning_utils/extractPose.h>
 //#include <sstream>
 
 //PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, state_creator_object_reachable,
@@ -83,7 +84,7 @@ namespace tidyup_state_creators
         {
             tidyup_msgs::GraspableObjectPtr object(new tidyup_msgs::GraspableObject);
             object->name = it->second;
-            extractPoseStamped(state, object->name, object->pose);
+            symbolic_planning_utils::extractPoseStampedFromSymbolicState(state, object->name, object->pose);
             objects.push_back(object);
         }
     }
@@ -91,7 +92,7 @@ namespace tidyup_state_creators
     void StateCreatorObjectReachable::processLocation(SymbolicState& state, const string& location, const vector<tidyup_msgs::GraspableObjectPtr>& objects) const
     {
         geometry_msgs::PoseStamped robotPose;
-        extractPoseStamped(state, location, robotPose);
+        symbolic_planning_utils::extractPoseStampedFromSymbolicState(state, location, robotPose);
         Predicate reachable;
         reachable.name = reachablePredicate;
         reachable.parameters.push_back("object");
@@ -105,90 +106,5 @@ namespace tidyup_state_creators
             }
         }
     }
-
-    void StateCreatorObjectReachable::extractPoseStamped(const SymbolicState & state, const string & object, geometry_msgs::PoseStamped & pose) const
-    {
-        // first get xyz, qxyzw from state
-        Predicate p;
-        p.parameters.push_back(object);
-
-        double posX = 0;
-        p.name = "x";
-        if(!state.hasNumericalFluent(p, &posX)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no x-location in state.";
-            throw StateAccessException(buff.str());
-        }
-        double posY = 0;
-        p.name = "y";
-        if(!state.hasNumericalFluent(p, &posY)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no y-location in state.";
-            throw StateAccessException(buff.str());
-        }
-        double posZ = 0;
-        p.name = "z";
-        if(!state.hasNumericalFluent(p, &posZ)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no z-location in state.";
-            throw StateAccessException(buff.str());
-        }
-
-        double qx;
-        p.name = "qx";
-        if(!state.hasNumericalFluent(p, &qx)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no qx-location in state.";
-            throw StateAccessException(buff.str());
-        }
-        double qy;
-        p.name = "qy";
-        if(!state.hasNumericalFluent(p, &qy)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no qy-location in state.";
-            throw StateAccessException(buff.str());
-        }
-        double qz;
-        p.name = "qz";
-        if(!state.hasNumericalFluent(p, &qz)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no qz-location in state.";
-            throw StateAccessException(buff.str());
-        }
-        double qw;
-        p.name = "qw";
-        if(!state.hasNumericalFluent(p, &qw)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no qw-location in state.";
-            throw StateAccessException(buff.str());
-        }
-
-        double timestamp;
-        p.name = "timestamp";
-        if(!state.hasNumericalFluent(p, &timestamp)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no timestamp in state.";
-            throw StateAccessException(buff.str());
-        }
-
-        string frameid;
-        p.name = "frame-id";
-        if(!state.hasObjectFluent(p, &frameid)) {
-            std::stringstream buff;
-            buff << __func__ << ": object: " << object << " - no frame-id in state.";
-            throw StateAccessException(buff.str());
-        }
-
-        pose.header.frame_id = frameid;
-        pose.header.stamp = ros::Time(timestamp);
-        pose.pose.position.x = posX;
-        pose.pose.position.y = posY;
-        pose.pose.position.z = posZ;
-        pose.pose.orientation.x = qx;
-        pose.pose.orientation.y = qy;
-        pose.pose.orientation.z = qz;
-        pose.pose.orientation.w = qw;
-    }
-
 };
 

@@ -104,6 +104,7 @@ include_directories(
 ## Declare a cpp library
 add_library(symbolic_planning_utils
   src/moveGroupInterface.cpp
+  src/extractPose.cpp
 )
 
 ## Declare a cpp executable

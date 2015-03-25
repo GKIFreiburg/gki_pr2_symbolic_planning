@@ -28,7 +28,6 @@ public:
 protected:
     void getMovableObjects(const SymbolicState& state, vector<tidyup_msgs::GraspableObjectPtr>& objects) const;
     void processLocation(SymbolicState& state, const string& location, const vector<tidyup_msgs::GraspableObjectPtr>& objects) const;
-    void extractPoseStamped(const SymbolicState & state, const string & object, geometry_msgs::PoseStamped & pose) const;
 
     string reachablePredicate;
     string atPredicate;
