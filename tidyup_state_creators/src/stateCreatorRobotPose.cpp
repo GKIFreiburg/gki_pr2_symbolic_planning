@@ -76,10 +76,10 @@ namespace tidyup_state_creators
     {
         ROS_ASSERT(arguments.size() == 4);
 
-        _robotPoseObject = arguments[0];
-        _robotPoseType = arguments[1];
-        _atPredicate = arguments[2];
-        _locationType = arguments[3];
+        _robotPoseObject = arguments[0]; // robot_location
+        _robotPoseType = arguments[1];   // location
+        _atPredicate = arguments[2];     // robot-at
+        _locationType = arguments[3];    // location
 
         if(_robotPoseObject == "-")
             _robotPoseObject = "";
