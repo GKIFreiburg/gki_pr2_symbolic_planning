@@ -16,9 +16,9 @@ namespace tidyup_state_creators
     void StateCreatorArmsAtSide::initialize(const std::deque<std::string> & arguments)
     {
         ROS_ASSERT(arguments.size() == 3);
-        service_name = arguments[0];
-        predicate_name = arguments[1];
-        predicate_value = arguments[2];
+        service_name = arguments[0];		// /tidyup/arms_at_side
+        predicate_name = arguments[1];		// arm-state
+        predicate_value = arguments[2]; 	// arm_at_side
         ros::NodeHandle nh;
         client = nh.serviceClient<tidyup_msgs::ArmsAtSide>(service_name);
         client.waitForExistence();
