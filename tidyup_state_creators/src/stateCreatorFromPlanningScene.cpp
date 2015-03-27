@@ -31,6 +31,17 @@ namespace tidyup_state_creators
     	// Tables have been added to symbolic state in goalCreatorLoadTablesIntoPlanningScene
     	initializeTables(state);
 
+
+    	// delete all movable objects from symbolic state, and re-add the important objects later (from PS)
+		const multimap<string, string> objects = state.getTypedObjects();
+		std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators =
+		        objects.equal_range("movable_object");
+		for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
+		{
+			// also predicates with the objects are removed
+			state.removeObject(it->second);
+		}
+
     	ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": number of collision objects in planning scene: "
     			<< planningScene_.world.collision_objects.size());
 
@@ -52,6 +63,7 @@ namespace tidyup_state_creators
                 continue;
             }
     		addObjectToSymbolicState(state, object, "movable_object");
+    		// add object-on predicate to object
     		findMatchingTable(state, planningScene_.world.collision_objects, object);
 		}
     	// attached objects
