@@ -28,7 +28,7 @@ namespace object_manipulation_actions
         private:
         std::string action_topic_;
         std::string action_name_;
-        std::string predicate_name_;
+        std::vector<std::string> predicate_names_;
 
         bool add_tables_;
         bool verify_planning_scene_update_;
