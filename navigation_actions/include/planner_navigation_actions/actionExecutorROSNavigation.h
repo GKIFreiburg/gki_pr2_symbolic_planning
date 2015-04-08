@@ -7,7 +7,7 @@
 #include <vector>
 #include <utility>
 
-namespace planner_navigation_actions
+namespace navigation_actions
 {
 
     class ActionExecutorROSNavigation : public ActionExecutorActionlib<move_base_msgs::MoveBaseAction

@@ -5,9 +5,9 @@
 //PLUGINLIB_DECLARE_CLASS(planner_navigation_actions, action_executor_ros_navigation,
 //        planner_navigation_actions::ActionExecutorROSNavigation,
 //        continual_planning_executive::ActionExecutorInterface)
-PLUGINLIB_EXPORT_CLASS(planner_navigation_actions::ActionExecutorROSNavigation, continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(navigation_actions::ActionExecutorROSNavigation, continual_planning_executive::ActionExecutorInterface)
 
-namespace planner_navigation_actions
+namespace navigation_actions
 {
 
     void ActionExecutorROSNavigation::initialize(const std::deque<std::string> & arguments)

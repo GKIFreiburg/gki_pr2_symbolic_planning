@@ -3,7 +3,7 @@
 
 #include "continual_planning_executive/goalCreator.h"
 
-namespace planner_navigation_actions
+namespace navigation_actions
 {
 
     class GoalCreatorROSNavigation : public continual_planning_executive::GoalCreator

@@ -135,8 +135,8 @@ add_library(putdown_modules
 #    ${continual_planning_executive_PACKAGE_PATH}/src/symbolicState.cpp)
 #target_link_libraries(precache_navigation planner_modules_pr2)
 
-target_link_libraries(planner_modules_pr2 tidyup_utils)
-target_link_libraries(putdown_modules tidyup_utils)
+target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
+target_link_libraries(putdown_modules ${catkin_LIBRARIES})
 
 ## Declare a cpp executable
 # add_executable(planner_modules_pr2_node src/planner_modules_pr2_node.cpp)
@@ -146,9 +146,9 @@ target_link_libraries(putdown_modules tidyup_utils)
 # add_dependencies(planner_modules_pr2_node planner_modules_pr2_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(planner_modules_pr2_node
+#target_link_libraries(planner_modules_pr2_node
 #   ${catkin_LIBRARIES}
-# )
+#)
 
 #############
 ## Install ##
