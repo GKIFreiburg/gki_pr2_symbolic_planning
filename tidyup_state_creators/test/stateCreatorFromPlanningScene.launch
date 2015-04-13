@@ -1,0 +1,8 @@
+<!-- -->
+<launch>
+	<include file="$(find tidyup_state_creators)/test/move_group.launch">
+	</include>
+
+	<test pkg="tidyup_state_creators" type="tidyup_state_creators-test" 
+		test-name="stateCreatorFromPlanningSceneTest" />
+</launch>

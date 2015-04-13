@@ -9,363 +9,315 @@ namespace tidyup_state_creators {
 
 class stateCreatorFromPlanningSceneTest : public ::testing::Test {
 	protected:
-	stateCreatorFromPlanningSceneTest() :
-		tableName_("table1_room1")
+	stateCreatorFromPlanningSceneTest()
 	{
 		ros::NodeHandle nh;
-		pub_co_ = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 10);
+		pubPlanningScene_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
 
-		state_.addObject(tableName_, "table");
-		state_.setNumericalFluent("timestamp", tableName_, ros::Time::now().toSec());
-	    state_.addObject("/map", "frameid");
-	    state_.setObjectFluent("frame-id", tableName_, "/map");
-	    state_.setNumericalFluent("x", tableName_, 0.50);
-	    state_.setNumericalFluent("y", tableName_, -0.75);
-	    state_.setNumericalFluent("z", tableName_, 0.58);
-	    state_.setNumericalFluent("qx", tableName_, 0);
-	    state_.setNumericalFluent("qy", tableName_, 0.28);
-	    state_.setNumericalFluent("qz", tableName_, 0);
-	    state_.setNumericalFluent("qw", tableName_, 1);
+	    ROS_INFO("Waiting for planning_scene publisher to have subscribers.");
+	    while(pubPlanningScene_.getNumSubscribers() < 1) {
+	        ros::Duration(0.5).sleep();
+	    }
 
-		state_.addObject("table2_room1", "table");
-		state_.setNumericalFluent("timestamp", tableName_, ros::Time::now().toSec());
-	    state_.addObject("/map", "frameid");
-	    state_.setObjectFluent("frame-id", tableName_, "/map");
-	    state_.setNumericalFluent("x", tableName_, 2.50);
-	    state_.setNumericalFluent("y", tableName_, -2.75);
-	    state_.setNumericalFluent("z", tableName_, 0.58);
-	    state_.setNumericalFluent("qx", tableName_, 0);
-	    state_.setNumericalFluent("qy", tableName_, 0.28);
-	    state_.setNumericalFluent("qz", tableName_, 0);
-	    state_.setNumericalFluent("qw", tableName_, 1);
+		setCollisionObjects();
+	}
 
-	    std::string location = "table1_loc1_room1";
-	    state_.setBooleanPredicate("location-near-table", location + " " + tableName_, true);
-        state_.setNumericalFluent("timestamp", location, ros::Time::now().toSec());
-        state_.addObject("/map", "frameid");
-        state_.setObjectFluent("frame-id", location, "/map");
-        state_.setNumericalFluent("x", location, 0);
-        state_.setNumericalFluent("y", location, -0.75);
-        state_.setNumericalFluent("z", location, 0);
-        state_.setNumericalFluent("qx", location, 0);
-        state_.setNumericalFluent("qy", location, 0.28);
-        state_.setNumericalFluent("qz", location, 0);
-        state_.setNumericalFluent("qw", location, 0);
-
-		coTable1_.header.frame_id = "/map";
+	void setCollisionObjects()
+	{
+		coTable1_.header.frame_id = "/odom_combined";
 		header_.stamp = ros::Time::now();
 		coTable1_.header.stamp = header_.stamp;
-		coTable1_.id = tableName_;
+		coTable1_.id = "table1";
 		coTable1_.primitives.resize(1);
 		coTable1_.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
 		coTable1_.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
-		coTable1_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 1.0;
-		coTable1_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 1.0;
-		coTable1_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.05;
+		coTable1_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 1.40;
+		coTable1_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.650;
+		coTable1_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.02;
 		geometry_msgs::Pose p;
-		p.position.x = 0.50;
-		p.position.y = -0.75;
-		p.position.z = 0.58;
+		p.position.x = 4.81;
+		p.position.y = 5.28;
+		p.position.z = 0.90;
 		p.orientation.x = 0;
-		p.orientation.y = 0.28;
+		p.orientation.y = 0;
 		p.orientation.z = 0;
 		p.orientation.w = 1;
+		coTable1_.operation = moveit_msgs::CollisionObject::ADD;
 		coTable1_.primitive_poses.push_back(p);
 
-		coTable2_.header.frame_id = "/map";
+		coTable2_.header.frame_id = "/odom_combined";
 		header_.stamp = ros::Time::now();
 		coTable2_.header.stamp = header_.stamp;
-		coTable2_.id = "table2_room1";
+		coTable2_.id = "table2";
 		coTable2_.primitives.resize(1);
 		coTable2_.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
 		coTable2_.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
 		coTable2_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 1.0;
-		coTable2_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 1.0;
-		coTable2_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.05;
-		p.position.x = 2.50;
-		p.position.y = -2.75;
-		p.position.z = 0.58;
+		coTable2_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 1.50;
+		coTable2_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.02;
+		p.position.x = 0.5;
+		p.position.y = 6.44;
+		p.position.z = 0.73;
 		p.orientation.x = 0;
-		p.orientation.y = 0.28;
+		p.orientation.y = 0;
 		p.orientation.z = 0;
 		p.orientation.w = 1;
+		coTable2_.operation = moveit_msgs::CollisionObject::ADD;
 		coTable2_.primitive_poses.push_back(p);
-//		coTable1_.operation = coTable1_.ADD;
-//		pub_co_.publish(coTable1_);
 
-		coObject_.header.frame_id = "/head_mount_kinect";
+		coObject_.header.frame_id = "/odom_combined";
 		coObject_.header.stamp = header_.stamp;
-		coObject_.id = "cokeTest";
+		coObject_.id = "coke";
 		coObject_.primitives.resize(1);
 		coObject_.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
 		coObject_.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
 		coObject_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = 0.067;
 		coObject_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 0.067;
 		coObject_.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 0.12;
-		p.position.x = 0.50;
-		p.position.y = 0.25;
-		p.position.z = 0.58;
-		p.orientation.x = 0.12;
-		p.orientation.y = 0.28;
-		p.orientation.z = 0.89;
+		p.position.x = 4.81;
+		p.position.y = 5.28;
+		p.position.z = 0.90;
+		p.orientation.x = 0;
+		p.orientation.y = 0;
+		p.orientation.z = 0;
 		p.orientation.w = 1;
+		coObject_.operation = moveit_msgs::CollisionObject::ADD;
 		coObject_.primitive_poses.push_back(p);
-
-		allCos.push_back(coTable1_);
-		allCos.push_back(coTable2_);
-		allCos.push_back(coObject_);
 	}
 
-	// virtual void SetUp() {}
-	// virtual void TearDown() {}
-	SymbolicState state_;
-	const std::string tableName_;
+    // ROS Interface
+    tf::TransformListener tf_;
 	std_msgs::Header header_;
 	moveit_msgs::CollisionObject coTable1_;
 	moveit_msgs::CollisionObject coTable2_;
 	moveit_msgs::CollisionObject coObject_;
-	std::vector<moveit_msgs::CollisionObject> allCos;
-	ros::Publisher pub_co_;
-};
+	ros::Publisher pubPlanningScene_;
 
-TEST_F(stateCreatorFromPlanningSceneTest, initializeTables)
+
+}; // class
+
+// testing that member variable planningScene_ is initialized correctly
+TEST_F(stateCreatorFromPlanningSceneTest, initializePlanningScene)
 {
 	StateCreatorFromPlanningScene scfps;
-	scfps.initializeTables(state_);
+	moveit_msgs::PlanningScene planning_scene;
+	planning_scene.is_diff = true;
 
-	// testing tables_
-	EXPECT_EQ(2, scfps.tables_.size());
-	EXPECT_TRUE(scfps.tables_.find("table1_room1") != scfps.tables_.end());
-	EXPECT_TRUE(scfps.tables_.find("table2_room1") != scfps.tables_.end());
+	planning_scene.world.collision_objects.push_back(coTable1_);
+	planning_scene.world.collision_objects.push_back(coTable2_);
+	planning_scene.world.collision_objects.push_back(coObject_);
+	pubPlanningScene_.publish(planning_scene);
+	ROS_INFO("Waiting 2s to make sure planning scene is updated");
+	ros::Duration(2.0).sleep();
 
-	EXPECT_TRUE(scfps.tables_.find("table3_room1") == scfps.tables_.end());
+	scfps.initializePlanningScene();
+	EXPECT_EQ(scfps.planningScene_.world.collision_objects.size(), 3);
 
-	// testing tableLocations_
-//	EXPECT_EQ(1, scfps.tableLocations_.size());
-//	EXPECT_TRUE(scfps.tableLocations_.find(std::make_pair("table1_room1", "table1_loc1_room1")) !=
-//			scfps.tableLocations_.end());
-//	EXPECT_TRUE(scfps.tableLocations_.find(std::make_pair("table1_room1", "table1_loc2")) ==
-//			scfps.tableLocations_.end());
+	// shortcut
+	moveit_msgs::CollisionObject co = scfps.planningScene_.world.collision_objects[0];
+	EXPECT_EQ(co.id, coObject_.id);
+	EXPECT_EQ(co.primitive_poses[0].position.x, coObject_.primitive_poses[0].position.x);
+	EXPECT_EQ(co.primitive_poses[0].position.y, coObject_.primitive_poses[0].position.y);
+	EXPECT_EQ(co.primitive_poses[0].position.z, coObject_.primitive_poses[0].position.z);
 
-	// testing state
-	// TODO: only if tableLocations is used
+	co = scfps.planningScene_.world.collision_objects[1];
+	EXPECT_EQ(co.id, coTable1_.id);
+	EXPECT_EQ(co.primitive_poses[0].position.x, coTable1_.primitive_poses[0].position.x);
+	EXPECT_EQ(co.primitive_poses[0].position.y, coTable1_.primitive_poses[0].position.y);
+	EXPECT_EQ(co.primitive_poses[0].position.z, coTable1_.primitive_poses[0].position.z);
+
+	co = scfps.planningScene_.world.collision_objects[2];
+	EXPECT_EQ(co.id, coTable2_.id);
+	EXPECT_EQ(co.primitive_poses[0].position.x, coTable2_.primitive_poses[0].position.x);
+	EXPECT_EQ(co.primitive_poses[0].position.y, coTable2_.primitive_poses[0].position.y);
+	EXPECT_EQ(co.primitive_poses[0].position.z, coTable2_.primitive_poses[0].position.z);
 }
 
-TEST_F(stateCreatorFromPlanningSceneTest, doesObjectTypeExist)
+TEST_F(stateCreatorFromPlanningSceneTest, fillState)
 {
-	StateCreatorFromPlanningScene scfps;
+	// Test 1: if object in planning scene is added to symbolic state
+	{
+		StateCreatorFromPlanningScene scfps;
+		moveit_msgs::PlanningScene planning_scene;
+		planning_scene.is_diff = true;
 
-	EXPECT_TRUE(scfps.doesObjectTypeExist("pose"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("frameid"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("location"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("manipulation_location"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("table"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("movable_object"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("arm"));
-	EXPECT_TRUE(scfps.doesObjectTypeExist("arm_state"));
+		planning_scene.world.collision_objects.push_back(coTable1_);
+		planning_scene.world.collision_objects.push_back(coTable2_);
+		planning_scene.world.collision_objects.push_back(coObject_);
+		pubPlanningScene_.publish(planning_scene);
+		ROS_INFO("Waiting 2s to make sure planning scene is updated");
+		ros::Duration(2.0).sleep();
 
-	EXPECT_FALSE(scfps.doesObjectTypeExist("abc"));
-	EXPECT_FALSE(scfps.doesObjectTypeExist(""));
-}
+		SymbolicState state;
+		// in real application, table collision objects are added in goalState
+		scfps.addObjectToSymbolicState(state, coTable1_, "table");
+		scfps.addObjectToSymbolicState(state, coTable2_, "table");
 
-TEST_F(stateCreatorFromPlanningSceneTest, addObjectToSymbolicState){
+		scfps.fillState(state);
 
-	StateCreatorFromPlanningScene scfps;
-
-    std::string objectType = "table";
-
-	// Test 1: if object is added to state
-    {
-    	state_.clear();
-		scfps.addObjectToSymbolicState(state_, coTable1_, objectType);
-		Predicate pred;
-		pred.parameters.push_back(coTable1_.id);
-		pred.name = "x";
-		double val;
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
-		EXPECT_EQ(0.50, val);
-		pred.name = "y";
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
-		EXPECT_NE(-0.74, val);
-		pred.name = "qy";
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
-		EXPECT_EQ(0.28, val);
-		pred.name = "qw";
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
-		EXPECT_EQ(1, val);
-    }
-
-    // Test 2: object containing wrong frame should not be added to state
-    //			Aborted by ROS_ASSERT
-//    {
-//    	state_.clear();
-//    	coTable1_.header.frame_id = "/base_link";
-//    	//pub_co_.publish(coTable1_);
-//    	::testing::FLAGS_gtest_death_test_style = "threadsafe";
-//    	EXPECT_DEATH_IF_SUPPORTED(scfps.addObjectToSymbolicState(state_, coTable1_, objectType), "");
-//    }
-
-    // Test 3: add object without pose
-    {
-    	state_.clear();
-    	moveit_msgs::CollisionObject co = coTable1_;
-    	co.primitive_poses.clear();
-    	co.header.frame_id = "/map";
-    	//pub_co_.publish(coTable1_);
-		Predicate pred;
-		pred.parameters.push_back(co.id);
-		pred.name = "x";
-		double val = -1;
-		scfps.addObjectToSymbolicState(state_, co, objectType);
-		EXPECT_FALSE(state_.hasNumericalFluent(pred, &val));
-		// verify that value has not been changed
-		EXPECT_EQ(-1, val);
-    }
-
-    // Test 4: add object with different pose - test if state is updated
-    {
-    	state_.clear();
-    	// first add object to state
-    	scfps.addObjectToSymbolicState(state_, coTable1_, objectType);
-    	// modify object
-    	moveit_msgs::CollisionObject co = coTable1_;
-    	co.primitive_poses[0].position.x = -2.0;
-    	// re-add it
-    	scfps.addObjectToSymbolicState(state_, co, objectType);
-		Predicate pred;
-		pred.parameters.push_back(co.id);
-		pred.name = "x";
-		double val;
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
-		EXPECT_EQ(-2.0, val);
-    }
-
-    // Test 5: add object coke
-    {
-    	state_.clear();
-    	scfps.addObjectToSymbolicState(state_, coObject_, "movable_object");
+		// test if state has now object
 		Predicate pred;
 		pred.parameters.push_back(coObject_.id);
 		pred.name = "x";
 		double val;
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		string value;
+		bool result;
+		EXPECT_TRUE(state.hasNumericalFluent(pred, &val));
 		EXPECT_EQ(coObject_.primitive_poses[0].position.x, val);
 		pred.name = "y";
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_TRUE(state.hasNumericalFluent(pred, &val));
 		EXPECT_EQ(coObject_.primitive_poses[0].position.y, val);
 		pred.name = "qy";
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_TRUE(state.hasNumericalFluent(pred, &val));
 		EXPECT_EQ(coObject_.primitive_poses[0].orientation.y, val);
 		pred.name = "qw";
-		EXPECT_TRUE(state_.hasNumericalFluent(pred, &val));
+		EXPECT_TRUE(state.hasNumericalFluent(pred, &val));
 		EXPECT_EQ(coObject_.primitive_poses[0].orientation.w, val);
-    }
+		pred.name = "frame-id";
+		EXPECT_TRUE(state.hasObjectFluent(pred, &value));
+		moveit_msgs::CollisionObject tmp = scfps.planningScene_.world.collision_objects[0];
+		EXPECT_EQ(tmp.header.frame_id, value);
+		// frame-id of collision object coke stays the same, here it is "odom_combined"
+		EXPECT_EQ(tmp.id, "coke");
+
+		// test if state has object now
+//		pred.parameters.clear();
+//		pred.parameters.push_back(coObject_.id);
+//		//pred.name = "frame-id";
+//		pred.name = "movable_object";
+//		EXPECT_TRUE(state.hasObjectFluent(pred, &value));
+
+		pred.parameters.clear();
+		pred.parameters.push_back(coObject_.id);
+		pred.parameters.push_back(coTable1_.id);
+		pred.name = "object-on";
+		EXPECT_TRUE(state.hasBooleanPredicate(pred, &result));
+		EXPECT_TRUE(result);
+
+		pred.parameters.clear();
+		pred.parameters.push_back(coObject_.id);
+		pred.parameters.push_back(coTable2_.id);
+		pred.name = "object-on";
+		EXPECT_FALSE(state.hasBooleanPredicate(pred, &result));
+		// testing value of result does not make sense since it is not set
+
+	// Test 2: object removed from planning scene, if it is removed from symbolic state
+		coObject_.operation = moveit_msgs::CollisionObject::REMOVE;
+		planning_scene.world.collision_objects.push_back(coObject_);
+		pubPlanningScene_.publish(planning_scene);
+		ROS_INFO("Waiting 2s to make sure planning scene is updated");
+		ros::Duration(2.0).sleep();
+
+		scfps.fillState(state);
+		// only table objects should be in state
+		EXPECT_EQ(scfps.planningScene_.world.collision_objects.size(), 2);
+
+		pred.parameters.clear();
+		pred.parameters.push_back(coObject_.id);
+		pred.name = "x";
+		// object is not in state
+		EXPECT_FALSE(state.hasNumericalFluent(pred, &val));
+
+		// verify that predicate object-on is also removed
+		pred.parameters.clear();
+		pred.parameters.push_back(coObject_.id);
+		pred.parameters.push_back(coTable1_.id);
+		pred.name = "object-on";
+		EXPECT_FALSE(state.hasBooleanPredicate(pred, &result));
+
+	// Test 3: object added as grasped object, verify that it is in state and predicates are correct
+		coObject_.operation = moveit_msgs::CollisionObject::ADD;
+
+		moveit_msgs::AttachedCollisionObject attachedCo;
+		attachedCo.link_name = "r_wrist_roll_link";
+		attachedCo.object = coObject_;
+		planning_scene.robot_state.attached_collision_objects.push_back(attachedCo);
+
+		pubPlanningScene_.publish(planning_scene);
+		ROS_INFO("Waiting 2s to make sure planning scene is updated");
+		ros::Duration(2.0).sleep();
+
+		scfps.fillState(state);
+		// only table objects should be in state
+		EXPECT_EQ(scfps.planningScene_.world.collision_objects.size(), 2);
+		// coObject is now an attachedCollisionObject
+		EXPECT_EQ(scfps.planningScene_.robot_state.attached_collision_objects.size(), 1);
+
+		// test if state has object now
+//		string value;
+//		pred.parameters.clear();
+//		pred.parameters.push_back(coObject_.id);
+//		pred.name = "movable_object";
+//		EXPECT_TRUE(state.hasObjectFluent(pred, &value));
+
+
+		moveit_msgs::AttachedCollisionObject aco = scfps.planningScene_.robot_state.attached_collision_objects[0];
+
+		pred.parameters.clear();
+		pred.parameters.push_back(aco.object.id);
+		pred.name = "frame-id";
+		EXPECT_TRUE(state.hasObjectFluent(pred, &value));
+		// frame is "r_wrist_roll_link"
+		EXPECT_EQ(value, "r_wrist_roll_link");
+		EXPECT_EQ(aco.object.header.frame_id, value);
+
+	    EXPECT_EQ(aco.object.header.frame_id, "r_wrist_roll_link");
+	    //			r_wrist_roll_link			odom_combined
+	    EXPECT_NE(aco.object.header.frame_id, attachedCo.object.header.frame_id);
+
+		pred.parameters.clear();
+		pred.parameters.push_back(aco.object.id);
+		EXPECT_EQ(aco.object.id, attachedCo.object.id);
+		pred.name = "x";
+		EXPECT_TRUE(state.hasNumericalFluent(pred, &val));
+		EXPECT_EQ(aco.object.primitive_poses[0].position.x, val);
+
+		pred.parameters.clear();
+		pred.parameters.push_back(aco.object.id);
+		pred.parameters.push_back("right_arm");
+		pred.name = "object-grasped";
+		EXPECT_TRUE(state.hasBooleanPredicate(pred, &result));
+		EXPECT_TRUE(result);
+
+	// Test 4: object no longer grasped, verfiy that predicate object-grasped is false/not set
+		attachedCo.object.operation = moveit_msgs::CollisionObject::REMOVE;
+		planning_scene.robot_state.attached_collision_objects.push_back(attachedCo);
+		pubPlanningScene_.publish(planning_scene);
+		ROS_INFO("Waiting 2s to make sure planning scene is updated");
+		ros::Duration(2.0).sleep();
+
+		scfps.fillState(state);
+		// only table objects should be in state
+		EXPECT_EQ(scfps.planningScene_.world.collision_objects.size(), 2);
+		EXPECT_EQ(scfps.planningScene_.robot_state.attached_collision_objects.size(), 0);
+
+		// not possible to verify if object is deleted by using objectFluents because
+		// object fluents are not removed when removing an object from symbolic state
+//		pred.parameters.clear();
+//		pred.parameters.push_back(attachedCo.object.id);
+//		pred.name = "frame-id";
+//		EXPECT_FALSE(state.hasObjectFluent(pred, &value));
+		pred.parameters.clear();
+		pred.parameters.push_back(attachedCo.object.id);
+		pred.name = "x";
+		EXPECT_FALSE(state.hasNumericalFluent(pred, &val));
+
+		pred.parameters.clear();
+		pred.parameters.push_back(attachedCo.object.id);
+		pred.parameters.push_back("right_arm");
+		pred.name = "object-grasped";
+		EXPECT_FALSE(state.hasBooleanPredicate(pred, &result));
+	}
+
 }
-TEST_F(stateCreatorFromPlanningSceneTest, findMatchingTable)
-{
-	StateCreatorFromPlanningScene scfps;
-	// needs to be called first, to set membervariable tables_
-	scfps.initializeTables(state_);
 
-	scfps.findMatchingTable(state_, allCos, coObject_);
-	Predicate p;
-	p.name = "object-on";
-	p.parameters.push_back(coObject_.id);
-	p.parameters.push_back(coTable1_.id);
-	bool value = false;
-	EXPECT_TRUE(state_.hasBooleanPredicate(p, &value));
+}; // namespace
 
-	p.parameters[0] = "NonExistingObject";
-	EXPECT_FALSE(state_.hasBooleanPredicate(p, &value));
-}
-
-
-TEST_F(stateCreatorFromPlanningSceneTest, extractPoseStampedFromCollisionObject)
-{
-	StateCreatorFromPlanningScene scfps;
-	// Test 1: verify that the correct pose is returned
-	geometry_msgs::PoseStamped pose;
-	EXPECT_TRUE(scfps.extractPoseStampedFromCollisionObject(coTable1_, pose));
-	EXPECT_EQ(0.5, pose.pose.position.x);
-	EXPECT_EQ(-0.75, pose.pose.position.y);
-	EXPECT_EQ(0.58, pose.pose.position.z);
-	EXPECT_EQ(0, pose.pose.orientation.x);
-	EXPECT_EQ(0.28, pose.pose.orientation.y);
-	EXPECT_EQ(0, pose.pose.orientation.z);
-	EXPECT_EQ(1, pose.pose.orientation.w);
-
-	// Test 2: verify that false is returned when co does not have a pose
-	moveit_msgs::CollisionObject co = coTable1_;
-	co.primitive_poses.clear();
-	EXPECT_FALSE(scfps.extractPoseStampedFromCollisionObject(co, pose));
-}
-
-//TEST_F(stateCreatorFromPlanningSceneTest, distanceBetweenTwoPoses)
-//{
-//	StateCreatorFromPlanningScene scfps;
-//	geometry_msgs::PoseStamped a, b;
-//	a.header.frame_id = "/map";
-//	a.header.stamp = ros::Time::now();
-//	geometry_msgs::Pose pose;
-//	pose.position.x = 1.0;
-//	pose.position.y = 1.0;
-//	pose.position.z = 1.0;
-//	pose.orientation.w = 1.0;
-//	pose.orientation.x = 0;
-//	pose.orientation.y = 0;
-//	pose.orientation.z = 0;
-//	a.pose = pose;
-//
-//	b.header.frame_id = "/map";
-//	b.header.stamp = ros::Time::now();
-//	pose.position.x = 2.0;
-//	pose.position.y = 1.0;
-//	pose.position.z = 0;
-//	b.pose = pose;
-//
-//	// Test 1: simple distance calc where the distance between the points is 1
-//	std::pair<double, double> result;
-//	result = scfps.distanceBetweenTwoPoses(a, b);
-//	double dist, height;
-//	dist = result.first;
-//	height = result.second;
-//	// Computed distance between 2 points: A (1, 1, 1) and B(2, 1, 0)
-//	EXPECT_EQ(1, dist);
-//	EXPECT_EQ(1, height);
-//
-//	// Test 2: distance gives no exact result (sqrt(5))
-//	b.pose.position.y = 3.0;
-//	b.pose.position.z = 3.0;
-//	result = scfps.distanceBetweenTwoPoses(a, b);
-//	dist = result.first;
-//	height = result.second;
-//	// Computed distance between 2 points: A (1, 1, 1) and B(2, 3, 0)
-//	// SQRT( (xB - xA)^2 + (yB - yA)^2) = SQRT( (2-1)^2 + (3-1)^2 )
-//	EXPECT_EQ(std::sqrt(5), dist);
-//	EXPECT_EQ(2, height);
-//
-//	// TODO: Test 3: orientation of poses changes, compute dist
-////	a.pose.orientation.x = 0.33;
-////	a.pose.orientation.y = 0.67;
-////	a.pose.orientation.z = 0.73;
-////
-////	b.pose.orientation.x = 0.45;
-////	b.pose.orientation.y = 0.82;
-////	b.pose.orientation.z = 0.12;
-////	result = scfps.distanceBetweenTwoPoses(a, b);
-////	dist = result.first;
-////	height = result.second;
-////	// Computed distance between 2 points: A (1, 1, 1) and B(2, 3, 0)
-////	// SQRT( (xB - xA)^2 + (yB - yA)^2) = SQRT( (2-1)^2 + (3-1)^2 )
-////	EXPECT_EQ(std::sqrt(5), dist);
-////	EXPECT_EQ(2, height);
-//}
-
-};
-
+// Only one main function for all tests!
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     // do not forget to init ros because this is also a node
     ros::init(argc, argv, "stateCreatorFromPlanningSceneTest");
     return RUN_ALL_TESTS();
 }
+

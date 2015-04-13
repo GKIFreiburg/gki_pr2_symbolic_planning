@@ -135,6 +135,8 @@ namespace tidyup_state_creators
         {
             ROS_DEBUG_STREAM("processing "<<tablesIterator->second);
             tables_.insert(tablesIterator->second);
+
+            // Note: tableLocations_ not needed at the moment therefore commented out
 //            pair<SymbolicState::TypedObjectConstIterator, SymbolicState::TypedObjectConstIterator> locationsRange =
 //                    currentState.getTypedObjects().equal_range("manipulation_location");
 //            for (SymbolicState::TypedObjectConstIterator locationsIterator = locationsRange.first;
