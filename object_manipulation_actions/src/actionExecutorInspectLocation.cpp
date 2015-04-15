@@ -3,6 +3,7 @@
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
 #include <symbolic_planning_utils/extractPose.h>
 //#include <moveit/move_group_interface/move_group.h>
+
 #include <set>
 #include <boost/foreach.hpp>
 #define for_each BOOST_FOREACH
@@ -15,8 +16,14 @@ PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorInspectLocatio
 namespace object_manipulation_actions
 {
 ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
-		actionPointHead_("head_traj_controller/point_head_action", true), actionOrkToPs_("ork_to_planning_scene", true)
+		actionLiftTorso_("torso_controller/position_joint_action", true),
+		actionPointHead_("head_traj_controller/point_head_action", true),
+		actionOrkToPs_("ork_to_planning_scene", true)
 {
+	// TODO: read from param server
+	actionTimeOut_ = ros::Duration(30.0);
+	vDistHeadToTable_ = 0.5; // m
+
 	ROS_DEBUG("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action"
 			"action server to start.", __func__);
 	actionPointHead_.waitForServer();
@@ -62,6 +69,71 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		return false;
 	}
 
+	if (!executeLiftTorso(tablePose))
+		return false;
+
+	if (!executePointHead(tablePose))
+		return false;
+
+	if (!executeUpdatePlanningSceneFromORK(currentState, table, mani_loc))
+		return false;
+
+
+	return true;
+}
+
+void ActionExecutorInspectLocation::cancelAction()
+{
+
+}
+
+void ActionExecutorInspectLocation::feedbackLiftTorso(const control_msgs::SingleJointPositionFeedback& feedback)
+{
+	ROS_DEBUG_STREAM("Torso Joint Position: " << feedback.position << " , Error: " << feedback.error);
+//	if (feedback.error < 0.01)
+//		actionLiftTorso_.cancelGoal();
+}
+
+bool ActionExecutorInspectLocation::executeLiftTorso(const geometry_msgs::PoseStamped tablePose)
+{
+	// compute difference in height between head_mount_link and table
+    // z coord from tf pose in /base_footprint frame
+    geometry_msgs::PoseStamped pose_transformed;
+    try {
+        tf_.waitForTransform("/head_mount_link", tablePose.header.frame_id, tablePose.header.stamp,
+                ros::Duration(0.5));
+        tf_.transformPose("/head_mount_link", tablePose, pose_transformed);
+    } catch (tf::TransformException& ex) {
+        ROS_ERROR("%s", ex.what());
+        return false;
+    }
+
+    if (!abs(pose_transformed.pose.position.z) < vDistHeadToTable_)
+    	// head_mount_link is more than vDistHeadToTable above table, no need to lift torso
+    	return true;
+
+	ROS_INFO("ActionExecutorInspectLocation::%s: Sending ListTorso request.", __func__);
+	control_msgs::SingleJointPositionGoal liftTorsoGoal;
+	liftTorsoGoal.position = vDistHeadToTable_ - abs(pose_transformed.pose.position.z);
+
+	actionLiftTorso_.sendGoal(liftTorsoGoal);
+
+	bool finished_before_timeout = actionLiftTorso_.waitForResult(actionTimeOut_);
+	if (finished_before_timeout)
+	{
+		actionlib::SimpleClientGoalState state = actionLiftTorso_.getState();
+		ROS_DEBUG("ActionExecutorInspectLocation::%s: Lift Torso Action finished: %s", __func__, state.toString().c_str());
+		if (state != actionlib::SimpleClientGoalState::SUCCEEDED)
+		{
+			ROS_ERROR("ActionExecutorInspectLocation::%s: Lift Torso Action failed.", __func__);
+			return false;
+		}
+	}
+	return true;
+}
+
+bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseStamped tablePose)
+{
 	ROS_INFO("ActionExecutorInspectLocation::%s: Sending PointHead request.", __func__);
 	control_msgs::PointHeadGoal pointHeadGoal;
 	geometry_msgs::PointStamped target;
@@ -77,7 +149,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 
 	actionPointHead_.sendGoal(pointHeadGoal);
 
-	bool finished_before_timeout = actionPointHead_.waitForResult(ros::Duration(30.0));
+	bool finished_before_timeout = actionPointHead_.waitForResult(actionTimeOut_);
 	if (finished_before_timeout)
 	{
 		actionlib::SimpleClientGoalState state = actionPointHead_.getState();
@@ -88,13 +160,18 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 			return false;
 		}
 	}
+	return true;
+}
 
+bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicState& currentState,
+		const std::string tableName, const std::string manipulationLocation)
+{
 	// execute action ork-to-planning-scene
 	ROS_INFO("ActionExecutorInspectLocation::%s: Sending UpdatePlanningSceneFromORK request.", __func__);
 	ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkGoal updatePSGoal;
 	updatePSGoal.verify_planning_scene_update = verify_planning_scene_update_;
 	updatePSGoal.add_tables = add_tables_;
-	updatePSGoal.table_prefix = table;
+	updatePSGoal.table_prefix = tableName;
 
 	const multimap<string, string> objects = currentState.getTypedObjects();
 	std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators = objects.equal_range("movable_object");
@@ -103,7 +180,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		Predicate on;
 		on.name = "object-on";
 		on.parameters.push_back(it->second);
-		on.parameters.push_back(table);
+		on.parameters.push_back(tableName);
 		bool value = false;
 		currentState.hasBooleanPredicate(on, &value);
 		if (value)
@@ -112,7 +189,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		}
 	}
 	actionOrkToPs_.sendGoal(updatePSGoal);
-	finished_before_timeout = actionOrkToPs_.waitForResult(ros::Duration(30.0));
+	bool finished_before_timeout = actionOrkToPs_.waitForResult(actionTimeOut_);
 	if (finished_before_timeout)
 	{
 		actionlib::SimpleClientGoalState state = actionOrkToPs_.getState();
@@ -122,7 +199,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 			ROS_INFO("Inspect location succeeded.");
 			for_each(const string& predicate, predicate_names_)
 			{
-				currentState.setBooleanPredicate(predicate, mani_loc, true);
+				currentState.setBooleanPredicate(predicate, manipulationLocation, true);
 			}
 		}
 		else
@@ -134,11 +211,4 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 	return true;
 }
 
-void ActionExecutorInspectLocation::cancelAction()
-{
-
-}
-
-}
-;
-
+}; // namespace
