@@ -7,7 +7,6 @@
 #include <actionlib/client/simple_action_client.h>
 #include <control_msgs/PointHeadAction.h>
 #include <control_msgs/SingleJointPositionAction.h>
-#include <control_msgs/SingleJointPositionFeedback.h>
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
 
 #include <tf/transform_listener.h>
@@ -30,6 +29,7 @@ namespace object_manipulation_actions
 
 		virtual void cancelAction();
 
+
         private:
         // ROS Interface
         tf::TransformListener tf_;
@@ -38,19 +38,35 @@ namespace object_manipulation_actions
         std::string action_name_;
         std::vector<std::string> predicate_names_;
 
-        bool add_tables_;
-        bool verify_planning_scene_update_;
-        std::set<std::string> expected_objects_;
+        // help variables for action liftTorso
+        double torsoPosition_;
+        bool setTorsoPosition_;
+        int counter_;
 
-        double vDistHeadToTable_;
         ros::Duration actionTimeOut_;
         actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction> actionLiftTorso_;
         actionlib::SimpleActionClient<control_msgs::PointHeadAction> actionPointHead_;
         actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction> actionOrkToPs_;
 
+        // Parameters
+        // UpdatePlanningSceneFromOrk-Parameters
+        bool add_tables_;
+        bool verify_planning_scene_update_;
+        std::set<std::string> expected_objects_;
+        // LiftTorso-Parameters
+        double vdist_head_to_table_;
+        double vdist_threshold_;
+        double min_torso_vel_;
+
+        // Action for lifting torso
         bool executeLiftTorso(const geometry_msgs::PoseStamped tablePose);
-        void feedbackLiftTorso(const control_msgs::SingleJointPositionFeedback& feedback);
+        // Checking if torso is stalled by reaching joint limits
+        void feedbackLiftTorso(const control_msgs::SingleJointPositionFeedbackConstPtr& feedback);
+        // Get position of torso, by sending an action request and reading position from feedback, then break
+        void setTorsoPosition();
+        // Action for pointing head
         bool executePointHead(const geometry_msgs::PoseStamped tablePose);
+        // Action for object dectection
         bool executeUpdatePlanningSceneFromORK(SymbolicState& currentState,
         		const std::string tableName, const std::string manipulationLocation);
 

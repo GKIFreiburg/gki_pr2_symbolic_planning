@@ -3,6 +3,8 @@
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
 #include <symbolic_planning_utils/extractPose.h>
 //#include <moveit/move_group_interface/move_group.h>
+#include <control_msgs/SingleJointPositionActionFeedback.h>
+#include <control_msgs/SingleJointPositionFeedback.h>
 
 #include <set>
 #include <boost/foreach.hpp>
@@ -20,15 +22,21 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
 		actionPointHead_("head_traj_controller/point_head_action", true),
 		actionOrkToPs_("ork_to_planning_scene", true)
 {
-	// TODO: read from param server
 	actionTimeOut_ = ros::Duration(30.0);
-	vDistHeadToTable_ = 0.5; // m
+	torsoPosition_ = -1.0;
+	setTorsoPosition_ = false;
 
-	ROS_DEBUG("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action"
+	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action"
 			"action server to start.", __func__);
 	actionPointHead_.waitForServer();
 
-	ROS_DEBUG("ActionExecutorInspectLocation::%s: Action client ready", __func__);
+	ROS_INFO("ActionExecutorInspectLocation::%s: Action client ready", __func__);
+
+    ros::NodeHandle nhPriv("~");
+    // Namespace is "/continual_planning_executive"(/vdist_head_to_table)
+    nhPriv.param("vdist_head_to_table", vdist_head_to_table_, 0.8);
+    nhPriv.param("vdist_threshold", vdist_threshold_, 0.002);
+    nhPriv.param("min_torso_vel", min_torso_vel_, 0.0001);
 }
 
 ActionExecutorInspectLocation::~ActionExecutorInspectLocation()
@@ -78,7 +86,6 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 	if (!executeUpdatePlanningSceneFromORK(currentState, table, mani_loc))
 		return false;
 
-
 	return true;
 }
 
@@ -87,36 +94,108 @@ void ActionExecutorInspectLocation::cancelAction()
 
 }
 
-void ActionExecutorInspectLocation::feedbackLiftTorso(const control_msgs::SingleJointPositionFeedback& feedback)
+void ActionExecutorInspectLocation::feedbackLiftTorso(const control_msgs::SingleJointPositionFeedbackConstPtr& feedback)
 {
-	ROS_DEBUG_STREAM("Torso Joint Position: " << feedback.position << " , Error: " << feedback.error);
-//	if (feedback.error < 0.01)
-//		actionLiftTorso_.cancelGoal();
+	if (setTorsoPosition_)
+	{
+		torsoPosition_ = feedback->position;
+		actionLiftTorso_.cancelGoal();
+		setTorsoPosition_ = false;
+		return;
+	}
+
+	if (fabs(feedback->velocity) < min_torso_vel_)
+	{
+		// Counter needed, because some time it happens that start velocity is
+		// extremly low, which would result in cancellation of action.
+		// this counter is used to ensure that velocity is under the min_torso_vel_
+		// for a certain time, which need torso is stalled
+		if (counter_ < 100)
+			counter_++;
+		else
+		{
+			ROS_WARN("ActionExecutorInspectLocation::%s: Torso stalled - limit reached (Position: %lf, Velocity: %lf)",
+					__func__, feedback->position, feedback->velocity);
+			actionLiftTorso_.cancelGoal();
+			control_msgs::SingleJointPositionGoal liftTorsoGoal;
+			liftTorsoGoal.position = feedback->position;
+			actionLiftTorso_.sendGoal(liftTorsoGoal);
+		}
+	}
+
+	ROS_DEBUG_STREAM_THROTTLE(0.10, "Torso Joint Position: " << feedback->position << " , Velocity: " << feedback->velocity << " , Error: " << feedback->error);
+
 }
 
 bool ActionExecutorInspectLocation::executeLiftTorso(const geometry_msgs::PoseStamped tablePose)
 {
 	// compute difference in height between head_mount_link and table
-    // z coord from tf pose in /base_footprint frame
-    geometry_msgs::PoseStamped pose_transformed;
+    // transform tablePose into frame of /base link
+    geometry_msgs::PoseStamped table_transformed;
     try {
-        tf_.waitForTransform("/head_mount_link", tablePose.header.frame_id, tablePose.header.stamp,
+        tf_.waitForTransform("/base_link", tablePose.header.frame_id, tablePose.header.stamp,
                 ros::Duration(0.5));
-        tf_.transformPose("/head_mount_link", tablePose, pose_transformed);
+        tf_.transformPose("/base_link", tablePose, table_transformed);
     } catch (tf::TransformException& ex) {
         ROS_ERROR("%s", ex.what());
         return false;
     }
 
-    if (!abs(pose_transformed.pose.position.z) < vDistHeadToTable_)
-    	// head_mount_link is more than vDistHeadToTable above table, no need to lift torso
+    ROS_DEBUG_STREAM("table pose" << tablePose);
+    ROS_DEBUG_STREAM("table pose transformed" << table_transformed);
+
+    // transform headPose into frame of /base link
+    tf::Pose tfHead;
+    geometry_msgs::PoseStamped headPose;
+    headPose.header.frame_id = "/head_mount_link";
+    headPose.header.stamp = ros::Time::now();
+    geometry_msgs::Quaternion q;
+    q.x = 0;
+    q.y = 0;
+    q.z = 0;
+    q.w = 1;
+    headPose.pose.orientation = q;
+    geometry_msgs::Point p;
+    p.x = 0;
+    p.y = 0;
+    p.z = 0;
+    headPose.pose.position = p;
+
+    geometry_msgs::PoseStamped head_transformed;
+    try {
+        tf_.waitForTransform("/map", headPose.header.frame_id, headPose.header.stamp,
+                ros::Duration(0.5));
+        tf_.transformPose("/map", headPose, head_transformed);
+    } catch (tf::TransformException& ex) {
+        ROS_ERROR("%s", ex.what());
+        return false;
+    }
+    ROS_DEBUG_STREAM("head pose transformed" << head_transformed);
+
+    double distance = fabs(head_transformed.pose.position.z - table_transformed.pose.position.z);
+    ROS_DEBUG("Distance: %lf, head: %lf, table: %lf", distance, head_transformed.pose.position.z, table_transformed.pose.position.z);
+    if (vdist_head_to_table_ - vdist_threshold_ < distance &&
+    	distance < vdist_head_to_table_ + vdist_threshold_)
+    	// head_mount_link is about vdist_head_to_table_ above table, no need to lift torso
     	return true;
+
+    setTorsoPosition();
 
 	ROS_INFO("ActionExecutorInspectLocation::%s: Sending ListTorso request.", __func__);
 	control_msgs::SingleJointPositionGoal liftTorsoGoal;
-	liftTorsoGoal.position = vDistHeadToTable_ - abs(pose_transformed.pose.position.z);
+	liftTorsoGoal.position = torsoPosition_ + vdist_head_to_table_ - distance;
 
-	actionLiftTorso_.sendGoal(liftTorsoGoal);
+	ROS_DEBUG_STREAM("Lift torso about : " << torsoPosition_ << " + " << vdist_head_to_table_ << " - " << distance <<
+			" = " << torsoPosition_ + vdist_head_to_table_ - distance);
+
+	counter_ = 0;
+	//actionLiftTorso_.sendGoal(liftTorsoGoal);
+	// Checking if torso is stalled, if so cancel action and start new action with current position
+	// Then actionLiftTorso will end immediately with success
+	actionLiftTorso_.sendGoal(liftTorsoGoal,
+		actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction>::SimpleDoneCallback(), // = NULL
+		actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction>::SimpleActiveCallback(), // = NULL
+		boost::bind(&ActionExecutorInspectLocation::feedbackLiftTorso, this, _1));
 
 	bool finished_before_timeout = actionLiftTorso_.waitForResult(actionTimeOut_);
 	if (finished_before_timeout)
@@ -130,6 +209,29 @@ bool ActionExecutorInspectLocation::executeLiftTorso(const geometry_msgs::PoseSt
 		}
 	}
 	return true;
+}
+
+void ActionExecutorInspectLocation::setTorsoPosition()
+{
+	ROS_INFO("ActionExecutorInspectLocation::%s: Sending ListTorso request.", __func__);
+	control_msgs::SingleJointPositionGoal liftTorsoGoal;
+	liftTorsoGoal.position = 0.32;
+	setTorsoPosition_ = true;
+
+//	actionLiftTorso_.sendGoal(liftTorsoGoal, &doneLiftTorso, &activeLiftTorso, &feedbackLiftTorso);
+
+	// http://library.isr.ist.utl.pt/docs/roswiki/actionlib_tutorials%282f%29Tutorials%282f%29Writing%2820%29a%2820%29Callback%2820%29Based%2820%29Simple%2820%29Action%2820%29Client.html
+//	actionLiftTorso_.sendGoal(liftTorsoGoal,
+//		boost::bind(&ActionExecutorInspectLocation::doneLiftTorso, this, _1, _2),
+//		actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction>::SimpleActiveCallback(),
+//		actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction>::SimpleFeedbackCallback());
+
+	actionLiftTorso_.sendGoal(liftTorsoGoal,
+		actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction>::SimpleDoneCallback(), // = NULL
+		actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction>::SimpleActiveCallback(), // = NULL
+		boost::bind(&ActionExecutorInspectLocation::feedbackLiftTorso, this, _1));
+
+	actionLiftTorso_.waitForResult(actionTimeOut_);
 }
 
 bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseStamped tablePose)
