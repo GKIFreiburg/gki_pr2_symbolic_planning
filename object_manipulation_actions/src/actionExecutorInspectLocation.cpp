@@ -37,6 +37,7 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
     nhPriv.param("vdist_head_to_table", vdist_head_to_table_, 0.8);
     nhPriv.param("vdist_threshold", vdist_threshold_, 0.002);
     nhPriv.param("min_torso_vel", min_torso_vel_, 0.0001);
+    nhPriv.param("stallThreshold", stallThreshold_, 5);
 }
 
 ActionExecutorInspectLocation::~ActionExecutorInspectLocation()
@@ -106,13 +107,10 @@ void ActionExecutorInspectLocation::feedbackLiftTorso(const control_msgs::Single
 
 	if (fabs(feedback->velocity) < min_torso_vel_)
 	{
-		// Counter needed, because some time it happens that start velocity is
-		// extremly low, which would result in cancellation of action.
-		// this counter is used to ensure that velocity is under the min_torso_vel_
-		// for a certain time, which need torso is stalled
-		if (counter_ < 100)
-			counter_++;
-		else
+		if (startStallTime_ == 0)
+			startStallTime_ = ros::Time::now().toSec();
+		// waited longer than stallThreshold_ -> torso is stalled
+		else if ((ros::Time::now().toSec() - startStallTime_) > stallThreshold_)
 		{
 			ROS_WARN("ActionExecutorInspectLocation::%s: Torso stalled - limit reached (Position: %lf, Velocity: %lf)",
 					__func__, feedback->position, feedback->velocity);
@@ -188,7 +186,7 @@ bool ActionExecutorInspectLocation::executeLiftTorso(const geometry_msgs::PoseSt
 	ROS_DEBUG_STREAM("Lift torso about : " << torsoPosition_ << " + " << vdist_head_to_table_ << " - " << distance <<
 			" = " << torsoPosition_ + vdist_head_to_table_ - distance);
 
-	counter_ = 0;
+	startStallTime_ = 0;
 	//actionLiftTorso_.sendGoal(liftTorsoGoal);
 	// Checking if torso is stalled, if so cancel action and start new action with current position
 	// Then actionLiftTorso will end immediately with success

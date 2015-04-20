@@ -41,7 +41,8 @@ namespace object_manipulation_actions
         // help variables for action liftTorso
         double torsoPosition_;
         bool setTorsoPosition_;
-        int counter_;
+        int stallThreshold_;
+        double startStallTime_; // in sec
 
         ros::Duration actionTimeOut_;
         actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction> actionLiftTorso_;
