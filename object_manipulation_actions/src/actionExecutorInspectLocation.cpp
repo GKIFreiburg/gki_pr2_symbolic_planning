@@ -26,11 +26,19 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
 	torsoPosition_ = -1.0;
 	setTorsoPosition_ = false;
 
-	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action"
+	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for torso_controller/position_joint_action "
+			"action server to start.", __func__);
+	actionLiftTorso_.waitForServer();
+
+	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action "
 			"action server to start.", __func__);
 	actionPointHead_.waitForServer();
 
-	ROS_INFO("ActionExecutorInspectLocation::%s: Action client ready", __func__);
+	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for ork_to_planning_scene "
+			"action server to start.", __func__);
+	actionOrkToPs_.waitForServer();
+
+	ROS_INFO("ActionExecutorInspectLocation::%s: Action clients are ready", __func__);
 
     ros::NodeHandle nhPriv("~");
     // Namespace is "/continual_planning_executive"(/vdist_head_to_table)
@@ -65,12 +73,11 @@ bool ActionExecutorInspectLocation::canExecute(const DurativeAction & a, const S
 
 bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 {
-	// point head to tablePose
 	ROS_ASSERT(a.parameters.size() == 2);
 	std::string mani_loc = a.parameters[0];
-	std::string table = a.parameters[1];
+	std::string table 	 = a.parameters[1];
 
-	// first get tablePose
+	// get tablePose
 	geometry_msgs::PoseStamped tablePose;
 	if (!symbolic_planning_utils::extractPoseStampedFromSymbolicState(currentState, table, tablePose))
 	{
@@ -92,7 +99,6 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 
 void ActionExecutorInspectLocation::cancelAction()
 {
-
 }
 
 void ActionExecutorInspectLocation::feedbackLiftTorso(const control_msgs::SingleJointPositionFeedbackConstPtr& feedback)
@@ -215,8 +221,6 @@ void ActionExecutorInspectLocation::setTorsoPosition()
 	control_msgs::SingleJointPositionGoal liftTorsoGoal;
 	liftTorsoGoal.position = 0.32;
 	setTorsoPosition_ = true;
-
-//	actionLiftTorso_.sendGoal(liftTorsoGoal, &doneLiftTorso, &activeLiftTorso, &feedbackLiftTorso);
 
 	// http://library.isr.ist.utl.pt/docs/roswiki/actionlib_tutorials%282f%29Tutorials%282f%29Writing%2820%29a%2820%29Callback%2820%29Based%2820%29Simple%2820%29Action%2820%29Client.html
 //	actionLiftTorso_.sendGoal(liftTorsoGoal,
