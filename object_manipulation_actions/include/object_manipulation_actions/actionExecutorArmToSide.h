@@ -26,9 +26,6 @@ namespace object_manipulation_actions
             std::string armStatePredicateName_;     // the arm state predicate name
             std::string armAtSideConstantName_;     // the arm at side position constant name
 
-    		moveit::planning_interface::MoveGroup* right_arm_group_;
-    		moveit::planning_interface::MoveGroup* left_arm_group_;
-
     		moveit::planning_interface::MoveItErrorCode armToSide(moveit::planning_interface::MoveGroup* group);
 
     };
