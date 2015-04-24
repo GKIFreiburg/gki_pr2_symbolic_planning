@@ -38,7 +38,7 @@ namespace tidyup_state_creators
 		private:
 
 			std::vector<tableLocation> tables_;
-			ros::Publisher pub_co_;
+			ros::Publisher pubPlanningScene_;
 
 			// Load a file containing table information and store them into tables_
 			bool load(const std::string& filename);
