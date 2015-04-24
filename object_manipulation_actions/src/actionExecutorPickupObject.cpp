@@ -75,7 +75,6 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 			break;
 		}
 	}
-
 	if (!found)
 	{
 		ROS_ERROR("ActionExecutorPickupObject::%s: No collision object found with name %s",
@@ -120,8 +119,9 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 		std::vector<moveit_msgs::Grasp> grasps = actionGenerateGrasps_.getResult()->grasps;
 		ROS_DEBUG("ActionExecutorPickupObject::%s: %lu grasps were found.", __func__, grasps.size());
 		moveit::planning_interface::MoveItErrorCode error_code;
-		error_code = arm_group->pick(movable_obj, grasps);
-		ROS_INFO_STREAM("ActionExecutorPickupObject::" << __func__ <<": Pick action returned "
+		arm_group->setSupportSurfaceName(table);
+		error_code = arm_group->pick(collObj.id, grasps);
+		ROS_INFO_STREAM("ActionExecutorPickupObject::" << __func__ <<": Pickup object " << collObj.id << " action returned "
 				<< error_code);
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	} else {
