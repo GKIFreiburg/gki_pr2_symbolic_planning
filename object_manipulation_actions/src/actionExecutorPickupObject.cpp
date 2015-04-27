@@ -101,6 +101,7 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 		ROS_ERROR("ActionExecutorPickupObject::%s: No arm group could be specified.", __func__);
 		return false;
 	}
+	arm_group->getCurrentState();
 	goal.eef_group_name = eef_name;
 	actionGenerateGrasps_.sendGoal(goal);
 
