@@ -10,6 +10,10 @@
 #include <ros/ros.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <shape_tools/solid_primitive_dims.h>
+#include <geometric_shapes/shapes.h>
+#include <geometric_shapes/mesh_operations.h>
+#include <geometric_shapes/shape_messages.h>
+#include <geometric_shapes/shape_operations.h>
 #include <fstream>
 #include <sstream>
 
@@ -136,13 +140,22 @@ namespace tidyup_state_creators
 			moveit_msgs::CollisionObject co;
 			co.id = tl.name;
 			co.header = tl.pose.header;
-			co.primitives.resize(1);
-			co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
-			co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
-			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = tl.sizex;
-			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = tl.sizey;
-			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = tl.sizez;
-			co.primitive_poses.push_back(tl.pose.pose);
+//			co.primitives.resize(1);
+//			co.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+//			co.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+//			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = tl.sizex;
+//			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = tl.sizey;
+//			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = tl.sizez;
+//			co.primitive_poses.push_back(tl.pose.pose);
+
+			shapes::Box box = shapes::Box(tl.sizex, tl.sizey, tl.sizez);
+			shapes::Mesh* mesh = shapes::createMeshFromShape(box);
+			shapes::ShapeMsg mesh_msg;
+			shapes::constructMsgFromShape(mesh, mesh_msg);
+
+			co.meshes.resize(1);
+			co.meshes[0] = boost::get<shape_msgs::Mesh>(mesh_msg);
+			co.mesh_poses.push_back(tl.pose.pose);
 			co.operation = co.ADD;
 			planning_scene.world.collision_objects.push_back(co);
 
