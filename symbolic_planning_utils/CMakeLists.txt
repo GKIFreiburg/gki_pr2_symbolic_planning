@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 	moveit_msgs
 	moveit_ros_planning_interface
 	tf
+	roscpp
 )
 
 ## System dependencies are found with CMake's conventions
@@ -84,7 +85,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES symbolic_planning_utils
-#  CATKIN_DEPENDS continual_planning_executive geometry_msgs moveit_core moveit_msgs tf
+  CATKIN_DEPENDS moveit_msgs roscpp
 #  DEPENDS system_lib
 )
 
@@ -105,6 +106,8 @@ include_directories(
 add_library(symbolic_planning_utils
   src/moveGroupInterface.cpp
   src/extractPose.cpp
+  src/planning_scene_interface.cpp
+  src/planning_scene_monitor.cpp
 )
 
 ## Declare a cpp executable
