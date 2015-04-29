@@ -1,27 +1,44 @@
 #ifndef ACTION_EXECUTOR_PLACE_OBJECT_H
 #define ACTION_EXECUTOR_PLACE_OBJECT_H
 
-#include "continual_planning_executive/actionExecutorActionlib.hpp"
+#include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"
-#include <tidyup_msgs/PlaceObjectAction.h>
+
+#include <symbolic_planning_utils/planning_scene_interface.h>
+#include <object_surface_placements/placement_generator.h>
+#include <object_surface_placements/object_surface_placements.h>
+//#include <tidyup_msgs/PlaceObjectAction.h>
 
 namespace object_manipulation_actions
 {
 
-class ActionExecutorPutdownObject: public ActionExecutorActionlib<tidyup_msgs::PlaceObjectAction,
-        tidyup_msgs::PlaceObjectGoal, tidyup_msgs::PlaceObjectResult>
-{
-public:
-    virtual bool fillGoal(tidyup_msgs::PlaceObjectGoal & goal,
-            const DurativeAction & a, const SymbolicState & current);
+	class ActionExecutorPutdownObject: public continual_planning_executive::ActionExecutorInterface
+	{
+    	public:
 
-    virtual void updateState(const actionlib::SimpleClientGoalState & actionReturnState,
-            const tidyup_msgs::PlaceObjectResult & result,
-            const DurativeAction & a, SymbolicState & current);
+		ActionExecutorPutdownObject();
+		~ActionExecutorPutdownObject();
+
+		virtual void initialize(const std::deque<std::string> & arguments);
+
+		virtual bool canExecute(const DurativeAction & a, const SymbolicState & currentState) const;
+
+		virtual bool executeBlocking(const DurativeAction & a, SymbolicState & currentState);
+
+		virtual void cancelAction();
+
+    	private:
+
+		std::string action_name_;
+		boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
+		boost::shared_ptr<object_surface_placements::PlacementGenerator> placement_gen_;
+
+		object_surface_placements::CollisionMethod collision_method_;
+		double z_above_table_;
+
+	};
+
 };
-
-}
-;
 
 #endif
 

@@ -1,8 +1,17 @@
 #include "object_manipulation_actions/actionExecutorPutdownObject.h"
 #include <pluginlib/class_list_macros.h>
-#include "tidyup_msgs/GetPutdownPose.h"
-//#include "arm_navigation_msgs/ArmNavigationErrorCodes.h"
-//#include <arm_navigation_msgs/convert_messages.h>
+#include <tidyup_utils/stringutil.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
+#include <symbolic_planning_utils/planning_scene_monitor.h>
+#include <symbolic_planning_utils/planning_scene_service.h>
+#include <object_surface_placements/placement_generator_discretization.h>
+#include <object_surface_placements/placement_generator_sampling.h>
+#include <moveit_msgs/CollisionObject.h>
+#include <moveit_msgs/AttachedCollisionObject.h>
+
+#include <boost/foreach.hpp>
+#define forEach BOOST_FOREACH
+
 #include <moveit_msgs/MoveItErrorCodes.h>
 #include "tidyup_utils/planning_scene_interface.h"
 
@@ -13,49 +22,105 @@ PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorPutdownObject,
 
 namespace object_manipulation_actions
 {
-    bool ActionExecutorPutdownObject::fillGoal(tidyup_msgs::PlaceObjectGoal & goal,
-            const DurativeAction & a, const SymbolicState & current)
-    {
-        if(!PlanningSceneInterface::instance()->resetPlanningScene())   // FIXME try anyways?
-            ROS_ERROR("%s: PlanningScene reset failed.", __PRETTY_FUNCTION__);
 
-        ROS_ASSERT(a.parameters.size() == 4);
-        string location = a.parameters[0];
-        goal.putdown_object = a.parameters[1];
-        goal.static_object = a.parameters[2];
-        goal.arm = a.parameters[3];
-        return true;
+ActionExecutorPutdownObject::ActionExecutorPutdownObject()
+{
+	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
+	//psi_.reset(new symbolic_planning_utils::PlanningSceneService());
+
+    //placement_gen_.reset(new object_surface_placements::PlacementGeneratorSampling(20, 50));
+    placement_gen_.reset(new object_surface_placements::PlacementGeneratorDiscretization());
+
+    collision_method_ = object_surface_placements::CM_CONTOUR_CONTOUR;
+    z_above_table_ = 0.01;
+}
+
+ActionExecutorPutdownObject::~ActionExecutorPutdownObject()
+{
+}
+
+void ActionExecutorPutdownObject::initialize(const std::deque<std::string> & arguments)
+{
+	ROS_ASSERT(arguments.size() >= 1);
+	action_name_ = arguments[0];
+}
+
+bool ActionExecutorPutdownObject::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
+{
+	return a.name == action_name_;
+}
+
+bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
+{
+	ROS_ASSERT(a.parameters.size() == 4);
+	std::string movable_obj = a.parameters[0];
+	std::string arm 		= a.parameters[1];
+	std::string table 		= a.parameters[2];
+	std::string mani_loc 	= a.parameters[3];
+
+	moveit_msgs::CollisionObject surface_object;
+	if (!psi_->getObjectFromCollisionObjects(table, surface_object))
+	{
+		ROS_ERROR("ActionExecutorPutdownObject::%s: Could not find surface_object %s", __func__, table.c_str());
+		return false;
+	}
+
+	moveit_msgs::AttachedCollisionObject attached_object;
+	if (!psi_->getAttachedObjectFromAttachedCollisionObjects(movable_obj, attached_object))
+	{
+		ROS_ERROR("ActionExecutorPutdownObject::%s: Could not find attached_object %s", __func__, movable_obj.c_str());
+		return false;
+	}
+
+    std::vector<moveit_msgs::CollisionObject> other_objects;
+    forEach(const moveit_msgs::CollisionObject & co, psi_->getCollisionObjects()) {
+        if(co.id != table)
+            other_objects.push_back(co);
     }
 
-    void ActionExecutorPutdownObject::updateState(const actionlib::SimpleClientGoalState & actionReturnState,
-            const tidyup_msgs::PlaceObjectResult & result,
-            const DurativeAction & a, SymbolicState & current)
+	std::string eef_name;
+	moveit::planning_interface::MoveGroup* arm_group;
+	if (StringUtil::startsWith(arm, "left_"))
+	{
+		eef_name = "left_gripper";
+		arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+	}
+	else if (StringUtil::startsWith(arm, "right_"))
+	{
+		eef_name = "right_gripper";
+		arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+	}
+	else
+	{
+		ROS_ERROR("ActionExecutorPickupObject::%s: No arm group could be specified.", __func__);
+		return false;
+	}
+	arm_group->getCurrentState();
+
+    std::vector<moveit_msgs::PlaceLocation> failed;
+    std::vector<moveit_msgs::PlaceLocation> locs =
+    		placement_gen_->generatePlacements(eef_name, attached_object.object, surface_object, other_objects,
+            collision_method_, z_above_table_, Eigen::Affine3d::Identity(), true, &failed);
+
+    if (locs.size() == 0)
     {
-        ROS_INFO("PutdownObject returned result");
-        ROS_ASSERT(a.parameters.size() == 4);
-        string location = a.parameters[0];
-        string object = a.parameters[1];
-        string static_object = a.parameters[2];
-        string arm = a.parameters[3];
-        if(actionReturnState == actionlib::SimpleClientGoalState::SUCCEEDED) {
-            ROS_INFO("PutdownObject succeeded.");
-            current.setBooleanPredicate("grasped", object + " " + arm, false);
-            current.setBooleanPredicate("on", object + " " + static_object, true);
-            current.setBooleanPredicate("grasp-impossible", object + " " + location + " right_arm", false);
-            current.setBooleanPredicate("grasp-impossible", object + " " + location + " left_arm", false);
-            current.setBooleanPredicate("searched", location, false);
-            current.setNumericalFluent("x", object, result.putdown_pose.pose.position.x);
-            current.setNumericalFluent("y", object, result.putdown_pose.pose.position.y);
-            current.setNumericalFluent("z", object, result.putdown_pose.pose.position.z);
-            current.setNumericalFluent("qx", object, result.putdown_pose.pose.orientation.x);
-            current.setNumericalFluent("qy", object, result.putdown_pose.pose.orientation.y);
-            current.setNumericalFluent("qz", object, result.putdown_pose.pose.orientation.z);
-            current.setNumericalFluent("qw", object, result.putdown_pose.pose.orientation.w);
-            current.setNumericalFluent("timestamp", object, result.putdown_pose.header.stamp.sec);
-            current.setObjectFluent("frame-id", object, result.putdown_pose.header.frame_id);
-        }
-        current.setObjectFluent("arm-state", arm, "arm_unknown");
-        current.setBooleanPredicate("recent-detected-objects", location, false);
+    	ROS_ERROR("ActionExecutorPutdownObject::%s: Could not determine any place location.", __func__);
+    	return false;
     }
+
+    // arm_group->setPlannerId("RRTConnectkConfigDefault");
+	arm_group->setSupportSurfaceName(table);
+
+	moveit::planning_interface::MoveItErrorCode error_code;
+	error_code = arm_group->place(attached_object.object.id, locs);
+	ROS_INFO_STREAM("ActionExecutorPutdownObject::" << __func__ <<": Place object " << attached_object.object.id << " action returned "
+			<< error_code);
+	return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
+}
+
+void ActionExecutorPutdownObject::cancelAction()
+{
+}
+
 };
 

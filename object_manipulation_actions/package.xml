@@ -25,6 +25,7 @@
   <build_depend>ork_to_planning_scene</build_depend>
   <build_depend>ork_to_planning_scene_msgs</build_depend>
   <build_depend>symbolic_planning_utils</build_depend>
+  <build_depend>object_surface_placements</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>
@@ -42,6 +43,7 @@
   <run_depend>ork_to_planning_scene</run_depend>
   <run_depend>ork_to_planning_scene_msgs</run_depend>
   <run_depend>symbolic_planning_utils</run_depend>
+  <run_depend>object_surface_placements</run_depend>
 
   <export>
       <continual_planning_executive plugin="${prefix}/object_manipulation_actions_plugins.xml" />

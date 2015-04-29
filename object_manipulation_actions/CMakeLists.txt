@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 	ork_to_planning_scene
 	ork_to_planning_scene_msgs
 	symbolic_planning_utils
+	object_surface_placements
 	#state_transformer
 	#pr2_controller_msgs
 )
