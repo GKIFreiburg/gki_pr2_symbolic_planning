@@ -8,6 +8,6 @@ namespace symbolic_planning_utils
 {
 	bool extractPoseStampedFromSymbolicState(const SymbolicState & state, const std::string & object,
         geometry_msgs::PoseStamped & pose);
-}
+};
 
 #endif
