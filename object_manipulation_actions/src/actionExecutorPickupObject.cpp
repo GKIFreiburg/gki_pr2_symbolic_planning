@@ -1,7 +1,11 @@
 #include "object_manipulation_actions/actionExecutorPickupObject.h"
+#include <pluginlib/class_list_macros.h>
+
 #include <tidyup_utils/stringutil.h>
 #include <symbolic_planning_utils/moveGroupInterface.h>
-#include <pluginlib/class_list_macros.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
+#include <symbolic_planning_utils/planning_scene_monitor.h>
+#include <symbolic_planning_utils/planning_scene_service.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit/move_group/capability_names.h>
 #include <moveit/move_group_interface/move_group.h>
@@ -28,6 +32,8 @@ ActionExecutorPickupObject::ActionExecutorPickupObject() :
 	actionGenerateGrasps_.waitForServer(); // will wait for infinite time
 
 	ROS_INFO("ActionExecutorInspectLocation::%s: Action client is ready", __func__);
+
+	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
 }
 
 ActionExecutorPickupObject::~ActionExecutorPickupObject()
@@ -63,24 +69,46 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 	}
 
 	moveit_msgs::CollisionObject collObj;
-	bool found = false;
-//	ROS_ASSERT(response.scene.world.collision_objects.size() > 0);
-	forEach(const moveit_msgs::CollisionObject & co, response.scene.world.collision_objects)
-	{
-		ROS_DEBUG("ActionExecutorPickupObject::%s: CollisionObject Name: %s", __func__, co.id.c_str());
-		if (movable_obj.compare(co.id) == 0)
-		{
-			found = true;
-			collObj = co;
-			break;
-		}
-	}
-	if (!found)
+	if (!psi_->getObjectFromCollisionObjects(movable_obj, collObj))
 	{
 		ROS_ERROR("ActionExecutorPickupObject::%s: No collision object found with name %s",
 				__func__, movable_obj.c_str());
 		return false;
 	}
+
+	moveit_msgs::CollisionObject tableCO;
+	forEach (const moveit_msgs::CollisionObject& co, psi_->getCollisionObjects())
+	{
+		if (!StringUtil::startsWith(co.id, table))
+			continue;
+
+		const char delim = '_';
+		std::vector<std::string> nameSplitted = StringUtil::split(co.id, &delim);
+
+	}
+
+
+
+
+
+//	bool found = false;
+////	ROS_ASSERT(response.scene.world.collision_objects.size() > 0);
+//	forEach(const moveit_msgs::CollisionObject & co, response.scene.world.collision_objects)
+//	{
+//		ROS_DEBUG("ActionExecutorPickupObject::%s: CollisionObject Name: %s", __func__, co.id.c_str());
+//		if (movable_obj.compare(co.id) == 0)
+//		{
+//			found = true;
+//			collObj = co;
+//			break;
+//		}
+//	}
+//	if (!found)
+//	{
+//		ROS_ERROR("ActionExecutorPickupObject::%s: No collision object found with name %s",
+//				__func__, movable_obj.c_str());
+//		return false;
+//	}
 
 	grasp_provider_msgs::GenerateGraspsGoal goal;
 	goal.collision_object = collObj;

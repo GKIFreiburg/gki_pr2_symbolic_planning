@@ -4,7 +4,9 @@
 #include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"
 
+#include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
+#include <symbolic_planning_utils/planning_scene_interface.h>
 #include <grasp_provider_msgs/GenerateGraspsAction.h>
 
 namespace object_manipulation_actions
@@ -30,6 +32,7 @@ namespace object_manipulation_actions
 		std::string action_name_;
 		ros::ServiceClient getPlanningSceneClient_;
 		actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction> actionGenerateGrasps_;
+		boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
     };
 
 };
