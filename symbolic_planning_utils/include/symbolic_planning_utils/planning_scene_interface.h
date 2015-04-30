@@ -17,7 +17,13 @@ namespace symbolic_planning_utils
 		virtual std::vector<moveit_msgs::AttachedCollisionObject> getAttachedCollisionObjects() = 0;
 
 		bool getObjectFromCollisionObjects(const std::string& objectName, moveit_msgs::CollisionObject& collisionObject);
+		// Change id of collision object and update it in the planning scene
+		void renameCollisionObject(const std::string& newName, moveit_msgs::CollisionObject& collisionObject);
+
 		bool getAttachedObjectFromAttachedCollisionObjects(const std::string& objectName, moveit_msgs::AttachedCollisionObject& attachedCollisionObject);
+
+		protected:
+		virtual void publishCollisionObject(const moveit_msgs::CollisionObject& collisionObject) = 0;
 
 	};
 };

@@ -32,6 +32,17 @@ bool PlanningSceneInterface::getObjectFromCollisionObjects(const std::string& ob
     return false;
 }
 
+void PlanningSceneInterface::renameCollisionObject(const std::string& newName, moveit_msgs::CollisionObject& collisionObject)
+{
+	// delete old co first
+	collisionObject.operation = collisionObject.REMOVE;
+	publishCollisionObject(collisionObject);
+	// change name and re-add co to planning scene
+	collisionObject.id = newName;
+	collisionObject.operation = collisionObject.ADD;
+	publishCollisionObject(collisionObject);
+}
+
 bool PlanningSceneInterface::getAttachedObjectFromAttachedCollisionObjects(const std::string& objectName,
 		moveit_msgs::AttachedCollisionObject& attachedCollisionObject)
 {

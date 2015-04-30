@@ -17,9 +17,13 @@ namespace symbolic_planning_utils
 
 		virtual std::vector<moveit_msgs::CollisionObject> getCollisionObjects();
 		virtual std::vector<moveit_msgs::AttachedCollisionObject> getAttachedCollisionObjects();
+		virtual void publishCollisionObject(const moveit_msgs::CollisionObject& collisionObject);
 
 		private:
 		boost::shared_ptr<planning_scene_monitor::PlanningSceneMonitor> psm_;
+		ros::Publisher pubPlanningScene_;
+
+		void getPlanningSceneMsg(moveit_msgs::PlanningScene& psMsg);
 	};
 
 };

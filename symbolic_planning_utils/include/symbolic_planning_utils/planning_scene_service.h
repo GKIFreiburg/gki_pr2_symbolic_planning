@@ -18,8 +18,12 @@ namespace symbolic_planning_utils
 		virtual std::vector<moveit_msgs::CollisionObject> getCollisionObjects();
 		virtual std::vector<moveit_msgs::AttachedCollisionObject> getAttachedCollisionObjects();
 
+		virtual void publishCollisionObject(const moveit_msgs::CollisionObject& collisionObject);
+
 		private:
 		ros::ServiceClient getPlanningSceneClient_;
+		ros::Publisher pubCollisionObject_;
+		ros::Publisher pubAttachedCollisionObject_;
 	};
 
 };

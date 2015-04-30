@@ -14,6 +14,9 @@ namespace symbolic_planning_utils
 				"service server to start.", __func__);
 		getPlanningSceneClient_ = nh.serviceClient<moveit_msgs::GetPlanningScene>(move_group::GET_PLANNING_SCENE_SERVICE_NAME);
 		getPlanningSceneClient_.waitForExistence();
+
+		pubCollisionObject_ = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 10);
+		pubAttachedCollisionObject_ = nh.advertise<moveit_msgs::AttachedCollisionObject>("attached_collision_object", 10);
 	}
 
 	PlanningSceneService::~PlanningSceneService()
@@ -44,6 +47,11 @@ namespace symbolic_planning_utils
 			return response.scene.robot_state.attached_collision_objects;
 		}
 		return response.scene.robot_state.attached_collision_objects;
+	}
+
+	void PlanningSceneService::publishCollisionObject(const moveit_msgs::CollisionObject& collisionObject)
+	{
+		pubCollisionObject_.publish(collisionObject);
 	}
 
 };
