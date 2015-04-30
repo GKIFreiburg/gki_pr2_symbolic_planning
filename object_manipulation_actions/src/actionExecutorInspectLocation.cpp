@@ -50,7 +50,7 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
     nhPriv.param("min_torso_vel", min_torso_vel_, 0.0001);
     nhPriv.param("stallThreshold", stallThreshold_, 5);
 
-    add_tables_ = false;
+    add_tables_ = true;
 	verify_planning_scene_update_ = true;
 
 	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
