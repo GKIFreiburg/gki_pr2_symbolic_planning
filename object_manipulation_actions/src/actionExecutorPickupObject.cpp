@@ -76,40 +76,6 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 		return false;
 	}
 
-	moveit_msgs::CollisionObject tableCO;
-	forEach (const moveit_msgs::CollisionObject& co, psi_->getCollisionObjects())
-	{
-		if (!StringUtil::startsWith(co.id, table))
-			continue;
-
-		const char delim = '_';
-		std::vector<std::string> nameSplitted = StringUtil::split(co.id, &delim);
-
-	}
-
-
-
-
-
-//	bool found = false;
-////	ROS_ASSERT(response.scene.world.collision_objects.size() > 0);
-//	forEach(const moveit_msgs::CollisionObject & co, response.scene.world.collision_objects)
-//	{
-//		ROS_DEBUG("ActionExecutorPickupObject::%s: CollisionObject Name: %s", __func__, co.id.c_str());
-//		if (movable_obj.compare(co.id) == 0)
-//		{
-//			found = true;
-//			collObj = co;
-//			break;
-//		}
-//	}
-//	if (!found)
-//	{
-//		ROS_ERROR("ActionExecutorPickupObject::%s: No collision object found with name %s",
-//				__func__, movable_obj.c_str());
-//		return false;
-//	}
-
 	grasp_provider_msgs::GenerateGraspsGoal goal;
 	goal.collision_object = collObj;
 	std::string eef_name;
