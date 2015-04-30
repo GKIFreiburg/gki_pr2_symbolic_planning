@@ -1,10 +1,13 @@
 #include "object_manipulation_actions/actionExecutorInspectLocation.h"
 #include <pluginlib/class_list_macros.h>
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
-#include <symbolic_planning_utils/extractPose.h>
 //#include <moveit/move_group_interface/move_group.h>
 #include <control_msgs/SingleJointPositionActionFeedback.h>
 #include <control_msgs/SingleJointPositionFeedback.h>
+#include <tidyup_utils/stringutil.h>
+#include <symbolic_planning_utils/extractPose.h>
+#include <symbolic_planning_utils/planning_scene_monitor.h>
+#include <symbolic_planning_utils/planning_scene_service.h>
 
 #include <set>
 #include <boost/foreach.hpp>
@@ -46,6 +49,12 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
     nhPriv.param("vdist_threshold", vdist_threshold_, 0.002);
     nhPriv.param("min_torso_vel", min_torso_vel_, 0.0001);
     nhPriv.param("stallThreshold", stallThreshold_, 5);
+
+    add_tables_ = false;
+	verify_planning_scene_update_ = true;
+
+	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
+	//psi_.reset(new symbolic_planning_utils::PlanningSceneService());
 }
 
 ActionExecutorInspectLocation::~ActionExecutorInspectLocation()
@@ -62,8 +71,6 @@ void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & a
 		predicate_names_.push_back(arguments[i]);
 	}
 
-	add_tables_ = false;
-	verify_planning_scene_update_ = true;
 }
 
 bool ActionExecutorInspectLocation::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -85,14 +92,16 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		return false;
 	}
 
-	if (!executeLiftTorso(tablePose))
-		return false;
+//	if (!executeLiftTorso(tablePose))
+//		return false;
 
 	if (!executePointHead(tablePose))
 		return false;
 
 	if (!executeUpdatePlanningSceneFromORK(currentState, table, mani_loc))
 		return false;
+
+	renameTableCollisionObject(table);
 
 	return true;
 }
@@ -268,7 +277,7 @@ bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseSt
 }
 
 bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicState& currentState,
-		const std::string tableName, const std::string manipulationLocation)
+		const std::string& tableName, const std::string& manipulationLocation)
 {
 	// execute action ork-to-planning-scene
 	ROS_INFO("ActionExecutorInspectLocation::%s: Sending UpdatePlanningSceneFromORK request.", __func__);
@@ -313,6 +322,22 @@ bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicSt
 		}
 	}
 	return true;
+}
+
+void ActionExecutorInspectLocation::renameTableCollisionObject(const std::string& tableName)
+{
+	ROS_WARN("ActionExecutorInspectLocation::%s: ok", __func__);
+	moveit_msgs::CollisionObject tableCO;
+	forEach (const moveit_msgs::CollisionObject& co, psi_->getCollisionObjects())
+	{
+		ROS_WARN("ActionExecutorInspectLocation::%s: object id = %s, looking for string %s", __func__, co.id.c_str(), tableName.c_str());
+		if (StringUtil::startsWith(co.id, tableName))
+		{
+			ROS_WARN("ActionExecutorInspectLocation::%s: FOUND OBJECT WITH ID %s", __func__, co.id.c_str());
+			tableCO = co;
+			psi_->renameCollisionObject(tableName, tableCO);
+		}
+	}
 }
 
 }; // namespace

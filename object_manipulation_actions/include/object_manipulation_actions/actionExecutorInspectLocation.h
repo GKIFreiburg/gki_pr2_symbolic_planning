@@ -8,6 +8,7 @@
 #include <control_msgs/PointHeadAction.h>
 #include <control_msgs/SingleJointPositionAction.h>
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
+#include <symbolic_planning_utils/planning_scene_interface.h>
 
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -48,6 +49,7 @@ namespace object_manipulation_actions
         actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction> actionLiftTorso_;
         actionlib::SimpleActionClient<control_msgs::PointHeadAction> actionPointHead_;
         actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction> actionOrkToPs_;
+        boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
 
         // Parameters
         // UpdatePlanningSceneFromOrk-Parameters
@@ -69,7 +71,9 @@ namespace object_manipulation_actions
         bool executePointHead(const geometry_msgs::PoseStamped tablePose);
         // Action for object dectection
         bool executeUpdatePlanningSceneFromORK(SymbolicState& currentState,
-        		const std::string tableName, const std::string manipulationLocation);
+        		const std::string& tableName, const std::string& manipulationLocation);
+
+        void renameTableCollisionObject(const std::string& tableName);
 
     };
 
