@@ -1,5 +1,6 @@
 #include "object_manipulation_actions/actionExecutorPutdownObject.h"
 #include <pluginlib/class_list_macros.h>
+
 #include <tidyup_utils/stringutil.h>
 #include <symbolic_planning_utils/moveGroupInterface.h>
 #include <symbolic_planning_utils/planning_scene_monitor.h>
@@ -102,11 +103,20 @@ bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, Symb
     		placement_gen_->generatePlacements(eef_name, attached_object.object, surface_object, other_objects,
             collision_method_, z_above_table_, Eigen::Affine3d::Identity(), true, &failed);
 
+    ROS_WARN_STREAM("Number of failed place locations: " << failed.size());
+
+    ROS_WARN_STREAM("eef_name: " << eef_name);
+    ROS_WARN_STREAM("attached object: " << attached_object.object);
+    ROS_WARN_STREAM("surface_object: " << surface_object);
+    ROS_WARN_STREAM("collision_method:" << collision_method_);
+    ROS_WARN_STREAM("z_above_table: " << z_above_table_);
+
     if (locs.size() == 0)
     {
     	ROS_ERROR("ActionExecutorPutdownObject::%s: Could not determine any place location.", __func__);
     	return false;
     }
+
 
     // arm_group->setPlannerId("RRTConnectkConfigDefault");
 	arm_group->setSupportSurfaceName(table);
