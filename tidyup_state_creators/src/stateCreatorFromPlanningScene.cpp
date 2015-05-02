@@ -6,6 +6,7 @@
 #include <moveit/move_group/capability_names.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit_msgs/PlanningScene.h>
+#include <tf/transform_listener.h>
 
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorFromPlanningScene, continual_planning_executive::StateCreator)
 
@@ -239,35 +240,72 @@ namespace tidyup_state_creators
     		const std::vector<moveit_msgs::CollisionObject>& allCos,
     		const moveit_msgs::CollisionObject& co)
     {
-        string closest_table = "table";
+        string closest_table = "closest-table";
         double closest_distance = 2.0;
         forEach(const moveit_msgs::CollisionObject& table, allCos)
         {
         	// if collisionObject table is really a table (was added in initializedTables())
             if (tables_.find(table.id) != tables_.end())
             {
-                geometry_msgs::PoseStamped tablePoseStamped;
-                if (!extractPoseStampedFromCollisionObject(table, tablePoseStamped))
+            	ROS_DEBUG("StateCreatorFromPlanningScene::%s: CO Name: %s was found in tables_ and object name is: %s",
+            			__func__, table.id.c_str(), co.id.c_str());
+                geometry_msgs::PoseStamped table_pose_stamped;
+                if (!extractPoseStampedFromCollisionObject(table, table_pose_stamped))
                 {
                 	ROS_ERROR("StateCreatorFromPlanningScene::%s: table:%s does not have a pose!", __func__, table.id.c_str());
                 	return;
                 }
-                const geometry_msgs::Point& origin = tablePoseStamped.pose.position;
 
                 // get the point of co
-                geometry_msgs::PoseStamped coPoseStamped;
-                if (!extractPoseStampedFromCollisionObject(co, coPoseStamped))
+                geometry_msgs::PoseStamped co_pose_stamped;
+                if (!extractPoseStampedFromCollisionObject(co, co_pose_stamped))
                 {
                 	ROS_ERROR("StateCreatorFromPlanningScene::%s: object:%s does not have a pose!", __func__, co.id.c_str());
                 	return;
                 }
-                const geometry_msgs::Point& coPoint = coPoseStamped.pose.position;
 
-                // co is beneath table
-                if (origin.z > coPoint.z)
+                // using only positions of table and collision object
+                geometry_msgs::Point table_origin;
+                geometry_msgs::Point co_origin;
+
+                // verify that poses are in same frame
+                if (table_pose_stamped.header.frame_id != co.header.frame_id)
+                {
+                	ROS_WARN("StateCreatorFromPlanningScene::%s: table pose in frame: %s and object pose in frame: %s",
+                			__func__, table_pose_stamped.header.frame_id.c_str(), co.header.frame_id.c_str());
+
+                	// transform object pose in table frame
+                    geometry_msgs::PoseStamped co_pose_transformed;
+                    tf::TransformListener tf;
+                    try {
+                        tf.waitForTransform(table_pose_stamped.header.frame_id, co_pose_stamped.header.frame_id,
+                        		co_pose_stamped.header.stamp,
+                                ros::Duration(0.5));
+                        tf.transformPose(table_pose_stamped.header.frame_id, co_pose_stamped, co_pose_transformed);
+                    } catch (tf::TransformException& ex) {
+                        ROS_ERROR("StateCreatorFromPlanningScene::%s: %s", __func__, ex.what());
+                    }
+                    table_origin = table_pose_stamped.pose.position;
+                    co_origin = co_pose_transformed.pose.position;
+                }
+                else
+                {
+                	table_origin = table_pose_stamped.pose.position;
+                	co_origin = co_pose_stamped.pose.position;
+                }
+
+                // Verify if object (co) is beneath table
+                // Since object poses are  projected on table surface therefore need a certain threshold
+                double threshold = 0.02;
+                if (table_origin.z - co_origin.z > threshold)
+                {
+                	ROS_WARN("StateCreatorFromPlanningScene::%s: collision object %s (h = %lf) is beneath table %s (h = %lf)"
+                			"with threshold %lf", __func__, co.id.c_str(), co_origin.z, table.id.c_str(), table_origin.z, threshold);
                     continue;
+                }
                 // simplified: find table with smallest distance to object
-                double distance = hypot(coPoint.x - origin.x, coPoint.y - origin.y);
+                double distance = hypot(co_origin.x - table_origin.x, co_origin.y - table_origin.y);
+                ROS_DEBUG("StateCreatorFromPlanningScene::%s: Distance between %s and %s is %lf", __func__, table.id.c_str(), co.id.c_str(), distance);
                 if (distance < closest_distance)
                 {
                     closest_distance = distance;
@@ -275,9 +313,9 @@ namespace tidyup_state_creators
                 }
             }
         }
-        if (closest_table != "table") // found a matching table
+        if (closest_table != "closest-table") // found a matching table
         {
-            ROS_DEBUG_STREAM("putting " << co.id << " on " << closest_table);
+            ROS_INFO_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": putting " << co.id << " on " << closest_table);
             Predicate pOn;
             pOn.name = "object-on";
             pOn.parameters.push_back(co.id);
@@ -288,31 +326,5 @@ namespace tidyup_state_creators
         	ROS_WARN("StateCreatorFromPlanningScene::%s: NO matching Table found for object: %s",
         			__func__, co.id.c_str());
     }
-
-//    std::pair<double, double> StateCreatorFromPlanningScene::distanceBetweenTwoPoses(const geometry_msgs::PoseStamped & posePS,
-//            const geometry_msgs::PoseStamped & poseState)
-//    {
-//        // OR poses might be in a sensor frame -> transform to PS frame first
-//        geometry_msgs::PoseStamped poseOR_transformed;
-//        try {
-//            tf_.waitForTransform(posePS.header.frame_id, poseState.header.frame_id, poseState.header.stamp,
-//                    ros::Duration(0.5));
-//            tf_.transformPose(posePS.header.frame_id, poseState, poseOR_transformed);
-//        } catch (tf::TransformException &ex) {
-//            ROS_ERROR("%s", ex.what());
-//        }
-//
-//		ROS_DEBUG_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": frame ObjPlanningScene: "
-//				<< posePS.header.frame_id << ": frame ObjSymbolicState: "
-//				<< poseState.header.frame_id);
-//        tf::Pose tfPS;
-//        tf::Pose tfState;
-//        tf::poseMsgToTF(posePS.pose, tfPS);
-//        tf::poseMsgToTF(poseState.pose, tfState);
-//        tf::Pose delta = tfPS.inverseTimes(tfState);
-//        return std::make_pair(hypot(delta.getOrigin().x(), delta.getOrigin().y()),
-//                fabs(delta.getOrigin().z()));   // usually we're interested in the 2d distance independently
-//    }
-
 };
 
