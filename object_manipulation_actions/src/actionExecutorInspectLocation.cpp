@@ -92,8 +92,8 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		return false;
 	}
 
-//	if (!executeLiftTorso(tablePose))
-//		return false;
+	if (!executeLiftTorso(tablePose))
+		return false;
 
 	if (!executePointHead(tablePose))
 		return false;
@@ -194,7 +194,7 @@ bool ActionExecutorInspectLocation::executeLiftTorso(const geometry_msgs::PoseSt
 
     setTorsoPosition();
 
-	ROS_INFO("ActionExecutorInspectLocation::%s: Sending ListTorso request.", __func__);
+	ROS_INFO("ActionExecutorInspectLocation::%s: Sending LiftTorso request.", __func__);
 	control_msgs::SingleJointPositionGoal liftTorsoGoal;
 	liftTorsoGoal.position = torsoPosition_ + vdist_head_to_table_ - distance;
 
@@ -226,7 +226,7 @@ bool ActionExecutorInspectLocation::executeLiftTorso(const geometry_msgs::PoseSt
 
 void ActionExecutorInspectLocation::setTorsoPosition()
 {
-	ROS_INFO("ActionExecutorInspectLocation::%s: Sending ListTorso request.", __func__);
+	ROS_INFO("ActionExecutorInspectLocation::%s: Sending LiftTorso request.", __func__);
 	control_msgs::SingleJointPositionGoal liftTorsoGoal;
 	liftTorsoGoal.position = 0.32;
 	setTorsoPosition_ = true;
