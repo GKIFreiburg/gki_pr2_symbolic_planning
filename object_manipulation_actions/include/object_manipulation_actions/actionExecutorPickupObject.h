@@ -9,6 +9,10 @@
 #include <symbolic_planning_utils/planning_scene_interface.h>
 #include <grasp_provider_msgs/GenerateGraspsAction.h>
 
+
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+
+
 namespace object_manipulation_actions
 {
     class ActionExecutorPickupObject : public continual_planning_executive::ActionExecutorInterface
@@ -33,6 +37,8 @@ namespace object_manipulation_actions
 		ros::ServiceClient getPlanningSceneClient_;
 		actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction> actionGenerateGrasps_;
 		boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
+
+		boost::shared_ptr<planning_scene_monitor::PlanningSceneMonitor> psm_;
     };
 
 };
