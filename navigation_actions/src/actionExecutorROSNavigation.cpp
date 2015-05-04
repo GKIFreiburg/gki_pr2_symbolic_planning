@@ -1,5 +1,4 @@
 #include "planner_navigation_actions/actionExecutorROSNavigation.h"
-#include "tidyup_utils/planning_scene_interface.h"
 #include <pluginlib/class_list_macros.h>
 
 //PLUGINLIB_DECLARE_CLASS(planner_navigation_actions, action_executor_ros_navigation,
@@ -53,10 +52,6 @@ namespace navigation_actions
     bool ActionExecutorROSNavigation::fillGoal(move_base_msgs::MoveBaseGoal & goal,
             const DurativeAction & a, const SymbolicState & current)
     {
-        if(!PlanningSceneInterface::instance()->resetPlanningScene())   // FIXME try anyways?
-            ROS_ERROR("ActionExecutorROSNavigation::fillGoal PlanningScene reset failed.");
-
-        // FIXME: don't get from state (very old), but the newest.
         // The frame_id should be a fixed frame anyways
         goal.target_pose.header.stamp = ros::Time::now();
 

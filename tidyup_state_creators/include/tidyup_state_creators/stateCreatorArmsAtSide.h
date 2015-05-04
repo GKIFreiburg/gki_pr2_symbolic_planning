@@ -30,6 +30,7 @@ namespace tidyup_state_creators
             string service_name;
             string predicate_name;
             string predicate_value;
+            string unknown_value;
     };
 
 };

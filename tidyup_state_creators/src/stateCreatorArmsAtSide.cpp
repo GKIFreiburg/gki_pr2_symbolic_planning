@@ -15,10 +15,11 @@ namespace tidyup_state_creators
     }
     void StateCreatorArmsAtSide::initialize(const std::deque<std::string> & arguments)
     {
-        ROS_ASSERT(arguments.size() == 3);
+        ROS_ASSERT(arguments.size() == 4);
         service_name = arguments[0];		// /tidyup/arms_at_side
         predicate_name = arguments[1];		// arm-state
         predicate_value = arguments[2]; 	// arm_at_side
+        unknown_value = arguments[3]; 	// arm_unknown;
         ros::NodeHandle nh;
         client = nh.serviceClient<tidyup_msgs::ArmsAtSide>(service_name);
         client.waitForExistence();
@@ -34,8 +35,12 @@ namespace tidyup_state_creators
         }
         if (srv.response.right_arm)
             state.setObjectFluent(predicate_name, "right_arm", predicate_value);
+        else
+            state.setObjectFluent(predicate_name, "right_arm", unknown_value);
         if (srv.response.left_arm)
             state.setObjectFluent(predicate_name, "left_arm", predicate_value);
+        else
+            state.setObjectFluent(predicate_name, "left_arm", unknown_value);
         return true;
     }
 };
