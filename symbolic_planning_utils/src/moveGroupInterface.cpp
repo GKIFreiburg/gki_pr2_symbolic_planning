@@ -3,7 +3,7 @@
 namespace symbolic_planning_utils
 {
 //MoveGroupInterface* MoveGroupInterface::instance = new MoveGroupInterface();
-MoveGroupInterface* MoveGroupInterface::instance = NULL;
+MoveGroupInterface* MoveGroupInterface::instance_ = NULL;
 
 MoveGroupInterface::MoveGroupInterface()
 {
@@ -15,14 +15,14 @@ MoveGroupInterface::MoveGroupInterface()
 
 MoveGroupInterface::MoveGroupInterface(const MoveGroupInterface* mgi)
 {
-	MoveGroupInterface::instance = mgi->instance;
+	MoveGroupInterface::instance_ = mgi->instance_;
 }
 
 MoveGroupInterface* MoveGroupInterface::operator= (const MoveGroupInterface* mgi)
 {
 	if (this != mgi)
 	{
-		MoveGroupInterface::instance = mgi->instance;
+		MoveGroupInterface::instance_ = mgi->instance_;
 	}
 	return this;
 }
@@ -33,9 +33,9 @@ MoveGroupInterface::~MoveGroupInterface()
 
 MoveGroupInterface* MoveGroupInterface::getInstance()
 {
-	if (MoveGroupInterface::instance == NULL)
-		MoveGroupInterface::instance = new MoveGroupInterface();
-    return MoveGroupInterface::instance;
+	if (MoveGroupInterface::instance_ == NULL)
+		MoveGroupInterface::instance_ = new MoveGroupInterface();
+    return MoveGroupInterface::instance_;
 }
 
 moveit::planning_interface::MoveGroup* MoveGroupInterface::getRightArmGroup()

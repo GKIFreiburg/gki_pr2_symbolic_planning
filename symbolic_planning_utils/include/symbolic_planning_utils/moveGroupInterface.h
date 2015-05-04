@@ -10,7 +10,7 @@ namespace symbolic_planning_utils
 	class MoveGroupInterface
 	{
 	private:
-		static MoveGroupInterface* instance;
+		static MoveGroupInterface* instance_;
 		moveit::planning_interface::MoveGroup* right_arm_group_;
 		moveit::planning_interface::MoveGroup* left_arm_group_;
 		moveit::planning_interface::MoveGroup* arms_group_;
