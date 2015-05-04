@@ -9,12 +9,6 @@
 #include <ros/ros.h>
 // MoveIt!
 #include <moveit/move_group_interface/move_group.h>
-//#include <moveit/robot_model_loader/robot_model_loader.h>
-//#include <moveit/planning_pipeline/planning_pipeline.h>
-//#include <moveit/planning_interface/planning_interface.h>
-//#include <moveit/kinematic_constraints/utils.h>
-//#include <moveit_msgs/DisplayTrajectory.h>
-//#include <moveit_msgs/PlanningScene.h>
 
 PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToSide, continual_planning_executive::ActionExecutorInterface)
 
