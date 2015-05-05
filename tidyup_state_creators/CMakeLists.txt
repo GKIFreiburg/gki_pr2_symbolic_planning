@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   tidyup_msgs
   geometry_msgs
-  #state_transformer
 )
 
 catkin_package(
@@ -39,8 +38,8 @@ add_library(tidyup_state_creators
     src/goalCreatorLoadTablesIntoPlanningScene.cpp
     src/goalCreatorFromPlanningScene.cpp
     src/goalCreatorMoveObjectsToTable.cpp
-    src/robotPoseVisualization.cpp
-    src/StateAccessException.cpp)
+    src/StateAccessException.cpp
+)
     
 target_link_libraries(tidyup_state_creators
   ${catkin_LIBRARIES}
