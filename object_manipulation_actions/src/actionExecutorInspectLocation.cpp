@@ -309,6 +309,17 @@ bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicSt
 		ROS_DEBUG("ActionExecutorInspectLocation::%s: ORK to Planning Scene Action finished: %s", __func__, state.toString().c_str());
 		if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
+	    	// delete all movable objects from symbolic state, and re-add the important objects later (from PS)
+			const multimap<string, string> objects = currentState.getTypedObjects();
+			std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators =
+			        objects.equal_range("manipulation_location");
+			for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
+			{
+				// also predicates with the objects are removed
+				ROS_INFO("ActionExecutorInspectLocation::%s: %s, %s, false", __func__, predicate_names_[0].c_str(), it->second.c_str());
+				currentState.setBooleanPredicate(predicate_names_[0], it->second, false);
+			}
+
 			ROS_INFO("Inspect location succeeded.");
 			for_each(const string& predicate, predicate_names_)
 			{
@@ -326,14 +337,12 @@ bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicSt
 
 void ActionExecutorInspectLocation::renameTableCollisionObject(const std::string& tableName)
 {
-	ROS_WARN("ActionExecutorInspectLocation::%s: ok", __func__);
 	moveit_msgs::CollisionObject tableCO;
 	forEach (const moveit_msgs::CollisionObject& co, psi_->getCollisionObjects())
 	{
-		ROS_WARN("ActionExecutorInspectLocation::%s: object id = %s, looking for string %s", __func__, co.id.c_str(), tableName.c_str());
 		if (StringUtil::startsWith(co.id, tableName))
 		{
-			ROS_WARN("ActionExecutorInspectLocation::%s: FOUND OBJECT WITH ID %s", __func__, co.id.c_str());
+			ROS_INFO("ActionExecutorInspectLocation::%s: Found object with id: %s, renaming to: %s", __func__, co.id.c_str(), tableName.c_str());
 			tableCO = co;
 			psi_->renameCollisionObject(tableName, tableCO);
 		}
