@@ -103,13 +103,10 @@ bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, Symb
     		placement_gen_->generatePlacements(eef_name, attached_object.object, surface_object, other_objects,
             collision_method_, z_above_table_, Eigen::Affine3d::Identity(), true, &failed);
 
-    ROS_WARN_STREAM("Number of failed place locations: " << failed.size());
-
-    ROS_WARN_STREAM("eef_name: " << eef_name);
-    ROS_WARN_STREAM("attached object: " << attached_object.object);
-    ROS_WARN_STREAM("surface_object: " << surface_object);
-    ROS_WARN_STREAM("collision_method:" << collision_method_);
-    ROS_WARN_STREAM("z_above_table: " << z_above_table_);
+//    ROS_WARN_STREAM("Number of failed place locations: " << failed.size());
+//    ROS_WARN_STREAM("eef_name: " << eef_name);
+//    ROS_WARN_STREAM("collision_method:" << collision_method_);
+//    ROS_WARN_STREAM("z_above_table: " << z_above_table_);
 
     if (locs.size() == 0)
     {
