@@ -21,8 +21,8 @@
   <class name="tidyup_state_creators/state_creator_object_reachable" type="tidyup_state_creators::StateCreatorObjectReachable" base_class_type="continual_planning_executive::StateCreator">
     <description>Estimates whether objects are in reach of the robot, when standing at specific locations.</description>
   </class>
-  <class name="tidyup_state_creators/state_creator_arms_at_side" type="tidyup_state_creators::StateCreatorArmsAtSide" base_class_type="continual_planning_executive::StateCreator">
-    <description>Sets arm-at-side for both arms.</description>
+  <class name="tidyup_state_creators/state_creator_arms_status" type="tidyup_state_creators::StateCreatorArmsStatus" base_class_type="continual_planning_executive::StateCreator">
+    <description>Asks status for both arms.</description>
   </class>
   <class name="tidyup_state_creators/state_creator_from_planning_scene" type="tidyup_state_creators::StateCreatorFromPlanningScene" base_class_type="continual_planning_executive::StateCreator">
     <description>Asks the environment server for known collision objects and adds them to the current state.</description>

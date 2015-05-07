@@ -1,4 +1,4 @@
-#include "object_manipulation_actions/actionExecutorArmToSide.h"
+#include "object_manipulation_actions/actionExecutorArmToFront.h"
 #include <pluginlib/class_list_macros.h>
 #include <tidyup_utils/stringutil.h>
 #include <symbolic_planning_utils/moveGroupInterface.h>
@@ -8,23 +8,23 @@
 // MoveIt!
 #include <moveit/move_group_interface/move_group.h>
 
-PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToSide, continual_planning_executive::ActionExecutorInterface)
+PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToFront, continual_planning_executive::ActionExecutorInterface)
 
 namespace object_manipulation_actions
 {
-    const std::string ActionExecutorArmToSide::ARM_TO_SIDE  = "_to_side";
+    const std::string ActionExecutorArmToFront::ARM_TO_FRONT  = "_to_front";
 
-	void ActionExecutorArmToSide::initialize(const std::deque<std::string> & arguments)
+	void ActionExecutorArmToFront::initialize(const std::deque<std::string> & arguments)
 	{
-		actionName_ = arguments[0]; 	// arm-to-side
+		actionName_ = arguments[0]; 	// arm-to-front
 	}
 
-	bool ActionExecutorArmToSide::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
+	bool ActionExecutorArmToFront::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
 	{
 	    return a.name == actionName_;
 	}
 
-	bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
+	bool ActionExecutorArmToFront::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 	{
 		ROS_ASSERT(a.parameters.size() == 1);
 		moveit::planning_interface::MoveItErrorCode error_code;
@@ -40,24 +40,24 @@ namespace object_manipulation_actions
 		}
 		else
 		{
-			ROS_ERROR("ActionExecutorArmToSide::%s: No arm group could be specified.", __func__);
+			ROS_ERROR("ActionExecutorArmToFront::%s: No arm group could be specified.", __func__);
 			return false;
 		}
-		error_code = armToSide(arm_group_);
+		error_code = armToFront(arm_group_);
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	}
 
-	void ActionExecutorArmToSide::cancelAction()
+	void ActionExecutorArmToFront::cancelAction()
 	{
 
 	}
 
-	moveit::planning_interface::MoveItErrorCode ActionExecutorArmToSide::armToSide(moveit::planning_interface::MoveGroup* group)
+	moveit::planning_interface::MoveItErrorCode ActionExecutorArmToFront::armToFront(moveit::planning_interface::MoveGroup* group)
 	{
-		std::string target = group->getName() + ARM_TO_SIDE;
+		std::string target = group->getName() + ARM_TO_FRONT;
 		if (!group->setNamedTarget(target))
 		{
-			ROS_ERROR("ActionExecutorArmToSide::%s: Could not find named target: %s", __func__, target.c_str());
+			ROS_ERROR("ActionExecutorArmToFront::%s: Could not find named target: %s", __func__, target.c_str());
 			return  moveit::planning_interface::MoveItErrorCode::FAILURE;
 		}
 
@@ -67,21 +67,21 @@ namespace object_manipulation_actions
 		// Note that we are just planning, not asking move_group
 		// to actually move the robot.
 		moveit::planning_interface::MoveGroup::Plan my_plan;
-		ROS_DEBUG("ActionExecutorArmToSide::%s: planning arm motion...", __func__);
+		ROS_DEBUG("ActionExecutorArmToFront::%s: planning arm motion...", __func__);
 
         error_code = group->plan(my_plan);
 		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
 		{
-			ROS_WARN("ActionExecutorArmToSide::%s: Ups, something with arm motion planning went wrong.", __func__);
+			ROS_WARN("ActionExecutorArmToFront::%s: Ups, something with arm motion planning went wrong.", __func__);
 			return error_code;
 		}
 
 		// planning was successful
-		ROS_DEBUG("ActionExecutorArmToSide::%s: executing arm motion...", __func__);
+		ROS_DEBUG("ActionExecutorArmToFront::%s: executing arm motion...", __func__);
 		error_code = group->execute(my_plan);
 		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
 		{
-			ROS_WARN("ActionExecutorArmToSide::%s: Ups, something with arm motion execution went wrong.", __func__);
+			ROS_WARN("ActionExecutorArmToFront::%s: Ups, something with arm motion execution went wrong.", __func__);
 			return error_code;
 		}
 

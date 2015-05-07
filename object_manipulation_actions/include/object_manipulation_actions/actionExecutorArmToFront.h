@@ -1,5 +1,5 @@
-#ifndef ACTION_EXECUTOR_ARM_TO_SIDE_H
-#define ACTION_EXECUTOR_ARM_TO_SIDE_H
+#ifndef ACTION_EXECUTOR_ARM_TO_FRONT_H
+#define ACTION_EXECUTOR_ARM_TO_FRONT_H
 
 #include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"
@@ -7,10 +7,10 @@
 
 namespace object_manipulation_actions
 {
-    class ActionExecutorArmToSide : public continual_planning_executive::ActionExecutorInterface
+    class ActionExecutorArmToFront : public continual_planning_executive::ActionExecutorInterface
     {
         public:
-			static const std::string ARM_TO_SIDE;
+			static const std::string ARM_TO_FRONT;
 
 			virtual void initialize(const std::deque<std::string> & arguments);
 
@@ -24,7 +24,7 @@ namespace object_manipulation_actions
 
 			std::string actionName_;
 
-    		moveit::planning_interface::MoveItErrorCode armToSide(moveit::planning_interface::MoveGroup* group);
+    		moveit::planning_interface::MoveItErrorCode armToFront(moveit::planning_interface::MoveGroup* group);
 
     };
 

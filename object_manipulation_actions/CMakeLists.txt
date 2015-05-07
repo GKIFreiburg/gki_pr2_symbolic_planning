@@ -22,8 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 	ork_to_planning_scene_msgs
 	symbolic_planning_utils
 	object_surface_placements
-	#state_transformer
-	#pr2_controller_msgs
 )
 
 #set the default path for built executables to the "bin" directory
@@ -43,11 +41,13 @@ include_directories(
 
 add_library(object_manipulation_actions
     src/actionExecutorArmToSide.cpp
+    src/actionExecutorArmToFront.cpp
     src/actionExecutorArmToInspectObject.cpp
     src/actionExecutorArmToCarry.cpp
     src/actionExecutorPickupObject.cpp
     src/actionExecutorPutdownObject.cpp
-    src/actionExecutorInspectLocation.cpp)
+    src/actionExecutorInspectLocation.cpp
+)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

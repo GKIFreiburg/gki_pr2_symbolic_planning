@@ -29,7 +29,7 @@ include_directories(
 )
  
 add_library(tidyup_state_creators
-    src/stateCreatorArmsAtSide.cpp
+    src/stateCreatorArmsStatus.cpp
     src/stateCreatorObjectReachable.cpp
     src/stateCreatorRobotPose.cpp
     src/stateCreatorFromPlanningScene.cpp
