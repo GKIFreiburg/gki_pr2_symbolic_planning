@@ -26,6 +26,9 @@ namespace object_manipulation_actions
 
 	bool ActionExecutorArmToFront::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 	{
+//		DEFAULT_RIGHT_ARM_INSPECT_POSE = PoseStamped(Header(frame_id='/head_mount_kinect_rgb_link'),Pose(Point(0.48, -0.2, 0.0), Quaternion(-0.037, -0.031, 0.609, 0.792)))
+//		DEFAULT_LEFT_ARM_INSPECT_POSE = PoseStamped(Header(frame_id='/head_mount_kinect_rgb_link'),Pose(Point(0.48, 0.2, 0.0), Quaternion(-0.073, -0.047, -0.669, 0.738)))
+
 		ROS_ASSERT(a.parameters.size() == 1);
 		moveit::planning_interface::MoveItErrorCode error_code;
 		moveit::planning_interface::MoveGroup* arm_group_;

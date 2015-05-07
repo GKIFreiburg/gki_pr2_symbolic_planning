@@ -125,7 +125,7 @@ void navstack_init(int argc, char** argv)
     ROS_INFO("Goal Tolerance is: %f.", g_GoalTolerance);
 
     // init service query for make plan
-    string service_name = "move_base/make_plan";
+    string service_name = "move_base_node/make_plan";
     g_NodeHandle = new ros::NodeHandle();
 //TODO:
 //    while(!ros::service::waitForService(service_name, ros::Duration(3.0))) {

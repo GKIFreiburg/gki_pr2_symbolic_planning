@@ -1,7 +1,7 @@
 #ifndef NAVSTACK_MODULE_H
 #define NAVSTACK_MODULE_H
 
-#include "tfd_modules/module_api/pddlModuleTypes.h"
+#include <tfd_modules/module_api/pddlModuleTypes.h>
 #include "planner_modules_pr2/module_param_cache.h"
 #include <map>
 #include <string>
@@ -9,6 +9,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/GetPlan.h>
 
+using std::string;
 /**
  * Simple module implementation for ROS navigation stack.
  *
