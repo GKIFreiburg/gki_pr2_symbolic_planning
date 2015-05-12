@@ -21,8 +21,8 @@
   <class name="object_manipulation_actions/action_executor_arm_to_front" type="object_manipulation_actions::ActionExecutorArmToFront" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>Action executor for moving an arm to the front</description>
   </class>
-  <class name="object_manipulation_actions/action_executor_arm_to_inspect_object" type="object_manipulation_actions::ActionExecutorArmToInspectObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for moving an arm with an object in front of the camera.</description>
+  <class name="object_manipulation_actions/action_executor_inspect_object" type="object_manipulation_actions::ActionExecutorInspectObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for analyzing an object in front of the camera.</description>
   </class>
   <class name="object_manipulation_actions/action_executor_arm_to_carry" type="object_manipulation_actions::ActionExecutorArmToCarry" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>An action executor that moves an arm to a carry position.</description>

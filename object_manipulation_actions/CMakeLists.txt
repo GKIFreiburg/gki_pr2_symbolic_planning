@@ -47,6 +47,7 @@ add_library(object_manipulation_actions
     src/actionExecutorPickupObject.cpp
     src/actionExecutorPutdownObject.cpp
     src/actionExecutorInspectLocation.cpp
+    src/actionExecutorInspectObject.cpp
 )
 
 ## Add cmake target dependencies of the executable/library
