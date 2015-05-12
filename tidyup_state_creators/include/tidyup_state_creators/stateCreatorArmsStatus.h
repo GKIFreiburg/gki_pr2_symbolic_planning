@@ -4,6 +4,7 @@
 #include "continual_planning_executive/stateCreator.h"
 #include <ros/ros.h>
 #include <moveit/move_group_interface/move_group.h>
+#include <tf/transform_listener.h>
 
 namespace tidyup_state_creators
 {
@@ -12,9 +13,6 @@ namespace tidyup_state_creators
     class StateCreatorArmsStatus : public continual_planning_executive::StateCreator
     {
         public:
-			static const std::string ARM_TO_SIDE;
-			static const std::string ARM_TO_FRONT;
-
             StateCreatorArmsStatus();
             ~StateCreatorArmsStatus();
 
@@ -33,15 +31,26 @@ namespace tidyup_state_creators
             string predicate_at_side_;
             string predicate_at_front_;
             string predicate_unkown_;
+            string named_target_right_arm_to_side_;
+            string named_target_left_arm_to_side_;
+            string named_target_right_arm_to_front_;
+            string named_target_left_arm_to_front_;
 
             moveit::planning_interface::MoveGroup* right_arm_;
             moveit::planning_interface::MoveGroup* left_arm_;
+
+    	    tf::TransformListener tf_;
 
             // Check if arm group satisfies a named target position which is defined in the pr2.srdf
             bool checkIfArmInTargetPosition(moveit::planning_interface::MoveGroup* group, const std::string& target);
 
             // Check all named target position for arm group and update arm-state in symbolic state
             void setArmStatusInSymbolicState(SymbolicState& state, moveit::planning_interface::MoveGroup* group);
+
+            void normalizeJointValue(double& jointValue);
+
+
+
     };
 
 };

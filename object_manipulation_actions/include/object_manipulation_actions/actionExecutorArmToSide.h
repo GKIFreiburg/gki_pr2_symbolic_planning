@@ -23,8 +23,11 @@ namespace object_manipulation_actions
         private:
 
 			std::string actionName_;
+			std::string named_target_right_arm_to_side_;
+			std::string named_target_left_arm_to_side_;
 
-    		moveit::planning_interface::MoveItErrorCode armToSide(moveit::planning_interface::MoveGroup* group);
+    		moveit::planning_interface::MoveItErrorCode executeArmToSide(
+    				moveit::planning_interface::MoveGroup* group, const std::string& target);
 
     };
 

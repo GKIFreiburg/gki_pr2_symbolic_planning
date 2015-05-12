@@ -10,7 +10,6 @@ namespace object_manipulation_actions
     class ActionExecutorArmToFront : public continual_planning_executive::ActionExecutorInterface
     {
         public:
-			static const std::string ARM_TO_FRONT;
 
 			virtual void initialize(const std::deque<std::string> & arguments);
 
@@ -23,8 +22,14 @@ namespace object_manipulation_actions
         private:
 
 			std::string actionName_;
+			std::string rosparam_right_arm_to_front_;
+			std::string rosparam_left_arm_to_front_;
+			ros::Publisher pub_pose_;
 
-    		moveit::planning_interface::MoveItErrorCode armToFront(moveit::planning_interface::MoveGroup* group);
+    		moveit::planning_interface::MoveItErrorCode executeArmToFront(
+    				moveit::planning_interface::MoveGroup* group,
+    				const geometry_msgs::PoseStamped& pose,
+    				const std::string target);
 
     };
 

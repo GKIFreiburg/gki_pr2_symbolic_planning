@@ -12,11 +12,13 @@ PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorArmToSide, con
 
 namespace object_manipulation_actions
 {
-    const std::string ActionExecutorArmToSide::ARM_TO_SIDE  = "_to_side";
-
 	void ActionExecutorArmToSide::initialize(const std::deque<std::string> & arguments)
 	{
-		actionName_ = arguments[0]; 	// arm-to-side
+		ROS_ASSERT(arguments.size() == 3);
+
+		actionName_ 					= arguments[0]; 	// arm-to-side
+		named_target_right_arm_to_side_ = arguments[1];		// right_arm_to_side
+		named_target_left_arm_to_side_  = arguments[2];		// left_arm_to_side
 	}
 
 	bool ActionExecutorArmToSide::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -27,23 +29,26 @@ namespace object_manipulation_actions
 	bool ActionExecutorArmToSide::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 	{
 		ROS_ASSERT(a.parameters.size() == 1);
+		moveit::planning_interface::MoveGroup* arm_group;
 		moveit::planning_interface::MoveItErrorCode error_code;
-		moveit::planning_interface::MoveGroup* arm_group_;
+		std::string target;
 
 		if (StringUtil::startsWith(a.parameters[0], "left_"))
 		{
-			arm_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+			target = named_target_left_arm_to_side_;
 		}
 		else if (StringUtil::startsWith(a.parameters[0], "right_"))
 		{
-			arm_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+			target = named_target_right_arm_to_side_;
 		}
 		else
 		{
 			ROS_ERROR("ActionExecutorArmToSide::%s: No arm group could be specified.", __func__);
 			return false;
 		}
-		error_code = armToSide(arm_group_);
+		error_code = executeArmToSide(arm_group, target);
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	}
 
@@ -52,9 +57,9 @@ namespace object_manipulation_actions
 
 	}
 
-	moveit::planning_interface::MoveItErrorCode ActionExecutorArmToSide::armToSide(moveit::planning_interface::MoveGroup* group)
+	moveit::planning_interface::MoveItErrorCode ActionExecutorArmToSide::executeArmToSide(
+			moveit::planning_interface::MoveGroup* group, const std::string& target)
 	{
-		std::string target = group->getName() + ARM_TO_SIDE;
 		if (!group->setNamedTarget(target))
 		{
 			ROS_ERROR("ActionExecutorArmToSide::%s: Could not find named target: %s", __func__, target.c_str());
