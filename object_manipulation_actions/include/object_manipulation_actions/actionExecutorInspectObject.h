@@ -27,6 +27,8 @@ namespace object_manipulation_actions
 		std::string action_name_;
 		std::string predicate_object_inspected_;
 
+		bool updateSymbolicState(SymbolicState& currentState, const std::string& object);
+
     };
 
 };

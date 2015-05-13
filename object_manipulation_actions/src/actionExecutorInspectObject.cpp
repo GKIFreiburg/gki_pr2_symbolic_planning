@@ -36,19 +36,27 @@ namespace object_manipulation_actions
 
 		// TODO: do useful stuff
 
+
+
+		// UGLY HACK IN STATECREATORFROMPLANNINGSCENE IN LINE 92
+		// state.setBooleanPredicate("object-inspected", object.id, true);
+		// BUT THERE THE UPDATE OF SYMBOLIC STATE WORKS
+
 		ROS_WARN("ActionExecutorInspectObject::%s: Setting (%s, %s, true)", __func__,
 				predicate_object_inspected_.c_str(), object.c_str());
 		// update symbolic state
 		currentState.setBooleanPredicate(predicate_object_inspected_, object, true);
+		currentState.setBooleanPredicate("object-inspected", object, true);
 
 		bool test = false;
 		Predicate pred;
 		pred.parameters.push_back(predicate_object_inspected_);
 		if (!currentState.hasBooleanPredicate(pred, &test))
+		{
 			ROS_ERROR("ActionExecutorInspectObject::%s: Could not find predicate %s", __func__,
 					predicate_object_inspected_.c_str());
-
-		return false;
+			return false;
+		}
 
 		if (test)
 			ROS_WARN("ActionExecutorInspectObject::%s: predicate was set successfully", __func__);

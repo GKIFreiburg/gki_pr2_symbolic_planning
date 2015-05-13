@@ -88,6 +88,8 @@ namespace tidyup_state_creators
                 ROS_DEBUG_STREAM("processing attached object " << object.id << " on right_arm.");
                 params[1] = "right_arm";
                 state.setBooleanPredicate("object-grasped", params, true);
+
+//                state.setBooleanPredicate("object-inspected", object.id, true);
             }
             else
             {
