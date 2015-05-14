@@ -9,7 +9,9 @@
 #include <control_msgs/SingleJointPositionAction.h>
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
 #include <symbolic_planning_utils/planning_scene_interface.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
 
+#include <moveit/move_group_interface/move_group.h>
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 
@@ -35,14 +37,17 @@ namespace object_manipulation_actions
         // ROS Interface
         tf::TransformListener tf_;
 
+        // MoveIt
+        moveit::planning_interface::MoveGroup* head_group_;
+
         std::string action_topic_;
         std::string action_name_;
         std::vector<std::string> predicate_names_;
+        std::string joint_name_head_yaw_;
 
         // help variables for action liftTorso
         double torsoPosition_;
         bool setTorsoPosition_;
-        int stallThreshold_;
         double startStallTime_; // in sec
 
         ros::Duration actionTimeOut_;
@@ -52,14 +57,13 @@ namespace object_manipulation_actions
         boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
 
         // Parameters
-        // UpdatePlanningSceneFromOrk-Parameters
-        bool add_tables_;
-        bool verify_planning_scene_update_;
-        std::set<std::string> expected_objects_;
         // LiftTorso-Parameters
         double vdist_head_to_table_;
         double vdist_threshold_;
         double min_torso_vel_;
+        int stallThreshold_;
+        // TurnHead-Parameters
+        int degrees_;
 
         // Action for lifting torso
         bool executeLiftTorso(const geometry_msgs::PoseStamped tablePose);
@@ -69,10 +73,18 @@ namespace object_manipulation_actions
         void setTorsoPosition();
         // Action for pointing head
         bool executePointHead(const geometry_msgs::PoseStamped tablePose);
-        // Action for object dectection
-        bool executeUpdatePlanningSceneFromORK(SymbolicState& currentState,
-        		const std::string& tableName, const std::string& manipulationLocation);
+        // Action for object detection
+        bool executeUpdatePlanningSceneFromORK(bool verify_planning_scene_update,
+        		const std::vector<std::string>& expected_objects,
+        		bool add_tables,
+        		std::string table_prefix,
+        		bool merge_tables);
 
+        // Turn head by the given degrees
+        bool executeTurnHead(const int degrees);
+
+        // Give table collision object the same in PS as in the symbolic state
+        // Basically cut off _number from table collision object
         void renameTableCollisionObject(const std::string& tableName);
 
     };

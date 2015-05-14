@@ -1,7 +1,6 @@
 #include "object_manipulation_actions/actionExecutorInspectLocation.h"
 #include <pluginlib/class_list_macros.h>
 #include <ork_to_planning_scene_msgs/UpdatePlanningSceneFromOrkAction.h>
-//#include <moveit/move_group_interface/move_group.h>
 #include <control_msgs/SingleJointPositionActionFeedback.h>
 #include <control_msgs/SingleJointPositionFeedback.h>
 #include <tidyup_utils/stringutil.h>
@@ -9,6 +8,7 @@
 #include <symbolic_planning_utils/planning_scene_monitor.h>
 #include <symbolic_planning_utils/planning_scene_service.h>
 
+#include <angles/angles.h>
 #include <set>
 #include <boost/foreach.hpp>
 #define for_each BOOST_FOREACH
@@ -28,6 +28,8 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
 	actionTimeOut_ = ros::Duration(30.0);
 	torsoPosition_ = -1.0;
 	setTorsoPosition_ = false;
+	joint_name_head_yaw_ = "head_pan_joint";
+	head_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getHeadGroup();
 
 	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for torso_controller/position_joint_action "
 			"action server to start.", __func__);
@@ -48,10 +50,8 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
     nhPriv.param("vdist_head_to_table", vdist_head_to_table_, 0.8);
     nhPriv.param("vdist_threshold", vdist_threshold_, 0.002);
     nhPriv.param("min_torso_vel", min_torso_vel_, 0.0001);
-    nhPriv.param("stallThreshold", stallThreshold_, 5);
-
-    add_tables_ = true;
-	verify_planning_scene_update_ = true;
+    nhPriv.param("stallThreshold", stallThreshold_, 2);
+    nhPriv.param("degrees", degrees_, 30);
 
 	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
 	//psi_.reset(new symbolic_planning_utils::PlanningSceneService());
@@ -98,9 +98,69 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 	if (!executePointHead(tablePose))
 		return false;
 
-	if (!executeUpdatePlanningSceneFromORK(currentState, table, mani_loc))
+	// after head is pointed to table, execute visual detection
+	bool verify_planning_scene_update = true;
+	bool add_tables = true;
+	bool merge_tables = false;
+	std::string table_prefix = table;
+	std::vector<std::string> expected_objects;
+
+	// fill expected_objects
+	const multimap<string, string> objects = currentState.getTypedObjects();
+	std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators = objects.equal_range("movable_object");
+	for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
+	{
+		Predicate on;
+		on.name = "object-on";
+		on.parameters.push_back(it->second);
+		on.parameters.push_back(table);
+		bool value = false;
+		currentState.hasBooleanPredicate(on, &value);
+		if (value)
+		{
+			expected_objects.push_back(it->second);
+		}
+	}
+
+	// sleep is needed before each object detection, so that the camera has chance to deliver good images
+	ros::Duration(1.0).sleep();
+	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+			add_tables, table_prefix, merge_tables))
 		return false;
 
+	// turn head by given degrees - return value is ignored, since action is executed but reports error
+	if (!executeTurnHead(degrees_))
+//		return false;
+
+	// execute visual detection to merge table
+	merge_tables = true;
+	ros::Duration(1.0).sleep();
+	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+			add_tables, table_prefix, merge_tables))
+		return false;
+
+	// turn head by given degrees, this time in opposite direction
+	if (!executeTurnHead(degrees_ * -1))
+//		return false;
+
+	// execute visual detection to merge table
+	merge_tables = true;
+	ros::Duration(1.0).sleep();
+	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+			add_tables, table_prefix, merge_tables))
+		return false;
+
+	// After operation is done, point head again to table
+	if (!executePointHead(tablePose))
+		return false;
+
+	// after detection is completed, set predicates: location-inspected and location_inspected-recently
+	for_each(const string& predicate, predicate_names_)
+	{
+		currentState.setBooleanPredicate(predicate, mani_loc, true);
+	}
+
+	// Cut off _number from table detection and readd table to PS
 	renameTableCollisionObject(table);
 
 	return true;
@@ -276,31 +336,21 @@ bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseSt
 	return true;
 }
 
-bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicState& currentState,
-		const std::string& tableName, const std::string& manipulationLocation)
+bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(bool verify_planning_scene_update,
+		const std::vector<std::string>& expected_objects,
+		bool add_tables,
+		std::string table_prefix,
+		bool merge_tables)
 {
 	// execute action ork-to-planning-scene
 	ROS_INFO("ActionExecutorInspectLocation::%s: Sending UpdatePlanningSceneFromORK request.", __func__);
 	ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkGoal updatePSGoal;
-	updatePSGoal.verify_planning_scene_update = verify_planning_scene_update_;
-	updatePSGoal.add_tables = add_tables_;
-	updatePSGoal.table_prefix = tableName;
+	updatePSGoal.verify_planning_scene_update = verify_planning_scene_update;
+	updatePSGoal.expected_objects = expected_objects;
+	updatePSGoal.add_tables = add_tables;
+	updatePSGoal.table_prefix = table_prefix;
+	updatePSGoal.merge_tables = merge_tables;
 
-	const multimap<string, string> objects = currentState.getTypedObjects();
-	std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators = objects.equal_range("movable_object");
-	for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
-	{
-		Predicate on;
-		on.name = "object-on";
-		on.parameters.push_back(it->second);
-		on.parameters.push_back(tableName);
-		bool value = false;
-		currentState.hasBooleanPredicate(on, &value);
-		if (value)
-		{
-			updatePSGoal.expected_objects.push_back(it->second);
-		}
-	}
 	actionOrkToPs_.sendGoal(updatePSGoal);
 	bool finished_before_timeout = actionOrkToPs_.waitForResult(actionTimeOut_);
 	if (finished_before_timeout)
@@ -309,11 +359,8 @@ bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicSt
 		ROS_DEBUG("ActionExecutorInspectLocation::%s: ORK to Planning Scene Action finished: %s", __func__, state.toString().c_str());
 		if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
-			ROS_INFO("Inspect location succeeded.");
-			for_each(const string& predicate, predicate_names_)
-			{
-				currentState.setBooleanPredicate(predicate, manipulationLocation, true);
-			}
+			ROS_INFO("ActionExecutorInspectLocation::%s: ORK to Planning Scene Action succeeded.", __func__);
+			return true;
 		}
 		else
 		{
@@ -321,7 +368,41 @@ bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(SymbolicSt
 			return false;
 		}
 	}
-	return true;
+	ROS_ERROR("ActionExecutorInspectLocation::%s: ORK to Planning Scene Action timed out.", __func__);
+	return false;
+}
+
+bool ActionExecutorInspectLocation::executeTurnHead(const int degrees)
+{
+	ROS_INFO("ActionExecutorInspectLocation::%s: turn head by %d degrees.", __func__, degrees);
+	moveit::planning_interface::MoveItErrorCode error_code;
+	// convert degree to radians
+	double radians = angles::from_degrees(degrees);
+
+	std::vector<double> current_joint_values = head_group_->getCurrentJointValues();
+	std::vector<std::string> joint_names = head_group_->getJoints();
+
+	ROS_ASSERT(current_joint_values.size() == joint_names.size());
+	// create map needed by setJointValueTarget()
+	std::map<std::string, double> jointValues;
+	for (size_t i = 0; i < current_joint_values.size(); i++)
+	{
+		std::pair<std::string, double> jointValue;
+		if (joint_names[i] == joint_name_head_yaw_)
+			jointValue = std::make_pair(joint_names[i], radians);
+		else
+			jointValue = std::make_pair(joint_names[i], current_joint_values[i]);
+
+		ROS_WARN("ActionExecutorInspectLocation::%s: %s - %lf - old value: %lf", __func__, jointValue.first.c_str(),
+				jointValue.second, current_joint_values[i]);
+		jointValues.insert(jointValue);
+	}
+
+	if (!head_group_->setJointValueTarget( jointValues ))
+		ROS_ERROR("ActionExecutorInspectLocation::%s: joint values out of bounds!", __func__);
+	error_code = head_group_->move();
+
+	return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 }
 
 void ActionExecutorInspectLocation::renameTableCollisionObject(const std::string& tableName)
