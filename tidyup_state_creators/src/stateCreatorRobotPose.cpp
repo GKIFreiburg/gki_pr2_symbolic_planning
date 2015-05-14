@@ -190,15 +190,22 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 
 		if (!_atPredicate.empty())
 		{
-			// Found a target - update state!
-			if (dDist < minDist)
+			// Found a target!
+			if(dDist < _goalToleranceXY && fabs(dAng) < _goalToleranceYaw)
 			{
-				minDist = dDist;
-				nearestTarget = target;
+				// FIXME also taking rotation into account
+				// Remember nearest target
+				if (dDist < minDist)
+				{
+					minDist = dDist;
+					nearestTarget = target;
+				}
 			}
 			state.setBooleanPredicate(_atPredicate, target, false);
 		}
 	}
+
+	// If a nearest target is found, update state
 	if (nearestTarget != "")
 	{
 		ROS_INFO("(at) target %s !", nearestTarget.c_str());
