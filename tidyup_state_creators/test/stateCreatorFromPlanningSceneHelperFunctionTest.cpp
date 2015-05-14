@@ -264,16 +264,14 @@ TEST_F(stateCreatorFromPlanningSceneHelperFunctionTest, findMatchingTable)
 	// needs to be called first, to set membervariable tables_
 	scfps.initializeTables(state_);
 
-	scfps.findMatchingTable(state_, allCos, coObject_);
-	Predicate p;
-	p.name = "object-on";
-	p.parameters.push_back(coObject_.id);
-	p.parameters.push_back(coTable1_.id);
-	bool value = false;
-	EXPECT_TRUE(state_.hasBooleanPredicate(p, &value));
+	std::string result;
+	result = scfps.findMatchingTable(allCos, coObject_);
+	EXPECT_EQ("table1", result);
 
-	p.parameters[0] = "NonExistingObject";
-	EXPECT_FALSE(state_.hasBooleanPredicate(p, &value));
+	moveit_msgs::CollisionObject cotmp = coObject_;
+	cotmp.id = "NonExistantObject";
+	result = scfps.findMatchingTable(allCos, cotmp);
+	EXPECT_EQ("", result);
 }
 
 

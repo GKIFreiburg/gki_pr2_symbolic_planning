@@ -131,6 +131,7 @@ TEST_F(stateCreatorFromPlanningSceneTest, initializePlanningScene)
 	EXPECT_EQ(co.primitive_poses[0].position.x, coTable2_.primitive_poses[0].position.x);
 	EXPECT_EQ(co.primitive_poses[0].position.y, coTable2_.primitive_poses[0].position.y);
 	EXPECT_EQ(co.primitive_poses[0].position.z, coTable2_.primitive_poses[0].position.z);
+
 }
 
 TEST_F(stateCreatorFromPlanningSceneTest, fillState)
@@ -244,12 +245,12 @@ TEST_F(stateCreatorFromPlanningSceneTest, fillState)
 		EXPECT_EQ(scfps.planningScene_.robot_state.attached_collision_objects.size(), 1);
 
 		// test if state has object now
-//		string value;
-//		pred.parameters.clear();
-//		pred.parameters.push_back(coObject_.id);
-//		pred.name = "movable_object";
-//		EXPECT_TRUE(state.hasObjectFluent(pred, &value));
-
+		pred.parameters.clear();
+		pred.parameters.push_back(coObject_.id);
+		pred.name = "x";
+		EXPECT_TRUE(state.hasNumericalFluent(pred, &val));
+		// something wrong with frames - therefore different values for x
+		// EXPECT_EQ(coObject_.primitive_poses[0].position.x, val);
 
 		moveit_msgs::AttachedCollisionObject aco = scfps.planningScene_.robot_state.attached_collision_objects[0];
 
@@ -278,6 +279,15 @@ TEST_F(stateCreatorFromPlanningSceneTest, fillState)
 		pred.name = "object-grasped";
 		EXPECT_TRUE(state.hasBooleanPredicate(pred, &result));
 		EXPECT_TRUE(result);
+
+		pred.parameters.clear();
+		pred.parameters.push_back(coObject_.id);
+		pred.parameters.push_back(coTable1_.id);
+		pred.name = "object-on";
+		// predicate object-on for object1 exists because it is not deleted but set to false
+		// therefore need to test that variable result is false
+		EXPECT_TRUE(state.hasBooleanPredicate(pred, &result));
+		EXPECT_FALSE(result);
 
 	// Test 4: object no longer grasped, verfiy that predicate object-grasped is false/not set
 		attachedCo.object.operation = moveit_msgs::CollisionObject::REMOVE;
