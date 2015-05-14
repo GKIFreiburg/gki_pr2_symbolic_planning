@@ -31,17 +31,18 @@ namespace tidyup_state_creators
     	// Tables have been added to symbolic state in goalCreatorLoadTablesIntoPlanningScene
     	initializeTables(state);
 
-
+    	// Store all collision object ids from the symbolic state into this set
+    	// If a collision object is not listed in the planning scene anymore, means that it can be deleted and therefore
+    	// is removed from the set.
+    	// At the end, all remaining objects in the set are going to be removed from the symbolic state
     	std::set<std::string> objects_to_remove;
-    	// delete all movable objects from symbolic state, and re-add the important objects later (from PS)
+
+    	// store all movable objects from symbolic state in the set
 		const multimap<string, string> objects = state.getTypedObjects();
 		std::pair<multimap<string, string>::const_iterator, multimap<string, string>::const_iterator> iterators =
 		        objects.equal_range("movable_object");
 		for (multimap<string, string>::const_iterator it = iterators.first; it != iterators.second; it++)
 		{
-			// also predicates with the objects are removed
-//			state.removeObject(it->second);
-
 			objects_to_remove.insert(it->second);
 		}
 
@@ -54,7 +55,7 @@ namespace tidyup_state_creators
 
     		if (StringUtil::startsWith(object.id, "table"))
     		{
-    			// tables are already in symbolic state - load in goalCreatorLoadTablesIntoPlanningScene
+    			// tables are already in symbolic state - loaded in goalCreatorLoadTablesIntoPlanningScene
     			continue;
     		}
             if (StringUtil::startsWith(object.id, "door"))
@@ -65,13 +66,14 @@ namespace tidyup_state_creators
             {
                 continue;
             }
+            // add/update object in symbolic state
     		addObjectToSymbolicState(state, object, "movable_object");
+    		// remove object from set, because it should not be deleted
     		objects_to_remove.erase(object.id);
 
-    		// add object-on predicate to object
+    		// add predicate object-on
     		std::string closest_table;
     		closest_table = findMatchingTable(planningScene_.world.collision_objects, object);
-
             if (!closest_table.empty()) // found a matching table
             {
                 ROS_INFO_STREAM("StateCreatorFromPlanningScene::" << __func__ << ": putting " << object.id << " on " << closest_table);
@@ -85,7 +87,7 @@ namespace tidyup_state_creators
             	ROS_WARN("StateCreatorFromPlanningScene::%s: NO matching Table found for object: %s",
             			__func__, object.id.c_str());
 
-            // set predicate object-grasped to false, since object-on table means it is not grasped
+            // set predicate object-grasped to false, since object-on table means it is not grasped anymore
             bool value = false;
             Predicate p_grasped;
             p_grasped.name = "object-grasped";
@@ -111,10 +113,12 @@ namespace tidyup_state_creators
     	forEach(const moveit_msgs::AttachedCollisionObject& attachedObject, planningScene_.robot_state.attached_collision_objects)
     	{
     		const moveit_msgs::CollisionObject& object = attachedObject.object;
+    		// add/update object in symbolic state
     		addObjectToSymbolicState(state, object, "movable_object");
+    		// remove object from set, because it should not be deleted
     		objects_to_remove.erase(object.id);
 
-            // grasped predicate
+            // set predicate object-grasped
             vector<string> params;
             params.push_back(object.id);
             params.push_back("arm_name");
@@ -148,7 +152,7 @@ namespace tidyup_state_creators
             }
     	}
 
-    	// remove objects not present in planning scene
+    	// remove all objects not present in planning scene from symbolic state and also the predicates are removed
     	for (std::set<std::string>::iterator it = objects_to_remove.begin(); it != objects_to_remove.end(); it++)
     	{
     		ROS_INFO("StateCreatorFromPlanningScene::%s: removing object %s from symbolic state", __func__, (*it).c_str());
