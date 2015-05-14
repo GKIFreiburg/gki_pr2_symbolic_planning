@@ -50,13 +50,6 @@ namespace tidyup_state_creators
 			// Create collision objects and publish them into the planning scene
 			void loadTablesIntoPlanningScene();
 
-
-			// HACK FOR TEST PURPOSES.
-//				// Create imaginary collision object (=graspable object) and publish it into the planning scene
-//				// Hack to test planner
-//				bool loadObjectIntoPlanningScene(moveit_msgs::CollisionObject& co);
-//				// Hack to test planner
-//				void fillObjectIntoState(SymbolicState& currentState);
 	};
 
 };
