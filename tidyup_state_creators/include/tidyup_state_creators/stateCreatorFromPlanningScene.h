@@ -34,6 +34,8 @@ namespace tidyup_state_creators
             std::set<string> tables_;
             std::multimap<string, string> tableLocations_; // <table, location>
 
+            tf::TransformListener tf_;
+
             FRIEND_TEST(stateCreatorFromPlanningSceneTest, initializePlanningScene);
             void initializePlanningScene();
             void setPlanningScene(const moveit_msgs::PlanningScene& scene);
@@ -51,7 +53,7 @@ namespace tidyup_state_creators
             bool doesObjectTypeExist(const string& objectType);
 
             FRIEND_TEST(stateCreatorFromPlanningSceneHelperFunctionTest, findMatchingTable);
-            void findMatchingTable(SymbolicState& currentState,
+            std::string findMatchingTable(
             		const std::vector<moveit_msgs::CollisionObject>& allCos,
             		const moveit_msgs::CollisionObject& co);
 
