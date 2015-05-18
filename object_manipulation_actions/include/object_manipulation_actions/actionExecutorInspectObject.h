@@ -1,5 +1,5 @@
-#ifndef ACTION_EXECUTOR_INSPECT_H
-#define ACTION_EXECUTOR_INSPECT_H
+#ifndef ACTION_EXECUTOR_INSPECT_OBJECT_H
+#define ACTION_EXECUTOR_INSPECT_OBJECT_H
 
 #include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"

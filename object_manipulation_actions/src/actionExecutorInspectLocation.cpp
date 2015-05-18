@@ -92,8 +92,8 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		return false;
 	}
 
-	if (!executeLiftTorso(tablePose))
-		return false;
+//	if (!executeLiftTorso(tablePose))
+//		return false;
 
 	if (!executePointHead(tablePose))
 		return false;
@@ -130,7 +130,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 
 	// turn head by given degrees - return value is ignored, since action is executed but reports error
 	if (!executeTurnHead(degrees_))
-//		return false;
+		return false;
 
 	// execute visual detection to merge table
 	merge_tables = true;
@@ -141,7 +141,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 
 	// turn head by given degrees, this time in opposite direction
 	if (!executeTurnHead(degrees_ * -1))
-//		return false;
+		return false;
 
 	// execute visual detection to merge table
 	merge_tables = true;

@@ -42,12 +42,13 @@ include_directories(
 add_library(object_manipulation_actions
     src/actionExecutorArmToSide.cpp
     src/actionExecutorArmToFront.cpp
-    src/actionExecutorArmToInspectObject.cpp
+#src/actionExecutorArmToInspectObject.cpp
     src/actionExecutorArmToCarry.cpp
     src/actionExecutorPickupObject.cpp
     src/actionExecutorPutdownObject.cpp
     src/actionExecutorInspectLocation.cpp
     src/actionExecutorInspectObject.cpp
+    src/actionExecutorLiftTorso.cpp
 )
 
 ## Add cmake target dependencies of the executable/library
