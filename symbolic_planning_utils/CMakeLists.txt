@@ -108,6 +108,7 @@ add_library(symbolic_planning_utils
   src/extractPose.cpp
   src/planning_scene_interface.cpp
   src/planning_scene_monitor.cpp
+  src/joint_limits.cpp
 )
 
 ## Declare a cpp executable

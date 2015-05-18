@@ -15,6 +15,7 @@ namespace symbolic_planning_utils
 		moveit::planning_interface::MoveGroup* left_arm_group_;
 		moveit::planning_interface::MoveGroup* arms_group_;
 		moveit::planning_interface::MoveGroup* head_group_;
+		moveit::planning_interface::MoveGroup* torso_group_;
 
 		// Constructor: creating all moveit::planning_interfaces
 //		FRIEND_TEST(moveGroupInterfaceTest, MoveGroupInterface);
@@ -40,6 +41,7 @@ namespace symbolic_planning_utils
 		moveit::planning_interface::MoveGroup* getLeftArmGroup();
 		moveit::planning_interface::MoveGroup* getArmsGroup();
 		moveit::planning_interface::MoveGroup* getHeadGroup();
+		moveit::planning_interface::MoveGroup* getTorsoGroup();
 	};
 };
 

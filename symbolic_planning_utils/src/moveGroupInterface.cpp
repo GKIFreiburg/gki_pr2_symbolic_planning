@@ -9,8 +9,9 @@ MoveGroupInterface::MoveGroupInterface()
 {
 	right_arm_group_ = new moveit::planning_interface::MoveGroup("right_arm");
 	left_arm_group_ = new moveit::planning_interface::MoveGroup("left_arm");
-    arms_group_ = new moveit::planning_interface::MoveGroup("arms");
+//    arms_group_ = new moveit::planning_interface::MoveGroup("arms");
     head_group_ = new moveit::planning_interface::MoveGroup("head");
+    torso_group_ = new moveit::planning_interface::MoveGroup("torso");
 }
 
 MoveGroupInterface::MoveGroupInterface(const MoveGroupInterface* mgi)
@@ -57,4 +58,10 @@ moveit::planning_interface::MoveGroup* MoveGroupInterface::getHeadGroup()
 {
 	return head_group_;
 }
+
+moveit::planning_interface::MoveGroup* MoveGroupInterface::getTorsoGroup()
+{
+	return torso_group_;
+}
+
 };
