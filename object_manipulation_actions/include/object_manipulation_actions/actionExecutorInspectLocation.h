@@ -45,10 +45,7 @@ namespace object_manipulation_actions
         std::vector<std::string> predicate_names_;
         std::string joint_name_head_yaw_;
 
-        // help variables for action liftTorso
-        double torsoPosition_;
-        bool setTorsoPosition_;
-        double startStallTime_; // in sec
+        std::set<std::string> expected_objects_;
 
         ros::Duration actionTimeOut_;
         actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction> actionLiftTorso_;
@@ -57,20 +54,9 @@ namespace object_manipulation_actions
         boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
 
         // Parameters
-        // LiftTorso-Parameters
-        double vdist_head_to_table_;
-        double vdist_threshold_;
-        double min_torso_vel_;
-        int stallThreshold_;
         // TurnHead-Parameters
         int degrees_;
 
-        // Action for lifting torso
-        bool executeLiftTorso(const geometry_msgs::PoseStamped tablePose);
-        // Checking if torso is stalled by reaching joint limits
-        void feedbackLiftTorso(const control_msgs::SingleJointPositionFeedbackConstPtr& feedback);
-        // Get position of torso, by sending an action request and reading position from feedback, then break
-        void setTorsoPosition();
         // Action for pointing head
         bool executePointHead(const geometry_msgs::PoseStamped tablePose);
         // Action for object detection
