@@ -33,6 +33,7 @@ add_library(tidyup_state_creators
     src/stateCreatorObjectReachable.cpp
     src/stateCreatorRobotPose.cpp
     src/stateCreatorFromPlanningScene.cpp
+    src/stateCreatorLiftTorso.cpp
     src/goalCreatorResetWorld.cpp
     src/goalCreatorTidyupInitialize.cpp
     src/goalCreatorLoadTablesIntoPlanningScene.cpp

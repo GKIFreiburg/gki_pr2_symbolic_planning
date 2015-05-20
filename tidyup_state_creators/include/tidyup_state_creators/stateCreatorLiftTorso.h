@@ -7,6 +7,8 @@
 
 namespace tidyup_state_creators
 {
+
+	// StateCreator with only object to write torso position (= joint value) into symbolic state
     class StateCreatorLiftTorso : public continual_planning_executive::StateCreator
     {
         public:
@@ -19,6 +21,8 @@ namespace tidyup_state_creators
 
         private:
             moveit::planning_interface::MoveGroup* torso_group_;
+
+            std::string torso_position_;
 
     };
 

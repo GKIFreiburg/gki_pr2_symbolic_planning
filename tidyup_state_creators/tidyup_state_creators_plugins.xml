@@ -27,4 +27,7 @@
   <class name="tidyup_state_creators/state_creator_from_planning_scene" type="tidyup_state_creators::StateCreatorFromPlanningScene" base_class_type="continual_planning_executive::StateCreator">
     <description>Asks the environment server for known collision objects and adds them to the current state.</description>
   </class>
+    <class name="tidyup_state_creators/state_creator_lift_torso" type="tidyup_state_creators::StateCreatorLiftTorso" base_class_type="continual_planning_executive::StateCreator">
+    <description>Writing torso position into current state.</description>
+  </class>
 </library>
