@@ -113,7 +113,9 @@ add_library(planner_modules_pr2
     src/navstack_module.cpp
     src/navstack_planning_scene_module.cpp
     src/navstack_module_full_body.cpp
-    src/tidyup_planning_scene_updater.cpp)
+    src/tidyup_planning_scene_updater.cpp
+    src/lift_torso_module.cpp
+)
 
 add_library(putdown_modules
     src/module_param_cache.cpp
