@@ -43,6 +43,7 @@ namespace object_manipulation_actions
 
 
         // Action for lifting torso
+        // Frame /head_pan_link should be vdist_head_to_table_ above table
         moveit::planning_interface::MoveItErrorCode executeLiftTorso(const geometry_msgs::PoseStamped tablePose);
 
     };

@@ -16,7 +16,7 @@ namespace object_manipulation_actions
 
 	    ros::NodeHandle nhPriv("~");
 	    // Namespace is "/continual_planning_executive"(/vdist_head_to_table)
-	    nhPriv.param("vdist_head_to_table", vdist_head_to_table_, 0.8);
+	    nhPriv.param("vdist_head_to_table", vdist_head_to_table_, 0.60);
 	    nhPriv.param("vdist_threshold", vdist_threshold_, 0.002);
 	    nhPriv.param("min_torso_vel", min_torso_vel_, 0.0001);
 	    nhPriv.param("stallThreshold", stallThreshold_, 2);
@@ -78,23 +78,13 @@ namespace object_manipulation_actions
 	{
 		// compute difference in height between head_mount_link and table
 	    // transform tablePose into frame of /base link
-	    geometry_msgs::PoseStamped table_transformed;
-	    try {
-	        tf_.waitForTransform("/base_link", tablePose.header.frame_id, tablePose.header.stamp,
-	                ros::Duration(0.5));
-	        tf_.transformPose("/base_link", tablePose, table_transformed);
-	    } catch (tf::TransformException& ex) {
-	        ROS_ERROR("%s", ex.what());
-	        return false;
-	    }
+	    ROS_ASSERT(tablePose.header.frame_id == "/map");
 
 	    ROS_DEBUG_STREAM("table pose" << tablePose);
-	    ROS_DEBUG_STREAM("table pose transformed" << table_transformed);
 
-	    // transform headPose into frame of /base link
-	    tf::Pose tfHead;
+	    // transform headPose into frame of /map
 	    geometry_msgs::PoseStamped headPose;
-	    headPose.header.frame_id = "/head_mount_link";
+	    headPose.header.frame_id = "/head_pan_link";
 	    headPose.header.stamp = ros::Time::now();
 	    geometry_msgs::Quaternion q;
 	    q.x = 0;
@@ -119,8 +109,8 @@ namespace object_manipulation_actions
 	    }
 	    ROS_DEBUG_STREAM("head pose transformed" << head_transformed);
 
-	    double distance = fabs(head_transformed.pose.position.z - table_transformed.pose.position.z);
-	    ROS_DEBUG("Distance: %lf, head: %lf, table: %lf", distance, head_transformed.pose.position.z, table_transformed.pose.position.z);
+	    double distance = fabs(head_transformed.pose.position.z - tablePose.pose.position.z);
+	    ROS_DEBUG("Distance: %lf, head: %lf, table: %lf", distance, head_transformed.pose.position.z, tablePose.pose.position.z);
 	    if (vdist_head_to_table_ - vdist_threshold_ < distance &&
 	    	distance < vdist_head_to_table_ + vdist_threshold_)
 	    	// head_mount_link is about vdist_head_to_table_ above table, no need to lift torso
