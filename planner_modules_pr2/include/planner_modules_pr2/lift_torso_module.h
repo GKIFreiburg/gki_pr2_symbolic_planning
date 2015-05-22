@@ -18,12 +18,16 @@ const double INFINITE_COST = HUGE_VAL;
 double table_height_;
 double torso_position_;
 double vdist_head_to_table_;
+double vdist_threshold_;
 double lift_speed_;
 std::string world_frame_;
 
 // set the variable table_height_ and torso_position_
 bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
 		modules::numericalFluentCallbackType numericalFluentCallback);
+
+// Compute distance between head and table
+double computeHeadTableDistance();
 
 // Compute the real distance that torso needs to be lifted, considering the joint limits of
 // torso_lift_link

@@ -43,11 +43,16 @@ bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
 }
 
 // ________________________________________________________________________________________________
+double computeHeadTableDistance()
+{
+	double head_height = MIN_TORSO_POSITION + torso_position_ + OFFSET_TORSO_HEAD;
+	return head_height - table_height_;
+}
+
+// ________________________________________________________________________________________________
 double computeLiftDistance()
 {
-	// Compute distance between head and table
-	double head_height = MIN_TORSO_POSITION + torso_position_ + OFFSET_TORSO_HEAD;
-	double distance = head_height - table_height_;
+	double distance = computeHeadTableDistance();
 
 	// Compute height that torso needs to be lifted
 	double lift_distance = torso_position_ + vdist_head_to_table_ - distance;
@@ -72,6 +77,8 @@ void liftTorsoInit(int argc, char** argv)
 
     // /continual_planning_executive/vdist_head_to_table)
     nhPriv.param("/continual_planning_executive/vdist_head_to_table", vdist_head_to_table_, 0.62);
+    nhPriv.param("/continual_planning_executive/vdist_threshold", vdist_threshold_, 0.002);
+
     // If not defined on param server, take 0.02 m/s which is an arbitrary chosen value
     nhPriv.param("lift_speed", lift_speed_, 0.02);
 
@@ -90,7 +97,8 @@ double liftTorsoCost(const modules::ParameterList & parameterList,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
 
-	fetchVariablesFromPlanner(parameterList, numericalFluentCallback);
+	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback))
+		return INFINITE_COST;
 
 	double cost = computeLiftDistance();
 
@@ -102,11 +110,23 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
-	double cost = 0.0;
-	ROS_ERROR("CALLING %s, cost: %lf", __func__, cost);
+	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback))
+		return INFINITE_COST;
 
-	return cost;
+	double ret;
+	double distance = computeHeadTableDistance();
+
+	// If head to table distance satisfies the given tolerance, then return INFITINITE_COST (= false)
+	// because no need to lift torso, otherwise return true
+    if (vdist_head_to_table_ - vdist_threshold_ < distance &&
+    	distance < vdist_head_to_table_ + vdist_threshold_)
+    	ret = INFINITE_COST;
+    else
+    	ret = 0.0;
+
+    ROS_INFO("lift_torso_modules::%s: Need to lift torso? ", (ret == INFINITE_COST) ? "false" : "true");
+
+	return ret;
 }
-
 
 
