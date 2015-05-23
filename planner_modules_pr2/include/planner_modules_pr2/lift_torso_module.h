@@ -15,8 +15,8 @@ const double MAX_TORSO_JOINT = 0.325;
 const double INFINITE_COST = HUGE_VAL;
 
 
-double table_height_;
-double torso_position_;
+//double table_height_;
+//double torso_position_;
 double vdist_head_to_table_;
 double vdist_threshold_;
 double lift_speed_;
@@ -24,14 +24,12 @@ std::string world_frame_;
 
 // set the variable table_height_ and torso_position_
 bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
-		modules::numericalFluentCallbackType numericalFluentCallback);
-
-// Compute distance between head and table
-double computeHeadTableDistance();
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		double& table_height, double& torso_position);
 
 // Compute the real distance that torso needs to be lifted, considering the joint limits of
 // torso_lift_link
-double computeLiftDistance();
+double computeLiftDistance(const double& table_height, const double& torso_position);
 
 
 
@@ -53,10 +51,16 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 
+// Effect Module, set predicate "torso-lifted" with the corresponding table
+// If return value != 0, then writtenVars are applied to the state, otherwise state remains unchanged
+int updateTorsoPosition(const modules::ParameterList & parameterList,
+        modules::predicateCallbackType predicateCallback,
+        modules::numericalFluentCallbackType numericalFluentCallback,
+        int relaxed, vector<double> & writtenVars);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
 
 #endif // LIFT_TORSO_MODULE_H
-
