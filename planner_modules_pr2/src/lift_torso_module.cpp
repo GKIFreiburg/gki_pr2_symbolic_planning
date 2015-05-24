@@ -38,7 +38,7 @@ bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
 
     // initialize values
     table_height 	= nfRequest[0].value;
-    torso_position = nfRequest[1].value;
+    torso_position  = nfRequest[1].value;
 
 //    ROS_INFO("lift_torso_modules::%s: table height: %lf and torso_position: %lf",
 //    		__func__, table_height, torso_position);
@@ -69,7 +69,7 @@ double computeLiftDistance(const double& table_height, const double& torso_posit
 	else if (new_position > MAX_TORSO_JOINT)
 		new_position = MAX_TORSO_JOINT;
 
-	double lift_distance = fabs(new_position - torso_position);
+	double lift_distance = new_position - torso_position;
 //	ROS_WARN("%s: lift_distance = %lf - %lf = %lf", new_position, torso_position, lift_distance);
 
 //	ROS_INFO("lift_torso_modules::%s: Real distance: %lf, lift distance: %lf", __func__,
@@ -114,7 +114,7 @@ double liftTorsoCost(const modules::ParameterList & parameterList,
 	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return INFINITE_COST;
 
-	double cost = computeLiftDistance(table_height, torso_position);
+	double cost = fabs(computeLiftDistance(table_height, torso_position));
 
 	if (cost < vdist_threshold_)
 		cost = vdist_threshold_;
@@ -132,8 +132,8 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return INFINITE_COST;
 
-	double ret;
-	double distance = computeLiftDistance(table_height, torso_position);
+	// Taking fabs() of lift distance, since it is not important if going up or down
+	double distance = fabs(computeLiftDistance(table_height, torso_position));
 
 //	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
 
@@ -141,15 +141,13 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 	// because no need to lift torso, otherwise return true
     if (distance < vdist_threshold_)
     {
-    	ret = INFINITE_COST;
+    	return INFINITE_COST;
     }
     else
     {
-    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
-    	ret = 0.0;
+//    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
+    	return 0.0;
     }
-
-	return ret;
 }
 
 // ________________________________________________________________________________________________
@@ -160,24 +158,27 @@ int updateTorsoPosition(const modules::ParameterList & parameterList,
 {
 	double table_height, torso_position;
 
-	ROS_INFO("lift_torso_modules::%s: ", __func__);
+//	ROS_INFO("lift_torso_modules::%s: ", __func__);
 	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return 0.0; // state remains unchanged
 
 	double lift_distance = computeLiftDistance(table_height, torso_position);
-	double joint_position = torso_position + lift_distance;
+	double new_position = torso_position + lift_distance;
+
+	// For safety reason verify that new_position is not outside bounds
+	if (new_position < MIN_TORSO_JOINT)
+	{
+		ROS_WARN("lift_torso_module::%s: new_position (%lf) < MIN_TORSO_JOINT!", __func__, new_position);
+		new_position = MIN_TORSO_JOINT;
+	} else if (new_position > MAX_TORSO_JOINT)
+	{
+		ROS_WARN("lift_torso_module::%s: new_position (%lf) > MAX_TORSO_JOINT!", __func__, new_position);
+		new_position = MAX_TORSO_JOINT;
+	}
+
 	ROS_ASSERT(writtenVars.size() == 1);
-
-	// Verify that lift_distance does not leave joint bounds, else set to the corresponding limit
-	if (joint_position < MIN_TORSO_JOINT)
-		joint_position = MIN_TORSO_JOINT;
-	else if (joint_position > MAX_TORSO_JOINT)
-		joint_position = MAX_TORSO_JOINT;
-
-
-	writtenVars[0] = joint_position;
+	writtenVars[0] = new_position;
 	ROS_WARN("lift_torso_modules::%s: new torso position: %lf", __func__, writtenVars[0]);
-//	writtenVars[0] = torso_position_ + 999;
 
 	return 1.0; // update state
 }

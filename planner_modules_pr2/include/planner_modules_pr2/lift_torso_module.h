@@ -28,7 +28,8 @@ bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
 		double& table_height, double& torso_position);
 
 // Compute the real distance that torso needs to be lifted, considering the joint limits of
-// torso_lift_link
+// torso_lift_link. If result is positiv, meaning torso is going to be raised, if otherwise
+// torso is lowered
 double computeLiftDistance(const double& table_height, const double& torso_position);
 
 
