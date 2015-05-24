@@ -29,10 +29,8 @@ namespace object_manipulation_actions
 
 	void ActionExecutorLiftTorso::initialize(const std::deque<std::string> & arguments)
 	{
-		ROS_ASSERT(arguments.size() == 2);
+		ROS_ASSERT(arguments.size() == 1);
 		action_name_ 			 	= arguments[0];		// lift-torso
-		predicate_torso_lifted_     = arguments[1];		// torso-lifted
-
 	}
 
 	bool ActionExecutorLiftTorso::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -56,15 +54,6 @@ namespace object_manipulation_actions
 
 		moveit::planning_interface::MoveItErrorCode error_code;
 		error_code = executeLiftTorso(tablePose);
-
-//		// Set predicate "torso-lifted" - NOT needed anymore, because not set in own state creator
-//		if (error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS)
-//		{
-//			// set all predicates containing torso-lifted to false
-//			currentState.setAllBooleanPredicates(predicate_torso_lifted_, false);
-//			// only set predicate torso-lifted for current table to true
-//			currentState.setBooleanPredicate(predicate_torso_lifted_, table, true);
-//		}
 
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	}
