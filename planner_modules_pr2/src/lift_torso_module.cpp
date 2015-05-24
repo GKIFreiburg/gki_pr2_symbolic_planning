@@ -135,21 +135,17 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 	double ret;
 	double distance = computeLiftDistance(table_height, torso_position);
 
-	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
+//	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
 
 	// If head to table distance satisfies the given tolerance, then return INFITINITE_COST (= false)
 	// because no need to lift torso, otherwise return true
     if (distance < vdist_threshold_)
     {
-    	ROS_INFO("lift_torso_modules::%s: NO Need to lift torso", __func__);
     	ret = INFINITE_COST;
     }
     else
     {
     	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
-    	ROS_WARN("lift_torso_modules::%s: vdist_head_to_table: %lf +- threshold: %lf || "
-    			"computedHeadTableDistance: %lf", __func__, vdist_head_to_table_, vdist_threshold_,
-    			distance);
     	ret = 0.0;
     }
 

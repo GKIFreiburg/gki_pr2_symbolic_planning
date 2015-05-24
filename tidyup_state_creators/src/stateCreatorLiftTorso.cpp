@@ -57,12 +57,13 @@ namespace tidyup_state_creators
         				p.name.c_str(), p.parameters[0].c_str());
         		return false;
         	}
-			// reset predicates torso-lifted to false
-			state.setAllBooleanPredicates(predicate_torso_lifted_, false);
 
-        	// robot is at current location
+        	// robot is at a manipulation_location
         	if (val)
         	{
+				// reset predicates torso-lifted to false
+				state.setAllBooleanPredicates(predicate_torso_lifted_, false);
+
             	std::vector<std::string> params = StringUtil::split(it->second, "_");
             	ROS_ASSERT(StringUtil::startsWith(params[0], "table"));
             	std::string table = params[0];
