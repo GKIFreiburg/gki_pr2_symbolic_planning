@@ -4,6 +4,7 @@
 #include "continual_planning_executive/stateCreator.h"
 #include <ros/ros.h>
 #include <moveit/move_group_interface/move_group.h>
+#include <tf/transform_listener.h>
 
 namespace tidyup_state_creators
 {
@@ -23,6 +24,15 @@ namespace tidyup_state_creators
             moveit::planning_interface::MoveGroup* torso_group_;
 
             std::string torso_position_;
+            std::string predicate_torso_lifted_;
+            tf::TransformListener tf_;
+
+            // LiftTorso-Parameters
+            double vdist_head_to_table_;
+            double vdist_threshold_;
+
+            bool verifyHeadTableDistance(SymbolicState & state, const std::string& table);
+            bool verifyTorsoMaximum();
 
     };
 

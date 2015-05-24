@@ -57,15 +57,14 @@ namespace object_manipulation_actions
 		moveit::planning_interface::MoveItErrorCode error_code;
 		error_code = executeLiftTorso(tablePose);
 
-		// Set predicate "torso-lifted" - NOT needed anymore, because setting the predicates is
-		// now done in domain file - WRONG IT IS NEEDED
-		if (error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS)
-		{
-			// set all predicates containing torso-lifted to false
-			currentState.setAllBooleanPredicates(predicate_torso_lifted_, false);
-			// only set predicate torso-lifted for current table to true
-			currentState.setBooleanPredicate(predicate_torso_lifted_, table, true);
-		}
+//		// Set predicate "torso-lifted" - NOT needed anymore, because not set in own state creator
+//		if (error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS)
+//		{
+//			// set all predicates containing torso-lifted to false
+//			currentState.setAllBooleanPredicates(predicate_torso_lifted_, false);
+//			// only set predicate torso-lifted for current table to true
+//			currentState.setBooleanPredicate(predicate_torso_lifted_, table, true);
+//		}
 
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	}
