@@ -36,15 +36,8 @@ namespace tidyup_state_creators
     	std::vector<double> current_joint_values = torso_group_->getCurrentJointValues();
     	ROS_ASSERT(current_joint_values.size() == 1);
 
-    	static int counter = 0;
-    	if (counter == 0)
-    	{
-    		state.setNumericalFluent(torso_position_, "", current_joint_values[0]);
-    		ROS_WARN("StateCreatorLiftTorso::%s: This code segment should only be executed once", __func__);
-    		counter++;
-    	}
+		state.setNumericalFluent(torso_position_, "", current_joint_values[0]);
 
-    	// TODO: mani_loc as argument in init
         pair<SymbolicState::TypedObjectConstIterator, SymbolicState::TypedObjectConstIterator> loc_range =
                 state.getTypedObjects().equal_range("manipulation_location");
 

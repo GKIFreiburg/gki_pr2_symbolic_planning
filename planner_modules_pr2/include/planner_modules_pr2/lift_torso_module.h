@@ -47,8 +47,14 @@ double liftTorsoCost(const modules::ParameterList & parameterList,
 
 // Condition checker Module, check if torso needs to be lifted
 // INFINITE_COST if false or 0 (a value smaller INFINITE_COST) if true
-// INFINITE_COST = HUGE_VAL
 double needToLiftTorso(const modules::ParameterList & parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
+
+// Condition checker Module, check if torso is lifted
+// INFINITE_COST if false or 0 (a value smaller INFINITE_COST) if true
+// Inverse of needToLiftTorso
+double torsoLifted(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 

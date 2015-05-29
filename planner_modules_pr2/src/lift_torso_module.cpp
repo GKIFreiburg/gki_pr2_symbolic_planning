@@ -7,6 +7,7 @@
 
 VERIFY_CONDITIONCHECKER_DEF(liftTorsoCost);
 VERIFY_CONDITIONCHECKER_DEF(needToLiftTorso);
+VERIFY_CONDITIONCHECKER_DEF(torsoLifted);
 VERIFY_APPLYEFFECT_DEF(updateTorsoPosition);
 
 
@@ -89,7 +90,7 @@ void liftTorsoInit(int argc, char** argv)
 
     // /continual_planning_executive/vdist_head_to_table)
     nhPriv.param("/continual_planning_executive/vdist_head_to_table", vdist_head_to_table_, 0.60);
-    nhPriv.param("/continual_planning_executive/vdist_module_threshold", vdist_threshold_, 0.01);
+    nhPriv.param("/continual_planning_executive/vdist_module_threshold", vdist_threshold_, 0.02);
 
     // If not defined on param server, take 0.02 m/s which is an arbitrary chosen value
     nhPriv.param("lift_speed", lift_speed_, 0.02);
@@ -147,6 +148,34 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
     {
 //    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
     	return 0.0;
+    }
+}
+
+// ________________________________________________________________________________________________
+double torsoLifted(const modules::ParameterList & parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
+{
+	double table_height, torso_position;
+
+	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
+		return INFINITE_COST;
+
+	// Taking fabs() of lift distance, since it is not important if going up or down
+	double distance = fabs(computeLiftDistance(table_height, torso_position));
+
+//	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
+
+	// If head to table distance satisfies the given tolerance, then return INFITINITE_COST (= false)
+	// because no need to lift torso, otherwise return true
+    if (distance < vdist_threshold_)
+    {
+    	return 0.0;
+    }
+    else
+    {
+//    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
+    	return INFINITE_COST;
     }
 }
 
