@@ -11,23 +11,16 @@
 #include "continual_planning_executive/goalCreator.h"
 #include <moveit_msgs/PlanningScene.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <iostream>
 #include <ros/publisher.h>
+#include <symbolic_planning_utils/load_tables.h>
 
 namespace tidyup_state_creators
 {
+	typedef symbolic_planning_utils::LoadTables::TableLocation TableLocation;
 
 	class GoalCreatorLoadTablesIntoPlanningScene: public continual_planning_executive::GoalCreator
 	{
 		public:
-
-			struct TableLocation {
-			  std::string name;
-			  geometry_msgs::PoseStamped pose;
-			  float sizex, sizey, sizez;
-			};
-
-			typedef GoalCreatorLoadTablesIntoPlanningScene::TableLocation tableLocation;
 
 			GoalCreatorLoadTablesIntoPlanningScene();
 			~GoalCreatorLoadTablesIntoPlanningScene();
@@ -37,22 +30,13 @@ namespace tidyup_state_creators
 
 		private:
 
-			std::vector<tableLocation> tables_;
 			ros::Publisher pubPlanningScene_;
 
-			// Load a file containing table information and store them into tables_
-			bool load(const std::string& filename);
-			tableLocation getTableLocationFromString(const std::string& line);
-
-			// Get all tables (name, Pose, size)
-			inline const std::vector<tableLocation>& getTables() const { return tables_; };
-
 			// Create collision objects and publish them into the planning scene
-			void loadTablesIntoPlanningScene();
+			void loadTablesIntoPlanningScene(const std::vector<TableLocation>& tables);
 
 	};
 
 };
-
 
 #endif /* GOALCREATORLOADTABLESINTOPLANNINGSCENE_H_ */
