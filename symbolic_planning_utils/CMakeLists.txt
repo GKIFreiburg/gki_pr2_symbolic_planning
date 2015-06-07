@@ -110,6 +110,7 @@ add_library(symbolic_planning_utils
   src/planning_scene_monitor.cpp
   src/joint_limits.cpp
   src/load_tables.cpp
+  src/planning_scene_monitor_singleton.cpp
 )
 
 ## Declare a cpp executable
