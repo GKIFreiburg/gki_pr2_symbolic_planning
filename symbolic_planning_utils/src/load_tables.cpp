@@ -8,11 +8,11 @@ namespace symbolic_planning_utils
 	// Get all tables (name, Pose, size) from tables.dat file
 	bool LoadTables::getTables(std::vector<TableLocation>& tables)
 	{
-        ros::NodeHandle nhPriv("~");
+        ros::NodeHandle nh;
 		// load table locations from file
 		std::string tablesFile;
 
-		if(!nhPriv.getParam("tables", tablesFile)) {
+		if(!nh.getParam("continual_planning_executive/tables", tablesFile)) {
 			ROS_ERROR("Could not get ~tables parameter.");
 			return false;
 		}
