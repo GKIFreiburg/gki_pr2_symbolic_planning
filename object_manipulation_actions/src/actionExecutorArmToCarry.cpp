@@ -1,6 +1,6 @@
 #include "object_manipulation_actions/actionExecutorArmToCarry.h"
 #include <pluginlib/class_list_macros.h>
-#include "tidyup_utils/planning_scene_interface.h"
+//#include "tidyup_utils/planning_scene_interface.h"
 
 //PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_arm_to_carry,
 //        object_manipulation_actions::ActionExecutorArmToCarry,
@@ -29,8 +29,8 @@ namespace object_manipulation_actions
     bool ActionExecutorArmToCarry::fillGoal(tidyup_msgs::PostGraspPositionGoal & goal,
             const DurativeAction & a, const SymbolicState & current)
     {
-        if(!PlanningSceneInterface::instance()->resetPlanningScene())   // FIXME try anyways?
-            ROS_ERROR("%s: PlanningScene reset failed.", __PRETTY_FUNCTION__);
+//        if(!PlanningSceneInterface::instance()->resetPlanningScene())   // FIXME try anyways?
+//            ROS_ERROR("%s: PlanningScene reset failed.", __PRETTY_FUNCTION__);
 
         goal.left_arm = false;
         goal.right_arm = false;
