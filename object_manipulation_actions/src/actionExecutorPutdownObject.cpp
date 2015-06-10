@@ -14,7 +14,6 @@
 #define forEach BOOST_FOREACH
 
 #include <moveit_msgs/MoveItErrorCodes.h>
-#include "tidyup_utils/planning_scene_interface.h"
 
 //PLUGINLIB_DECLARE_CLASS(object_manipulation_actions, action_executor_putdown_object,
 //        object_manipulation_actions::ActionExecutorPutdownObject,
