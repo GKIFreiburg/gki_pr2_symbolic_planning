@@ -6,11 +6,14 @@
  */
 
 #include "planner_modules_pr2/tidyup_planning_scene_updater.h"
-#include "tidyup_utils/planning_scene_interface.h"
-#include "tidyup_utils/arm_state.h"
+#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/planning_pipeline/planning_pipeline.h>
+//#include "tidyup_utils/planning_scene_interface.h"
+//#include "tidyup_utils/arm_state.h"
 #include "tidyup_utils/stringutil.h"
-#include "tidyup_utils/geometryPoses.h"
+//#include "tidyup_utils/geometryPoses.h"
 #include <ros/ros.h>
+#include <tf_conversions/tf_eigen.h>
 
 using std::vector;
 using std::map;
@@ -19,12 +22,9 @@ using std::string;
 
 TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance = NULL;
 
-TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() : logName("[psu]")
+TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
+		logName("[psu]")
 {
-/*    string doorLocationFileName;
-    ros::param::get("/continual_planning_executive/door_location_file", doorLocationFileName);
-    loadDoorPoses(doorLocationFileName);
-*/
 //    defaultAttachPose.position.x = 0.032;
 //    defaultAttachPose.position.y = 0.015;
 //    defaultAttachPose.position.z = 0.0;
@@ -33,178 +33,152 @@ TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() : logName("[psu]")
 //    defaultAttachPose.orientation.z = -0.690;
 //    defaultAttachPose.orientation.w = 0.105;
 
-    ROS_INFO("%s initialized.\n", logName.c_str());
+	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
+
+	ROS_INFO("%s initialized.\n", logName.c_str());
 }
 
 TidyupPlanningSceneUpdater::~TidyupPlanningSceneUpdater()
 {
 }
 
-bool TidyupPlanningSceneUpdater::readState(
-        const string& robotLocation,
-        predicateCallbackType predicateCallback,
-        numericalFluentCallbackType numericalFluentCallback,
-        geometry_msgs::Pose& robotPose,
-        map<string, geometry_msgs::Pose>& movableObjects,
-        GraspedObjectMap& graspedObjects,
-        map<string, string>& objectsOnStatic,
-        set<string>& openDoors)
+bool TidyupPlanningSceneUpdater::readState(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, map<string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
+		map<string, string>& objectsOnStatic)
 {
-    if (instance == NULL) instance = new TidyupPlanningSceneUpdater();
-    return instance->readState_(robotLocation, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic, openDoors);
+	if (instance == NULL)
+		instance = new TidyupPlanningSceneUpdater();
+	return instance->readState_(robotLocation, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic);
 }
 
-
-
-bool TidyupPlanningSceneUpdater::readState_(
-        const string& robotLocation,
-        predicateCallbackType predicateCallback,
-        numericalFluentCallbackType numericalFluentCallback,
-        geometry_msgs::Pose& robotPose,
-        map<string, geometry_msgs::Pose>& movableObjects,
-        GraspedObjectMap& graspedObjects,
-        map<string, string>& objectsOnStatic,
-        set<string>& openDoors)
+bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, map<string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
+		map<string, string>& objectsOnStatic)
 {
-    // get poses of all movable objects
-    PlanningSceneInterface* psi = PlanningSceneInterface::instance();
-//    psi->resetPlanningScene();
-    geometry_msgs::Pose pose;
-    const vector <moveit_msgs::CollisionObject>& collisionObjects = psi->getCollisionObjects();
-    for (vector <moveit_msgs::CollisionObject>::const_iterator it = collisionObjects.begin();
-            it != collisionObjects.end(); it++)
-    {
-        const string& objectName = it->id;
-        if (StringUtil::startsWith(objectName, "table"))
-            continue;
-        if (StringUtil::startsWith(objectName, "door"))
-            continue;
-        if (StringUtil::startsWith(objectName, "sponge"))
-            continue;
-        if (! fillPoseFromState_(pose, objectName, numericalFluentCallback))
-        {
-            psi->removeObject(objectName);
-        }
-        else
-        {
-            movableObjects.insert(make_pair(objectName, pose));
-        }
-    }
-    const vector <moveit_msgs::AttachedCollisionObject>& attachedObjects = psi->getAttachedCollisionObjects();
-    for (vector <moveit_msgs::AttachedCollisionObject>::const_iterator it = attachedObjects.begin(); it != attachedObjects.end(); it++)
-    {
-        const string& objectName = it->object.id;
-        if (StringUtil::startsWith(objectName, "table"))
-            continue;
-        if (StringUtil::startsWith(objectName, "door"))
-            continue;
-        if (StringUtil::startsWith(objectName, "sponge"))
-            continue;
-        if (! fillPoseFromState_(pose, objectName, numericalFluentCallback))
-        {
-            psi->removeObject(objectName);
-        }
-        else
-        {
-            movableObjects.insert(make_pair(objectName, pose));
-        }
-    }
+	// get poses of all movable objects
+	scene_monitor->requestPlanningSceneState("/get_planning_scene");
+	planning_scene::PlanningScenePtr scene = scene_monitor->getPlanningScene();
+	collision_detection::WorldConstPtr world = scene->getWorld();
+	geometry_msgs::Pose pose;
+	for (collision_detection::World::const_iterator it = world->begin(); it != world->end(); it++)
+	{
+		const string& objectName = it->first;
+		if (StringUtil::startsWith(objectName, "table"))
+			continue;
+		if (StringUtil::startsWith(objectName, "sponge"))
+			continue;
+		if (fillPoseFromState_(pose, objectName, numericalFluentCallback))
+		{
+			movableObjects.insert(make_pair(objectName, pose));
+		}
+	}
+	vector<const moveit::core::AttachedBody*> attachedObjects;
+	scene->getCurrentState().getAttachedBodies(attachedObjects);
+	for (vector<const moveit::core::AttachedBody*>::iterator it = attachedObjects.begin(); it != attachedObjects.end(); it++)
+	{
+		const string& objectName = (*it)->getName();
+		if (StringUtil::startsWith(objectName, "table"))
+			continue;
+		if (StringUtil::startsWith(objectName, "sponge"))
+			continue;
+		if (fillPoseFromState_(pose, objectName, numericalFluentCallback))
+		{
+			movableObjects.insert(make_pair(objectName, pose));
+		}
+	}
 
-    // find grasped objects and objects on tables
-    PredicateList* predicates = NULL;
-    if (!predicateCallback(predicates))
-    {
-        ROS_ERROR("%s predicateCallback failed.", logName.c_str());
-        return false;
-    }
-    ROS_ASSERT(predicates != NULL);
-    for (PredicateList::iterator it = predicates->begin(); it != predicates->end(); it++)
-    {
-        Predicate p = *it;
-        if (!p.value)
-            continue;
-        if (p.name == "on")
-        {
-            ROS_ASSERT(p.parameters.size() == 2);
-            // (on movable static)
-            objectsOnStatic.insert(make_pair(p.parameters.front().value, p.parameters.back().value));
-        }
-        else if (p.name == "grasped")
-        {
-            ROS_ASSERT(p.parameters.size() == 2);
-            // (grasped object arm)
-            string objectName = p.parameters.front().value;
-            ROS_ASSERT(fillPoseFromState_(pose, objectName, numericalFluentCallback));
-            graspedObjects.insert(make_pair(objectName, make_pair(p.parameters.back().value, pose)));
-        }
-        else if (p.name == "door-open")
-        {
-            ROS_ASSERT(p.parameters.size() == 1);
-            // (door-open door)
-            openDoors.insert(p.parameters.front().value);
-        }
-    }
+	// find grasped objects and objects on tables
+	PredicateList* predicates = NULL;
+	if (!predicateCallback(predicates))
+	{
+		ROS_ERROR("%s predicateCallback failed.", logName.c_str());
+		return false;
+	}
+	ROS_ASSERT(predicates != NULL);
+	for (PredicateList::iterator it = predicates->begin(); it != predicates->end(); it++)
+	{
+		Predicate p = *it;
+		if (!p.value)
+			continue;
+		if (p.name == "on")
+		{
+			ROS_ASSERT(p.parameters.size() == 2);
+			// (on movable static)
+			objectsOnStatic.insert(make_pair(p.parameters.front().value, p.parameters.back().value));
+		}
+		else if (p.name == "grasped")
+		{
+			ROS_ASSERT(p.parameters.size() == 2);
+			// (grasped object arm)
+			string objectName = p.parameters.front().value;
+			ROS_ASSERT(fillPoseFromState_(pose, objectName, numericalFluentCallback));
+			graspedObjects.insert(make_pair(objectName, make_pair(p.parameters.back().value, pose)));
+		}
+	}
 
-    // Robot pose
-    if (! fillPoseFromState_(robotPose, robotLocation, numericalFluentCallback))
-    {
-        ROS_ERROR("%s get robot location failed.", logName.c_str());
-    }
-    return true;
+	// Robot pose
+	if (!fillPoseFromState_(robotPose, robotLocation, numericalFluentCallback))
+	{
+		ROS_ERROR("%s get robot location failed.", logName.c_str());
+	}
+	return true;
 }
 
-bool TidyupPlanningSceneUpdater::update(const geometry_msgs::Pose& robotPose,
-        const map<string, geometry_msgs::Pose>& movableObjects,
-        const GraspedObjectMap& graspedObjects,
-        const set<string>& openDoors,
-        bool sendDiff)
+bool TidyupPlanningSceneUpdater::update(const geometry_msgs::Pose& robotPose, const map<string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects)
 {
-    if (instance == NULL) instance = new TidyupPlanningSceneUpdater();
-    return instance->update_(robotPose, movableObjects, graspedObjects, openDoors, sendDiff);
+	if (instance == NULL)
+		instance = new TidyupPlanningSceneUpdater();
+	return instance->update_(robotPose, movableObjects, graspedObjects);
 }
 
 bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
         const map<string, geometry_msgs::Pose>& movableObjects,
-        const GraspedObjectMap& graspedObjects,
-        const set<string>& openDoors,
-        bool sendDiff)
+        const GraspedObjectMap& graspedObjects)
 {
-    PlanningSceneInterface* psi = PlanningSceneInterface::instance();
-//    psi->resetPlanningScene();
+	planning_scene::PlanningScenePtr scene = scene_monitor->getPlanningScene();
+	collision_detection::WorldPtr world = scene->getWorldNonConst();
 
-    // set robot state in planning scene
-    ROS_INFO("%s update robot state in planning scene", logName.c_str());
-    moveit_msgs::RobotState state = psi->getRobotState();
-    state.multi_dof_joint_state.transforms[0].translation.x = robotPose.position.x;
-    state.multi_dof_joint_state.transforms[0].translation.y = robotPose.position.y;
-    state.multi_dof_joint_state.transforms[0].translation.z = robotPose.position.z;
-    state.multi_dof_joint_state.transforms[0].rotation = robotPose.orientation;
-    ArmState::get("/arm_configurations/side_tuck/position/", "right_arm").replaceJointPositions(state.joint_state);
-    ArmState::get("/arm_configurations/side_tuck/position/", "left_arm").replaceJointPositions(state.joint_state);
+	// set robot state in planning scene
+	ROS_INFO("%s update robot state in planning scene", logName.c_str());
+	tf::Pose robotPoseTf;
+	Eigen::Affine3d robotPoseEigen;
+	tf::poseMsgToTF(robotPose, robotPoseTf);
+	tf::transformTFToEigen(robotPoseTf, robotPoseEigen);
+	scene->getTransformsNonConst().setTransform(robotPoseEigen, "/base_footprint");
+	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
+	scene->setCurrentState(robot_state);
+	// TODO: set default arm state
+//    ArmState::get("/arm_configurations/side_tuck/position/", "right_arm").replaceJointPositions(state.joint_state);
+//    ArmState::get("/arm_configurations/side_tuck/position/", "left_arm").replaceJointPositions(state.joint_state);
 
-    // update pose of graspable object in the planning scene
-    for(map<string, geometry_msgs::Pose>::const_iterator movabelObjectIt = movableObjects.begin(); movabelObjectIt != movableObjects.end(); movabelObjectIt++)
-    {
-        string object_name = movabelObjectIt->first;
-        ROS_INFO("%s updating object %s", logName.c_str(), object_name.c_str());
-        // if this object is attached somewhere we need to detach it
-        if (psi->getAttachedCollisionObject(object_name) != NULL)
-        {
-            psi->detachObjectAndAdd(object_name);
-        }
-        // object is not attached, update pose
-        if (psi->getCollisionObject(object_name) != NULL)
-        {
-            psi->updateObject(object_name, movabelObjectIt->second);
-        }
-        else
-        {
-            ROS_ERROR("%s object %s does not exist in planning scene.", logName.c_str(), object_name.c_str());
-            return false;
-        }
-    }
+// update pose of movalbe object in the planning scene
+	for (map<string, geometry_msgs::Pose>::const_iterator movabelObjectIt = movableObjects.begin(); movabelObjectIt != movableObjects.end(); movabelObjectIt++)
+	{
+		string object_name = movabelObjectIt->first;
+		ROS_INFO("%s updating object %s", logName.c_str(), object_name.c_str());
+		const moveit::core::AttachedBody* attachedObject = scene->getCurrentStateNonConst().getAttachedBody(object_name);
+		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
+		tf::Pose object_pose_tf;
+		Eigen::Affine3d object_pose_eigen;
+		tf::poseMsgToTF(movabelObjectIt->second, object_pose_tf);
+		tf::transformTFToEigen(object_pose_tf, object_pose_eigen);
+		if (attachedObject != NULL)
+		{
+			// if this object is attached somewhere we need to detach it
+			scene->getCurrentStateNonConst().clearAttachedBody(movabelObjectIt->first);
+			world->addToObject(object_name, attachedObject->getShapes().front(), object_pose_eigen);
+		}
+		else if (object != NULL)
+		{
+			// object is not attached, update pose
+			world->moveShapeInObject(object_name, object->shapes_.front(), object_pose_eigen);
+		}
+		else
+		{
+			ROS_ERROR("%s object %s does not exist in planning scene.", logName.c_str(), object_name.c_str());
+			return false;
+		}
+	}
 
-    // attach putdown object to the correct arm
+    // attach object to the correct arm
 //    const moveit_msgs::CollisionObject* object = psi->getCollisionObject(request.putdown_object);
     for (GraspedObjectMap::const_iterator graspedIt = graspedObjects.begin(); graspedIt != graspedObjects.end(); graspedIt++)
     {
@@ -216,25 +190,6 @@ bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
         psi->updateObject(objectName, graspedIt->second.second);
     }
     psi->setRobotState(state);
-
-    // update doors
-/*    for (map<string, Door>::const_iterator doorIt = doors.begin(); doorIt != doors.end(); doorIt++)
-    {
-        if (openDoors.find(doorIt->first) != openDoors.end())
-        {
-            // door is open
-            psi->updateObject(doorIt->first, doorIt->second.openPose);
-        }
-        else
-        {
-            // door is closed
-            psi->updateObject(doorIt->first, doorIt->second.closedPose);
-        }
-    }
-*/
-    // send changes
-    if (sendDiff)
-        return psi->sendDiff();
     return true;
 }
 
@@ -316,50 +271,5 @@ bool TidyupPlanningSceneUpdater::fillPoseFromState_(geometry_msgs::Pose& pose,
     pose.orientation.z = nfRequest[5].value;
     pose.orientation.w = nfRequest[6].value;
     return true;
-}
-
-void TidyupPlanningSceneUpdater::loadDoorPoses(const string& doorLocationFileName)
-{
-    GeometryPoses locations = GeometryPoses();
-    ROS_ASSERT_MSG(locations.load(doorLocationFileName), "Could not load locations from \"%s\".", doorLocationFileName.c_str());
-    const std::map<std::string, geometry_msgs::PoseStamped>& poses = locations.getPoses();
-    for(std::map<std::string, geometry_msgs::PoseStamped>::const_iterator posesIterator = poses.begin(); posesIterator != poses.end(); posesIterator++)
-    {
-        string name = posesIterator->first;
-        if (StringUtil::startsWith(name, "door"))
-        {
-            string doorName;
-            bool open = false;
-            if(StringUtil::endsWith(name, "_closed"))
-            {
-                doorName = name.substr(0, name.length()-7);
-            }
-            else if(StringUtil::endsWith(name, "_open"))
-            {
-                doorName = name.substr(0, name.length()-5);
-                open = true;
-            }
-            else
-            {
-                ROS_ERROR("navstack planning scene: misformated door location entry %s in file %s", name.c_str(), doorLocationFileName.c_str());
-                continue;
-            }
-            map<string, Door>::iterator doorIterator = doors.find(doorName);
-            if (doorIterator == doors.end())
-            {
-                doors.insert(make_pair(doorName, Door(doorName)));
-                doorIterator = doors.find(doorName);
-            }
-            Door& door = doorIterator->second;
-            if (open)
-            {
-                door.openPose = posesIterator->second.pose;
-            }
-            else
-            {
-                door.closedPose = posesIterator->second.pose;
-            }
-        }
-    }
 }
 

@@ -3,7 +3,7 @@
 
 #include "tfd_modules/module_api/pddlModuleTypes.h"
 #include "tidyup_utils/arm_state.h"
-#include "tidyup_utils/planning_scene_interface.h"
+//#include "tidyup_utils/planning_scene_interface.h"
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 

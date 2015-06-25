@@ -288,12 +288,9 @@ double pathCost(const ParameterList & parameterList,
     if (g_Debug)
     { // prevent spamming ROS_DEBUG calls unless we really want debug
         // debugging raw planner calls
-        static unsigned int calls = 0;
+        static unsigned long calls = 0;
         calls++;
-        if (calls % 10000 == 0)
-        {
-            ROS_DEBUG("Got %d module calls.\n", calls);
-        }
+        ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
     }
     ROS_ASSERT(parameterList.size() == 2);
 

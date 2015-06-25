@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <geometry_msgs/Pose.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 
 using namespace modules;
 
@@ -20,71 +21,31 @@ typedef std::map<std::string, std::pair<std::string, geometry_msgs::Pose> > Gras
 class TidyupPlanningSceneUpdater
 {
 public:
-    virtual ~TidyupPlanningSceneUpdater();
+	virtual ~TidyupPlanningSceneUpdater();
 
-    static bool readState(
-            const string& robotLocation,
-            predicateCallbackType predicateCallback,
-            numericalFluentCallbackType numericalFluentCallback,
-            geometry_msgs::Pose& robotPose,
-            std::map<std::string, geometry_msgs::Pose>& movableObjects,
-            GraspedObjectMap& graspedObjects,
-            std::map<std::string, std::string>& objectsOnStatic,
-            std::set<std::string>& openDoors);
+	static bool readState(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, std::map<std::string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
+			std::map<std::string, std::string>& objectsOnStatic);
 
-    static bool update(const geometry_msgs::Pose& robotPose,
-            const std::map<std::string, geometry_msgs::Pose>& movableObjects,
-            const GraspedObjectMap& graspedObjects,
-            const std::set<std::string>& openDoors,
-            bool sendDiff=true);
+	static bool update(const geometry_msgs::Pose& robotPose, const std::map<std::string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects);
 
-    static bool fillPoseFromState(geometry_msgs::Pose& pose,
-            const std::string& poseName,
-            numericalFluentCallbackType numericalFluentCallback);
+	static bool fillPoseFromState(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
 
-    static bool fillPointFromState(geometry_msgs::Point& point,
-            const string& poseName,
-            numericalFluentCallbackType numericalFluentCallback);
-
+	static bool fillPointFromState(geometry_msgs::Point& point, const string& poseName, numericalFluentCallbackType numericalFluentCallback);
 
 private:
-    TidyupPlanningSceneUpdater();
-    bool readState_(
-            const string& robotLocation,
-            predicateCallbackType predicateCallback,
-            numericalFluentCallbackType numericalFluentCallback,
-            geometry_msgs::Pose& robotPose,
-            std::map<std::string, geometry_msgs::Pose>& movableObjects,
-            GraspedObjectMap& graspedObjects,
-            std::map<std::string, std::string>& objectsOnStatic,
-            std::set<std::string>& openDoors);
+	TidyupPlanningSceneUpdater();
+	bool readState_(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, std::map<std::string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
+			std::map<std::string, std::string>& objectsOnStatic);
+	bool update_(const geometry_msgs::Pose& robotPose, const std::map<std::string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects);
+	bool fillPoseFromState_(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
+	bool fillPointFromState_(geometry_msgs::Point& point, const string& poseName, numericalFluentCallbackType numericalFluentCallback);
 
-    bool update_(const geometry_msgs::Pose& robotPose,
-            const std::map<std::string, geometry_msgs::Pose>& movableObjects,
-            const GraspedObjectMap& graspedObjects,
-            const std::set<std::string>& openDoors,
-            bool sendDiff);
-
-    bool fillPoseFromState_(geometry_msgs::Pose& pose,
-                const std::string& poseName,
-                numericalFluentCallbackType numericalFluentCallback);
-
-    bool fillPointFromState_(geometry_msgs::Point& point,
-            const string& poseName,
-            numericalFluentCallbackType numericalFluentCallback);
-
-    std::string logName;
+	std::string logName;
 //    geometry_msgs::Pose defaultAttachPose;
-    struct Door
-    {
-        string name;
-        geometry_msgs::Pose closedPose;
-        geometry_msgs::Pose openPose;
-        Door(string name){this->name = name;}
-    };
-    map<string, Door> doors;
-    void loadDoorPoses(const string& doorLocationFileName);
-    static TidyupPlanningSceneUpdater* instance;
+	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;
+
+	static TidyupPlanningSceneUpdater* instance;
+
 };
 
 #endif /* TIDYUP_PLANNING_SCENE_UPDATER_H_ */
