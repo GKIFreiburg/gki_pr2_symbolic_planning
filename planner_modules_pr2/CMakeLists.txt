@@ -107,22 +107,22 @@ include_directories(
 #   src/${PROJECT_NAME}/planner_modules_pr2.cpp
 # )
 
-add_library(planner_modules_pr2
-    src/module_param_cache.cpp
-    src/caching_evaluation.cpp
-    src/navstack_module.cpp
-    src/navstack_planning_scene_module.cpp
-    src/navstack_module_full_body.cpp
-    src/tidyup_planning_scene_updater.cpp
-    src/lift_torso_module.cpp
-)
+#add_library(planner_modules_pr2
+#    src/module_param_cache.cpp
+#    src/caching_evaluation.cpp
+#    src/navstack_module.cpp
+#    src/navstack_planning_scene_module.cpp
+#    src/navstack_module_full_body.cpp
+#    src/tidyup_planning_scene_updater.cpp
+#    src/lift_torso_module.cpp
+#)
 
-add_library(putdown_modules
-    src/module_param_cache.cpp
-    src/caching_evaluation.cpp
-    src/putdown_modules.cpp
-    src/subsumption_caching.cpp
-    src/tidyup_planning_scene_updater.cpp)
+#add_library(putdown_modules
+#    src/module_param_cache.cpp
+#    src/caching_evaluation.cpp
+#    src/putdown_modules.cpp
+#    src/subsumption_caching.cpp
+#    src/tidyup_planning_scene_updater.cpp)
 
 #add_library(pickup_modules
 #    src/module_param_cache.cpp
@@ -137,8 +137,8 @@ add_library(putdown_modules
 #    ${continual_planning_executive_PACKAGE_PATH}/src/symbolicState.cpp)
 #target_link_libraries(precache_navigation planner_modules_pr2)
 
-target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
-target_link_libraries(putdown_modules ${catkin_LIBRARIES})
+#target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
+#target_link_libraries(putdown_modules ${catkin_LIBRARIES})
 
 ## Declare a cpp executable
 # add_executable(planner_modules_pr2_node src/planner_modules_pr2_node.cpp)

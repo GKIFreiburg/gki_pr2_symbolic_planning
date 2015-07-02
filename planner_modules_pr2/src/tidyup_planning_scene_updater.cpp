@@ -185,11 +185,11 @@ bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
         const string& objectName = graspedIt->first;
         const string& arm = graspedIt->second.first;
         ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), objectName.c_str(), arm.c_str());
-        ArmState::get("/arm_configurations/side_tuck/position/", arm).replaceJointPositions(state.joint_state);
-        psi->attachObjectToGripper(objectName, arm);
-        psi->updateObject(objectName, graspedIt->second.second);
+//        ArmState::get("/arm_configurations/side_tuck/position/", arm).replaceJointPositions(state.joint_state);
+//        psi->attachObjectToGripper(objectName, arm);
+//        psi->updateObject(objectName, graspedIt->second.second);
     }
-    psi->setRobotState(state);
+//    psi->setRobotState(state);
     return true;
 }
 

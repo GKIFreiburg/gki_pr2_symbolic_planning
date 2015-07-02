@@ -3,7 +3,7 @@
 //#include "tidyup_utils/arm_state.h"
 //#include "tidyup_utils/planning_scene_interface.h"
 #include "planner_modules_pr2/tidyup_planning_scene_updater.h"
-#include "tidyup_utils/planning_scene_interface.h"
+//#include "tidyup_utils/planning_scene_interface.h"
 //#include "tidyup_utils/transformer.h"
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -316,7 +316,7 @@ bool findPutdownPose(const ParameterList & parameterList,
     map<string, string> objectsOnStatic;
     set<string> openDoors;
     moveit_msgs::PlanningScene world = PlanningSceneInterface::instance()->getCurrentScene();
-    if (! TidyupPlanningSceneUpdater::readState(robot_location.value, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic, openDoors))
+    if (! TidyupPlanningSceneUpdater::readState(robot_location.value, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic))
     {
         ROS_ERROR("%s read state failed.", logName.c_str());
         return false;
@@ -492,7 +492,7 @@ bool findPutdownPose(const ParameterList & parameterList,
     PlanningSceneInterface::instance()->resetPlanningScene();
     ROS_DEBUG("%s set planning scene", logName.c_str());
     // dont need to send the diff as its send with the request.
-    if (! TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects, openDoors, false))
+    if (! TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects))
     {
         ROS_ERROR("%s update planning scene failed.", logName.c_str());
         return false;
@@ -663,7 +663,7 @@ double wipePointFree(const ParameterList & parameterList, predicateCallbackType 
     map<string, string> objectsOnStatic;
     set<string> openDoors;
     moveit_msgs::PlanningScene world = PlanningSceneInterface::instance()->getCurrentScene();
-    if (! TidyupPlanningSceneUpdater::readState(robot_location.value, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic, openDoors))
+    if (! TidyupPlanningSceneUpdater::readState(robot_location.value, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic))
     {
         ROS_ERROR("%s read state failed.", logName.c_str());
         return INFINITE_COST;
