@@ -182,14 +182,30 @@ bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
 //    const moveit_msgs::CollisionObject* object = psi->getCollisionObject(request.putdown_object);
     for (GraspedObjectMap::const_iterator graspedIt = graspedObjects.begin(); graspedIt != graspedObjects.end(); graspedIt++)
     {
-        const string& objectName = graspedIt->first;
+        const string& object_name = graspedIt->first;
         const string& arm = graspedIt->second.first;
-        ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), objectName.c_str(), arm.c_str());
-//        ArmState::get("/arm_configurations/side_tuck/position/", arm).replaceJointPositions(state.joint_state);
-//        psi->attachObjectToGripper(objectName, arm);
-//        psi->updateObject(objectName, graspedIt->second.second);
+        string arm_prefix = arm.substr(0, arm.find_first_of("_"));
+        ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), object_name.c_str(), arm.c_str());
+		const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
+		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
+		if (object != NULL)
+		{
+			// attach
+			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
+			world->removeObject(object_name);
+		}
+		else if (attachedObject != NULL)
+		{
+			// if incorrect arm update arm
+			string attach_link_name = arm_prefix[0]+"_wrist_roll_link";
+			if (attachedObject->getAttachedLinkName() != attach_link_name)
+			{
+				std::vector<shapes::ShapeConstPtr> shapes = attachedObject->getShapes();
+				robot_state.clearAttachedBody(object_name);
+				attachObject(arm_prefix, object_name, shapes, defaultAttachPose, robot_state);
+			}
+		}
     }
-//    psi->setRobotState(state);
     return true;
 }
 
@@ -272,4 +288,20 @@ bool TidyupPlanningSceneUpdater::fillPoseFromState_(geometry_msgs::Pose& pose,
     pose.orientation.w = nfRequest[6].value;
     return true;
 }
+
+void attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state)
+{
+	tf::Pose attach_pose_tf;
+	tf::poseMsgToTF(grasp, attach_pose_tf);
+	Eigen::Affine3d attach_pose_eigen;
+	tf::poseTFToEigen(attach_pose_tf, attach_pose_eigen);
+	EigenSTL::vector_Affine3d attach_trans;
+	attach_trans.push_back(attach_pose_eigen);
+	const std::vector<std::string>& names = robot_state.getRobotModel()->getEndEffector(arm_prefix+"_eef")->getLinkModelNamesWithCollisionGeometry();
+	std::set<std::string> touch_links;
+	touch_links.insert(names.begin(), names.end());
+	std::string link_name = arm_prefix[0]+"_wrist_roll_link";
+	robot_state.attachBody(object, shapes, attach_trans, touch_links, link_name);
+}
+
 

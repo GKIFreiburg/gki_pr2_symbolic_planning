@@ -39,9 +39,10 @@ private:
 	bool update_(const geometry_msgs::Pose& robotPose, const std::map<std::string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects);
 	bool fillPoseFromState_(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
 	bool fillPointFromState_(geometry_msgs::Point& point, const string& poseName, numericalFluentCallbackType numericalFluentCallback);
+	void attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state);
 
 	std::string logName;
-//    geometry_msgs::Pose defaultAttachPose;
+	geometry_msgs::Pose defaultAttachPose;
 	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;
 
 	static TidyupPlanningSceneUpdater* instance;

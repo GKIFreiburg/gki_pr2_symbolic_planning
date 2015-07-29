@@ -6,12 +6,21 @@ project(planner_modules_pr2)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
 #  continual_planning_msgs
-  moveit_msgs
-  nav_msgs
+  roscpp
   pluginlib
+  actionlib
   tf
   tfd_modules
-  tidyup_msgs
+  moveit_core
+  moveit_msgs
+  moveit_ros_planning_interface
+  object_recognition_msgs
+  symbolic_name_tools
+  grasp_provider_msgs
+  object_surface_placements
+  interactive_markers
+  moveit_ros_warehouse
+  nav_msgs
   tidyup_utils
 )
 
@@ -100,6 +109,11 @@ catkin_package(
 include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+)
+
+add_library(planner_modules_pr2
+	src/ManipulationPlanning.cpp
+	src/tidyup_planning_scene_updater.cpp
 )
 
 ## Declare a cpp library

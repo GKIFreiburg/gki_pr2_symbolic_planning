@@ -9,22 +9,6 @@
 
 using namespace modules;
 
-//class PlanningSceneNavigationModule
-//{
-//public:
-//    static PlanningSceneNavigationModule* instance();
-//
-//    void initModule(int argc, char** argv);
-//
-//    // TEST and DEBUG methods
-////    const arm_navigation_msgs::SetPlanningSceneDiff& getPlanningScene() const {return spsdService;}
-////    bool setPlanningSceneDiff(arm_navigation_msgs::SetPlanningSceneDiff& service) {return setPlanningSceneService.call(service);}
-//
-//private:
-//    static PlanningSceneNavigationModule* singleton_instance;
-//    PlanningSceneNavigationModule(){}
-//};
-
 #ifdef __cplusplus
 extern "C" {
 #endif
