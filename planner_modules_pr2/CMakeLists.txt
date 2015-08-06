@@ -86,7 +86,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES planner_modules_pr2
+  LIBRARIES planner_modules_pr2 drive_pose_modules
 #  CATKIN_DEPENDS continual_planning_msgs moveit_msgs nav_msgs planner_benchmarks pluginlib tf tfd_modules tidyup_msgs tidyup_utils
 #  DEPENDS system_lib
 )
@@ -117,6 +117,10 @@ add_library(planner_modules_pr2
     src/lift_torso_module.cpp
 )
 
+add_library(drive_pose_modules
+	src/drive_pose_module.cpp
+)
+
 add_library(putdown_modules
     src/module_param_cache.cpp
     src/caching_evaluation.cpp
@@ -138,6 +142,7 @@ add_library(putdown_modules
 #target_link_libraries(precache_navigation planner_modules_pr2)
 
 target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
+target_link_libraries(drive_pose_modules ${catkin_LIBRARIES})
 target_link_libraries(putdown_modules ${catkin_LIBRARIES})
 
 ## Declare a cpp executable
