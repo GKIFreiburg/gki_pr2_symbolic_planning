@@ -34,6 +34,7 @@ TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 //    defaultAttachPose.orientation.w = 0.105;
 
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
+	scene_monitor->requestPlanningSceneState("/get_planning_scene");
 
 	ROS_INFO("%s initialized.\n", logName.c_str());
 }
@@ -50,11 +51,15 @@ bool TidyupPlanningSceneUpdater::readState(const string& robotLocation, predicat
 	return instance->readState_(robotLocation, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic);
 }
 
-bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, map<string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
+bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation,
+		predicateCallbackType predicateCallback,
+		numericalFluentCallbackType numericalFluentCallback,
+		geometry_msgs::Pose& robotPose,
+		map<string, geometry_msgs::Pose>& movableObjects,
+		GraspedObjectMap& graspedObjects,
 		map<string, string>& objectsOnStatic)
 {
 	// get poses of all movable objects
-	scene_monitor->requestPlanningSceneState("/get_planning_scene");
 	planning_scene::PlanningScenePtr scene = scene_monitor->getPlanningScene();
 	collision_detection::WorldConstPtr world = scene->getWorld();
 	geometry_msgs::Pose pose;
@@ -122,34 +127,39 @@ bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation, predica
 	return true;
 }
 
-bool TidyupPlanningSceneUpdater::update(const geometry_msgs::Pose& robotPose, const map<string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects)
+bool TidyupPlanningSceneUpdater::update(const geometry_msgs::Pose& robotPose,
+		const map<string, geometry_msgs::Pose>& movableObjects,
+		const GraspedObjectMap& graspedObjects,
+		planning_scene::PlanningScenePtr& scene)
 {
 	if (instance == NULL)
 		instance = new TidyupPlanningSceneUpdater();
-	return instance->update_(robotPose, movableObjects, graspedObjects);
+	return instance->update_(robotPose, movableObjects, graspedObjects, scene);
 }
 
 bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
         const map<string, geometry_msgs::Pose>& movableObjects,
-        const GraspedObjectMap& graspedObjects)
+        const GraspedObjectMap& graspedObjects,
+		planning_scene::PlanningScenePtr& scene)
 {
-	planning_scene::PlanningScenePtr scene = scene_monitor->getPlanningScene();
+	scene = scene_monitor->getPlanningScene();
 	collision_detection::WorldPtr world = scene->getWorldNonConst();
 
 	// set robot state in planning scene
 	ROS_INFO("%s update robot state in planning scene", logName.c_str());
-	tf::Pose robotPoseTf;
-	Eigen::Affine3d robotPoseEigen;
-	tf::poseMsgToTF(robotPose, robotPoseTf);
-	tf::transformTFToEigen(robotPoseTf, robotPoseEigen);
-	scene->getTransformsNonConst().setTransform(robotPoseEigen, "/base_footprint");
+	tf::Quaternion orientation;
+	tf::quaternionMsgToTF(robotPose.orientation, orientation);
+	double yaw = tf::getYaw(orientation);
 	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
-	scene->setCurrentState(robot_state);
-	// TODO: set default arm state
-//    ArmState::get("/arm_configurations/side_tuck/position/", "right_arm").replaceJointPositions(state.joint_state);
-//    ArmState::get("/arm_configurations/side_tuck/position/", "left_arm").replaceJointPositions(state.joint_state);
+	robot_state.setVariablePosition("world_joint/x", robotPose.position.x);
+	robot_state.setVariablePosition("world_joint/y", robotPose.position.y);
+	robot_state.setVariablePosition("world_joint/theta", yaw);
 
-// update pose of movalbe object in the planning scene
+	// set default arm state
+	setArmJointsToSidePosition("right_arm", scene);
+	setArmJointsToSidePosition("left_arm", scene);
+
+	// update pose of movalbe object in the planning scene
 	for (map<string, geometry_msgs::Pose>::const_iterator movabelObjectIt = movableObjects.begin(); movabelObjectIt != movableObjects.end(); movabelObjectIt++)
 	{
 		string object_name = movabelObjectIt->first;
@@ -289,7 +299,7 @@ bool TidyupPlanningSceneUpdater::fillPoseFromState_(geometry_msgs::Pose& pose,
     return true;
 }
 
-void attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state)
+void TidyupPlanningSceneUpdater::attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state)
 {
 	tf::Pose attach_pose_tf;
 	tf::poseMsgToTF(grasp, attach_pose_tf);
@@ -304,4 +314,20 @@ void attachObject(const string& arm_prefix, const string& object, const std::vec
 	robot_state.attachBody(object, shapes, attach_trans, touch_links, link_name);
 }
 
-
+void TidyupPlanningSceneUpdater::setArmJointsToSidePosition(const std::string& arm, planning_scene::PlanningScenePtr scene)
+{
+	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
+	const moveit::core::JointModelGroup* model_group = robot_state.getJointModelGroup(arm);
+	std::map< std::string, double > values;
+	// right_arm_to_side is a group defined in pr2.srdf (tidyup_pr2_moveit_config)
+	if (!model_group->getVariableDefaultPositions(arm+"_to_side", values))
+	{
+		ROS_WARN("%s: Could not set positions for %s to side!", __func__, arm.c_str());
+	}
+	std::map< std::string, double >::iterator it;
+	for (it = values.begin(); it != values.end(); it++)
+	{
+		// ROS_INFO_STREAM(it->first << " " << it->second);
+		robot_state.setJointPositions(it->first, &it->second);
+	}
+}

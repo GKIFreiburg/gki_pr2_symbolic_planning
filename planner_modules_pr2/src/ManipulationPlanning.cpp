@@ -14,7 +14,7 @@
 namespace planner_modules_pr2
 {
 
-boost::shared_ptr<ManipulationPlanning> instance_;
+boost::shared_ptr<ManipulationPlanning> ManipulationPlanning::instance_;
 
 boost::weak_ptr<ManipulationPlanning> ManipulationPlanning::instance()
 {
@@ -78,34 +78,9 @@ void ManipulationPlanning::pickup(planning_scene::PlanningScenePtr psc,
 	goal.support_surface_name = support_surface;
 	goal.allow_gripper_support_collision = false;
 	goal.end_effector = arm_prefix + "_eef";
-	try
-	{
-		fillGrasps(psc, goal.target_name, arm_prefix, goal.possible_grasps);
-		planPickupAndUpdateScene(psc, goal);
-	}
-	catch (ManipulationException& ex)
-	{
-		ROS_ERROR("Pickup failed: %s", ex.what());
-	}
-	catch (std::exception& ex)
-	{
-		ROS_ERROR("Error: %s", ex.what());
-	}
 
-//    ros::Duration(1.0).sleep();
-//    ROS_INFO("pick done, publishing planning scene");
-//    moveit_msgs::PlanningScene psMsg;
-//    psc->getPlanningSceneMsg(psMsg);
-//    pubPlanningScene.publish(psMsg);
-
-//    ros::Duration(2.0).sleep();
-//    ROS_INFO("adding motion plan after pick");
-//    // plan with attached forgets attached...
-//    moveit_msgs::MotionPlanRequest req;
-//    req.goal_constraints.clear();
-//    req.goal_constraints.push_back(kinematic_constraints::constructGoalConstraints(arms_up, jmg));
-//    if(!planAndVisualize(psc, req))
-//        return;
+	fillGrasps(psc, goal.target_name, arm_prefix, goal.possible_grasps);
+	planPickupAndUpdateScene(psc, goal);
 }
 
 void ManipulationPlanning::planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal)
@@ -211,7 +186,7 @@ moveit_msgs::CollisionObject ManipulationPlanning::getCollisionObjectFromPlannin
 
 		if (shapes == NULL || shape_transforms == NULL)
 		{
-			throw "Cannot find object "+id+" in scene.";
+			throw ObjectNotFoundInSceneException(id);
 		}
 	}
 
@@ -257,7 +232,7 @@ private:
 	const geometry_msgs::Pose* pose_;
 };
 
-moveit_msgs::CollisionObject createCollisionObject(const std::string& name,
+moveit_msgs::CollisionObject ManipulationPlanning::createCollisionObject(const std::string& name,
 	const planning_scene::PlanningScenePtr& scene,
 	const std::vector<shapes::ShapeConstPtr>& shapes,
 	const EigenSTL::vector_Affine3d& shape_transforms)

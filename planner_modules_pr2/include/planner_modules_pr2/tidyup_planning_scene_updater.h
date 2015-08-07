@@ -26,7 +26,10 @@ public:
 	static bool readState(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, std::map<std::string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
 			std::map<std::string, std::string>& objectsOnStatic);
 
-	static bool update(const geometry_msgs::Pose& robotPose, const std::map<std::string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects);
+	static bool update(const geometry_msgs::Pose& robotPose,
+			const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			const GraspedObjectMap& graspedObjects,
+			planning_scene::PlanningScenePtr& scene);
 
 	static bool fillPoseFromState(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
 
@@ -34,12 +37,23 @@ public:
 
 private:
 	TidyupPlanningSceneUpdater();
-	bool readState_(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, std::map<std::string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
+	bool readState_(const string& robotLocation,
+			predicateCallbackType predicateCallback,
+			numericalFluentCallbackType numericalFluentCallback,
+			geometry_msgs::Pose& robotPose,
+			std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			GraspedObjectMap& graspedObjects,
 			std::map<std::string, std::string>& objectsOnStatic);
-	bool update_(const geometry_msgs::Pose& robotPose, const std::map<std::string, geometry_msgs::Pose>& movableObjects, const GraspedObjectMap& graspedObjects);
+	bool update_(const geometry_msgs::Pose& robotPose,
+			const std::map<std::string,
+			geometry_msgs::Pose>& movableObjects,
+			const GraspedObjectMap& graspedObjects,
+			planning_scene::PlanningScenePtr& scene);
 	bool fillPoseFromState_(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
 	bool fillPointFromState_(geometry_msgs::Point& point, const string& poseName, numericalFluentCallbackType numericalFluentCallback);
 	void attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state);
+
+	void setArmJointsToSidePosition(const std::string& arm, planning_scene::PlanningScenePtr scene);
 
 	std::string logName;
 	geometry_msgs::Pose defaultAttachPose;

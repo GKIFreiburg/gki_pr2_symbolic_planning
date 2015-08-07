@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   pluginlib
   actionlib
   tf
+  tf_conversions
   tfd_modules
   moveit_core
   moveit_msgs
@@ -115,6 +116,9 @@ add_library(planner_modules_pr2
 	src/ManipulationPlanning.cpp
 	src/tidyup_planning_scene_updater.cpp
 )
+target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
+add_executable(test_pickup src/test_pickup.cpp)
+target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
 
 ## Declare a cpp library
 # add_library(planner_modules_pr2

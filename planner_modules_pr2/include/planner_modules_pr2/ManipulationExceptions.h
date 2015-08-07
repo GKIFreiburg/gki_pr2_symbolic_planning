@@ -32,15 +32,18 @@ struct PickupPlanFailedException : public virtual ManipulationException
 		std::stringstream buffer;
 		moveit_msgs::MoveItErrorCodes error;
 		error.val = error_value;
-		buffer << "Pickup failed: " << error;
+		buffer << "MoveIt error code: " << error;
 		return buffer.str().c_str();
 	}
 };
 
 struct ObjectNotFoundInSceneException : public virtual ManipulationException
 {
-	const char* id;
-	ObjectNotFoundInSceneException(const std::string& id) : ManipulationException(), id(id.c_str())
+	std::string id;
+	ObjectNotFoundInSceneException(const std::string& id) : ManipulationException(), id(id)
+	{
+	}
+	virtual ~ObjectNotFoundInSceneException() throw()
 	{
 	}
 
