@@ -6,6 +6,7 @@
 #include <tf/transform_datatypes.h>
 #include <set>
 #include <std_srvs/Empty.h>
+#include <moveit_msgs/LoadMap.h>
 
 //PLUGINLIB_DECLARE_CLASS(tidyup_state_creators, goal_creator_tidyup_initialize,
 //        tidyup_state_creators::GoalCreatorTidyupInitialize, continual_planning_executive::GoalCreator)
@@ -23,7 +24,21 @@ namespace tidyup_state_creators
 
     void GoalCreatorTidyupInitialize::initialize(const std::deque<std::string> & arguments)
     {
+    	// send recorded octomap to move_group
+    	ros::NodeHandle nhPriv("~");
+    	std::string octomap_path;
+        if(!nhPriv.getParam("octomap_path", octomap_path)) {
+            ROS_ERROR("GoalCreatorTidyupInitialize::%s: Could not get ~octomap_path parameter.", __func__);
+            return;
+        }
 
+        ros::ServiceClient client = nhPriv.serviceClient<moveit_msgs::LoadMap>("/move_group/load_map");
+        moveit_msgs::LoadMap srv;
+        srv.request.filename = octomap_path;
+        if (!client.call(srv))
+        {
+        	ROS_ERROR("GoalCreatorTidyupInitialize::%s: Could not send %s to move_group", __func__, octomap_path.c_str());
+        }
     }
 
     bool GoalCreatorTidyupInitialize::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
@@ -38,12 +53,7 @@ namespace tidyup_state_creators
         currentState.addSuperType("movable_object", "pose");
         currentState.addSuperType("arm", "arm");
         currentState.addSuperType("arm_state", "arm_state");
-//        currentState.addSuperType("door_location", "location");
-//        currentState.addSuperType("door_in_location", "door_location");
-//        currentState.addSuperType("door_out_location", "door_location");
-//        currentState.addSuperType("room", "room");
-//        currentState.addSuperType("static_object", "static_object");
-//        currentState.addSuperType("door", "door");
+
         goal.addSuperType("pose", "pose");
         goal.addSuperType("frameid", "frameid");
         goal.addSuperType("location", "pose");
@@ -52,12 +62,6 @@ namespace tidyup_state_creators
         goal.addSuperType("movable_object", "pose");
         goal.addSuperType("arm", "arm");
         goal.addSuperType("arm_state", "arm_state");
-//        goal.addSuperType("door_location", "location");
-//        goal.addSuperType("door_in_location", "door_location");
-//        goal.addSuperType("door_out_location", "door_location");
-//        goal.addSuperType("room", "room");
-//        goal.addSuperType("static_object", "static_object");
-//        goal.addSuperType("door", "door");
 
         currentState.printSuperTypes();
 
@@ -72,7 +76,7 @@ namespace tidyup_state_creators
         // GeometryPoses contains std::map<std::string, geometry_msgs::PoseStamped> poses
         GeometryPoses locations = GeometryPoses();
         if(!locations.load(locationsFile)) {
-            ROS_ERROR("Could not load locations from \"%s\".", locationsFile.c_str());
+            ROS_ERROR("GoalCreatorTidyupInitialize::%s: Could not load locations from \"%s\".", __func__, locationsFile.c_str());
             return false;
         }
 
