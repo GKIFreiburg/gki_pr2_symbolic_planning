@@ -244,13 +244,13 @@ double planning_scene_pathCost(const ParameterList & parameterList,
     map<string, string> objectsOnStatic;
     set<string> openDoors;
 //    arm_navigation_msgs::PlanningScene world = PlanningSceneInterface::instance()->getCurrentScene();
-    if (! TidyupPlanningSceneUpdater::readState(robotLocation, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic, openDoors))
+    if (! TidyupPlanningSceneUpdater::readState(robotLocation, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic))
     {
         ROS_ERROR("%s read state failed.", logName.c_str());
         return INFINITE_COST;
     }
     // set planning scene
-    if (! TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects, openDoors))
+    if (! TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects))
     {
         ROS_ERROR("%s update planning scene failed.", logName.c_str());
         return INFINITE_COST;

@@ -86,6 +86,7 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		return false;
 	}
 
+	executePointHead(tablePose);
 	if (!executePointHead(tablePose))
 		return false;
 
@@ -121,29 +122,29 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 			add_tables, table_prefix, merge_tables))
 		return false;
 
-	// turn head by given degrees - return value is ignored, since action is executed but reports error
-	if (!executeTurnHead(degrees_))
-		return false;
-
-	// execute visual detection to merge table
-	merge_tables = true;
-	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
-	ros::Duration(1.0).sleep();
-	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
-			add_tables, table_prefix, merge_tables))
-		return false;
-
-	// turn head by given degrees, this time in opposite direction
-	if (!executeTurnHead(degrees_ * -1))
-		return false;
-
-	// execute visual detection to merge table
-	merge_tables = true;
-	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
-	ros::Duration(1.0).sleep();
-	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
-			add_tables, table_prefix, merge_tables))
-		return false;
+//	// turn head by given degrees - return value is ignored, since action is executed but reports error
+//	if (!executeTurnHead(degrees_))
+//		return false;
+//
+//	// execute visual detection to merge table
+//	merge_tables = true;
+//	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
+//	ros::Duration(1.0).sleep();
+//	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+//			add_tables, table_prefix, merge_tables))
+//		return false;
+//
+//	// turn head by given degrees, this time in opposite direction
+//	if (!executeTurnHead(degrees_ * -1))
+//		return false;
+//
+//	// execute visual detection to merge table
+//	merge_tables = true;
+//	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
+//	ros::Duration(1.0).sleep();
+//	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+//			add_tables, table_prefix, merge_tables))
+//		return false;
 
 	// After operation is done, point head again to table
 	if (!executePointHead(tablePose))
@@ -190,7 +191,7 @@ bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseSt
 		if (state != actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
 			ROS_ERROR("ActionExecutorInspectLocation::%s: Point Head Action failed.", __func__);
-			return false;
+			//return false;
 		}
 	}
 	return true;
