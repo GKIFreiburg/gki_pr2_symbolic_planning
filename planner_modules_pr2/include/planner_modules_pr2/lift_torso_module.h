@@ -20,7 +20,6 @@ const double INFINITE_COST = HUGE_VAL;
 double vdist_head_to_table_;
 double vdist_threshold_;
 double lift_speed_;
-std::string world_frame_;
 
 // set the variable table_height_ and torso_position_
 bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
