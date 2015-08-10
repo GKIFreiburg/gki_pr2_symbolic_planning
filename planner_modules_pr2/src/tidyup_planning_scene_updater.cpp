@@ -66,6 +66,9 @@ bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation,
 	for (collision_detection::World::const_iterator it = world->begin(); it != world->end(); it++)
 	{
 		const string& objectName = it->first;
+		// first object in world is "<octomap>" which should be skipped
+		if (objectName.find("octomap") != std::string::npos)
+			continue;
 		if (StringUtil::startsWith(objectName, "table"))
 			continue;
 		if (StringUtil::startsWith(objectName, "sponge"))
