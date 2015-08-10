@@ -82,11 +82,10 @@ double computeLiftDistance(const double& table_height, const double& torso_posit
 // ________________________________________________________________________________________________
 void liftTorsoInit(int argc, char** argv)
 {
-	ROS_ASSERT(argc == 2);
+	ROS_ASSERT(argc == 1);
 
     ros::NodeHandle nhPriv("~");
     std::string tfPrefix = tf::getPrefixParam(nhPriv);
-    world_frame_ = tf::resolve(tfPrefix, argv[1]);
 
     // /continual_planning_executive/vdist_head_to_table)
     nhPriv.param("/continual_planning_executive/vdist_head_to_table", vdist_head_to_table_, 0.60);
@@ -96,7 +95,6 @@ void liftTorsoInit(int argc, char** argv)
     nhPriv.param("lift_speed", lift_speed_, 0.02);
 
    	ROS_INFO_STREAM("lift_torso_modules::" << __func__ << ": param namespace: " << nhPriv.getNamespace() << "\n"
-		"world frame: " << world_frame_ << "\n"
 		"vdist_head_to_table: " << vdist_head_to_table_ << "\n"
 		"vdist_module_threshold: " << vdist_threshold_ << "\n"
 		"lift_speed: " << lift_speed_);
