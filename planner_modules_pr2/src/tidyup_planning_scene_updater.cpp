@@ -14,13 +14,21 @@
 //#include "tidyup_utils/geometryPoses.h"
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
+#include <geometry_msgs/Pose2D.h>
 
 using std::vector;
 using std::map;
 using std::set;
 using std::string;
 
-TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance = NULL;
+TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance_ = NULL;
+
+TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance()
+{
+	if (instance_ == NULL)
+		instance_ = new TidyupPlanningSceneUpdater();
+	return instance_;
+}
 
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
@@ -43,18 +51,9 @@ TidyupPlanningSceneUpdater::~TidyupPlanningSceneUpdater()
 {
 }
 
-bool TidyupPlanningSceneUpdater::readState(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, map<string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
-		map<string, string>& objectsOnStatic)
-{
-	if (instance == NULL)
-		instance = new TidyupPlanningSceneUpdater();
-	return instance->readState_(robotLocation, predicateCallback, numericalFluentCallback, robotPose, movableObjects, graspedObjects, objectsOnStatic);
-}
-
-bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation,
+bool TidyupPlanningSceneUpdater::readObjects(
 		predicateCallbackType predicateCallback,
 		numericalFluentCallbackType numericalFluentCallback,
-		geometry_msgs::Pose& robotPose,
 		map<string, geometry_msgs::Pose>& movableObjects,
 		GraspedObjectMap& graspedObjects,
 		map<string, string>& objectsOnStatic)
@@ -73,7 +72,7 @@ bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation,
 			continue;
 		if (StringUtil::startsWith(objectName, "sponge"))
 			continue;
-		if (fillPoseFromState_(pose, objectName, numericalFluentCallback))
+		if (readPose(pose, objectName, numericalFluentCallback))
 		{
 			movableObjects.insert(make_pair(objectName, pose));
 		}
@@ -87,7 +86,7 @@ bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation,
 			continue;
 		if (StringUtil::startsWith(objectName, "sponge"))
 			continue;
-		if (fillPoseFromState_(pose, objectName, numericalFluentCallback))
+		if (readPose(pose, objectName, numericalFluentCallback))
 		{
 			movableObjects.insert(make_pair(objectName, pose));
 		}
@@ -117,46 +116,45 @@ bool TidyupPlanningSceneUpdater::readState_(const string& robotLocation,
 			ROS_ASSERT(p.parameters.size() == 2);
 			// (grasped object arm)
 			string objectName = p.parameters.front().value;
-			ROS_ASSERT(fillPoseFromState_(pose, objectName, numericalFluentCallback));
+			ROS_ASSERT(readPose(pose, objectName, numericalFluentCallback));
 			graspedObjects.insert(make_pair(objectName, make_pair(p.parameters.back().value, pose)));
 		}
-	}
-
-	// Robot pose
-	if (!fillPoseFromState_(robotPose, robotLocation, numericalFluentCallback))
-	{
-		ROS_ERROR("%s get robot location failed.", logName.c_str());
 	}
 	return true;
 }
 
-bool TidyupPlanningSceneUpdater::update(const geometry_msgs::Pose& robotPose,
-		const map<string, geometry_msgs::Pose>& movableObjects,
-		const GraspedObjectMap& graspedObjects,
-		planning_scene::PlanningScenePtr& scene)
+planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getEmptyScene()
 {
-	if (instance == NULL)
-		instance = new TidyupPlanningSceneUpdater();
-	return instance->update_(robotPose, movableObjects, graspedObjects, scene);
+	return scene_monitor->getPlanningScene();
 }
 
-bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
-        const map<string, geometry_msgs::Pose>& movableObjects,
-        const GraspedObjectMap& graspedObjects,
-		planning_scene::PlanningScenePtr& scene)
+void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
+		const geometry_msgs::Pose& robot_pose)
 {
-	scene = scene_monitor->getPlanningScene();
-	collision_detection::WorldPtr world = scene->getWorldNonConst();
-
-	// set robot state in planning scene
-	ROS_INFO("%s update robot state in planning scene", logName.c_str());
+	geometry_msgs::Pose2D pose;
+	pose.x = robot_pose.position.x;
+	pose.y = robot_pose.position.y;
 	tf::Quaternion orientation;
-	tf::quaternionMsgToTF(robotPose.orientation, orientation);
-	double yaw = tf::getYaw(orientation);
+	tf::quaternionMsgToTF(robot_pose.orientation, orientation);
+	pose.theta = tf::getYaw(orientation);
+	updateRobotPose2D(scene, pose);
+}
+
+void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
+		const geometry_msgs::Pose2D& robot_pose)
+{
 	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
-	robot_state.setVariablePosition("world_joint/x", robotPose.position.x);
-	robot_state.setVariablePosition("world_joint/y", robotPose.position.y);
-	robot_state.setVariablePosition("world_joint/theta", yaw);
+	robot_state.setVariablePosition("world_joint/x", robot_pose.x);
+	robot_state.setVariablePosition("world_joint/y", robot_pose.y);
+	robot_state.setVariablePosition("world_joint/theta", robot_pose.theta);
+}
+
+void TidyupPlanningSceneUpdater::updateObjects(
+		planning_scene::PlanningScenePtr scene,
+		const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+		const GraspedObjectMap& graspedObjects)
+{
+	collision_detection::WorldPtr world = scene->getWorldNonConst();
 
 	// set default arm state
 	setArmJointsToSidePosition("right_arm", scene);
@@ -187,18 +185,17 @@ bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
 		else
 		{
 			ROS_ERROR("%s object %s does not exist in planning scene.", logName.c_str(), object_name.c_str());
-			return false;
 		}
 	}
 
-    // attach object to the correct arm
-//    const moveit_msgs::CollisionObject* object = psi->getCollisionObject(request.putdown_object);
-    for (GraspedObjectMap::const_iterator graspedIt = graspedObjects.begin(); graspedIt != graspedObjects.end(); graspedIt++)
-    {
-        const string& object_name = graspedIt->first;
-        const string& arm = graspedIt->second.first;
-        string arm_prefix = arm.substr(0, arm.find_first_of("_"));
-        ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), object_name.c_str(), arm.c_str());
+	// attach object to the correct arm
+	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
+	for (GraspedObjectMap::const_iterator graspedIt = graspedObjects.begin(); graspedIt != graspedObjects.end(); graspedIt++)
+	{
+		const string& object_name = graspedIt->first;
+		const string& arm = graspedIt->second.first;
+		string arm_prefix = arm.substr(0, arm.find_first_of("_"));
+		ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), object_name.c_str(), arm.c_str());
 		const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
 		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
 		if (object != NULL)
@@ -218,91 +215,105 @@ bool TidyupPlanningSceneUpdater::update_(const geometry_msgs::Pose& robotPose,
 				attachObject(arm_prefix, object_name, shapes, defaultAttachPose, robot_state);
 			}
 		}
-    }
-    return true;
+	}
 }
 
-bool TidyupPlanningSceneUpdater::fillPointFromState(geometry_msgs::Point& point,
-        const string& poseName,
-        numericalFluentCallbackType numericalFluentCallback)
+bool TidyupPlanningSceneUpdater::readRobotPose2D(
+		geometry_msgs::Pose2D& robot_pose,
+		modules::numericalFluentCallbackType numericalFluentCallback)
 {
-    if (instance == NULL) instance = new TidyupPlanningSceneUpdater();
-    return instance->fillPointFromState_(point, poseName, numericalFluentCallback);
+	ParameterList poseParams;
+	NumericalFluentList nfRequest;
+	nfRequest.reserve(3);
+	nfRequest.push_back(NumericalFluent("robot-x", poseParams));
+	nfRequest.push_back(NumericalFluent("robot-y", poseParams));
+	nfRequest.push_back(NumericalFluent("robot-theta", poseParams));
+
+	NumericalFluentList* nfRequestP = &nfRequest;
+	if ( !numericalFluentCallback(nfRequestP))
+	{
+		ROS_ERROR("numericalFluentCallback failed.");
+		return false;
+	}
+
+	robot_pose.x = nfRequest[0].value;
+	robot_pose.y = nfRequest[1].value;
+	robot_pose.theta = nfRequest[2].value;
+	return true;
 }
 
-bool TidyupPlanningSceneUpdater::fillPointFromState_(geometry_msgs::Point& point,
-        const string& poseName,
-        numericalFluentCallbackType numericalFluentCallback)
+bool TidyupPlanningSceneUpdater::readPoint(
+		geometry_msgs::Point& point,
+		const string& poseName,
+		numericalFluentCallbackType numericalFluentCallback)
 {
-    // create the numerical fluent request
-    ParameterList startParams;
-    startParams.push_back(Parameter("", "", poseName));
-    NumericalFluentList nfRequest;
-    nfRequest.reserve(3);
-    nfRequest.push_back(NumericalFluent("x", startParams));
-    nfRequest.push_back(NumericalFluent("y", startParams));
-    nfRequest.push_back(NumericalFluent("z", startParams));
+	// create the numerical fluent request
+	ParameterList startParams;
+	startParams.push_back(Parameter("", "", poseName));
+	NumericalFluentList nfRequest;
+	nfRequest.reserve(3);
+	nfRequest.push_back(NumericalFluent("x", startParams));
+	nfRequest.push_back(NumericalFluent("y", startParams));
+	nfRequest.push_back(NumericalFluent("z", startParams));
 
-    // get the fluents
-    NumericalFluentList* nfRequestP = &nfRequest;
-    if (!numericalFluentCallback(nfRequestP))
-    {
-        ROS_ERROR("fillPoseFromState failed for object: %s", poseName.c_str());
-        return false;
-    }
+	// get the fluents
+	NumericalFluentList* nfRequestP = &nfRequest;
+	if (!numericalFluentCallback(nfRequestP))
+	{
+		ROS_ERROR("fillPoseFromState failed for object: %s", poseName.c_str());
+		return false;
+	}
 
-    // fill pose stamped
-    point.x = nfRequest[0].value;
-    point.y = nfRequest[1].value;
-    point.z = nfRequest[2].value;
-    return true;
+	// fill pose stamped
+	point.x = nfRequest[0].value;
+	point.y = nfRequest[1].value;
+	point.z = nfRequest[2].value;
+	return true;
 }
 
-bool TidyupPlanningSceneUpdater::fillPoseFromState(geometry_msgs::Pose& pose,
-        const string& poseName,
-        numericalFluentCallbackType numericalFluentCallback)
+bool TidyupPlanningSceneUpdater::readPose(
+		geometry_msgs::Pose& pose,
+		const string& poseName,
+		numericalFluentCallbackType numericalFluentCallback)
 {
-    if (instance == NULL) instance = new TidyupPlanningSceneUpdater();
-    return instance->fillPoseFromState_(pose, poseName, numericalFluentCallback);
+	// create the numerical fluent request
+	ParameterList startParams;
+	startParams.push_back(Parameter("", "", poseName));
+	NumericalFluentList nfRequest;
+	nfRequest.reserve(7);
+	nfRequest.push_back(NumericalFluent("x", startParams));
+	nfRequest.push_back(NumericalFluent("y", startParams));
+	nfRequest.push_back(NumericalFluent("z", startParams));
+	nfRequest.push_back(NumericalFluent("qx", startParams));
+	nfRequest.push_back(NumericalFluent("qy", startParams));
+	nfRequest.push_back(NumericalFluent("qz", startParams));
+	nfRequest.push_back(NumericalFluent("qw", startParams));
+
+	// get the fluents
+	NumericalFluentList* nfRequestP = &nfRequest;
+	if (!numericalFluentCallback(nfRequestP))
+	{
+		ROS_ERROR("fillPoseFromState failed for object: %s", poseName.c_str());
+		return false;
+	}
+
+	// fill pose stamped
+	pose.position.x = nfRequest[0].value;
+	pose.position.y = nfRequest[1].value;
+	pose.position.z = nfRequest[2].value;
+	pose.orientation.x = nfRequest[3].value;
+	pose.orientation.y = nfRequest[4].value;
+	pose.orientation.z = nfRequest[5].value;
+	pose.orientation.w = nfRequest[6].value;
+	return true;
 }
 
-bool TidyupPlanningSceneUpdater::fillPoseFromState_(geometry_msgs::Pose& pose,
-        const string& poseName,
-        numericalFluentCallbackType numericalFluentCallback)
-{
-    // create the numerical fluent request
-    ParameterList startParams;
-    startParams.push_back(Parameter("", "", poseName));
-    NumericalFluentList nfRequest;
-    nfRequest.reserve(7);
-    nfRequest.push_back(NumericalFluent("x", startParams));
-    nfRequest.push_back(NumericalFluent("y", startParams));
-    nfRequest.push_back(NumericalFluent("z", startParams));
-    nfRequest.push_back(NumericalFluent("qx", startParams));
-    nfRequest.push_back(NumericalFluent("qy", startParams));
-    nfRequest.push_back(NumericalFluent("qz", startParams));
-    nfRequest.push_back(NumericalFluent("qw", startParams));
-
-    // get the fluents
-    NumericalFluentList* nfRequestP = &nfRequest;
-    if (!numericalFluentCallback(nfRequestP))
-    {
-        ROS_ERROR("fillPoseFromState failed for object: %s", poseName.c_str());
-        return false;
-    }
-
-    // fill pose stamped
-    pose.position.x = nfRequest[0].value;
-    pose.position.y = nfRequest[1].value;
-    pose.position.z = nfRequest[2].value;
-    pose.orientation.x = nfRequest[3].value;
-    pose.orientation.y = nfRequest[4].value;
-    pose.orientation.z = nfRequest[5].value;
-    pose.orientation.w = nfRequest[6].value;
-    return true;
-}
-
-void TidyupPlanningSceneUpdater::attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state)
+void TidyupPlanningSceneUpdater::attachObject(
+		const string& arm_prefix,
+		const string& object,
+		const std::vector<shapes::ShapeConstPtr>&
+		shapes, const geometry_msgs::Pose& grasp,
+		robot_state::RobotState& robot_state)
 {
 	tf::Pose attach_pose_tf;
 	tf::poseMsgToTF(grasp, attach_pose_tf);

@@ -128,36 +128,9 @@ add_library(planner_modules_pr2
 
 add_dependencies(planner_modules_pr2 planner_modules_pr2_generate_messages_cpp)
 target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
-#add_executable(test_pickup src/test_pickup.cpp)
-#target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
 
-#add_library(planner_modules_pr2
-#    src/module_param_cache.cpp
-#    src/caching_evaluation.cpp
-#    src/navstack_module.cpp
-#    src/navstack_planning_scene_module.cpp
-#    src/navstack_module_full_body.cpp
-#    src/tidyup_planning_scene_updater.cpp
-#    src/lift_torso_module.cpp
-#)
-
-#add_library(drive_pose_modules
-#	src/drive_pose_module.cpp
-#)
-
-#add_library(putdown_modules
-#    src/module_param_cache.cpp
-#    src/caching_evaluation.cpp
-#    src/putdown_modules.cpp
-#    src/subsumption_caching.cpp
-#    src/tidyup_planning_scene_updater.cpp)
-
-#add_library(pickup_modules
-#    src/module_param_cache.cpp
-#    src/caching_evaluation.cpp
-#    src/pickup_modules.cpp
-#    src/subsumption_caching.cpp
-#    src/tidyup_planning_scene_updater.cpp)
+add_executable(test_pickup src/test_pickup.cpp)
+target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
 
 #rosbuild_find_ros_package(continual_planning_executive)
 #add_executable(precache_navigation
@@ -171,18 +144,6 @@ target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
 
 #target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
 #target_link_libraries(putdown_modules ${catkin_LIBRARIES})
-
-## Declare a cpp executable
-# add_executable(planner_modules_pr2_node src/planner_modules_pr2_node.cpp)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-# add_dependencies(planner_modules_pr2_node planner_modules_pr2_generate_messages_cpp)
-
-## Specify libraries to link a library or executable target against
-#target_link_libraries(planner_modules_pr2_node
-#   ${catkin_LIBRARIES}
-#)
 
 #############
 ## Install ##

@@ -10,12 +10,8 @@
 #include <actionlib/client/simple_action_client.h>
 #include <planner_modules_pr2/EmptyAction.h>
 
-// debug tools, g_actionDebug enable the triggering of the published msgs
-boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction> > g_action_debug;
 // publish the planning scene msgs
 extern ros::Publisher g_debug_ps_pub;
-
-const double INFINITE_COST = HUGE_VAL;
 
 // storing the table names with their poses
 extern std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;

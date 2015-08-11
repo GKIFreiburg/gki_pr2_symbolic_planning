@@ -12,9 +12,6 @@ const double OFFSET_TORSO_HEAD = 0.38145;
 const double MIN_TORSO_JOINT = 0.00115;
 const double MAX_TORSO_JOINT = 0.325;
 
-const double INFINITE_COST = HUGE_VAL;
-
-
 //double table_height_;
 //double torso_position_;
 double vdist_head_to_table_;

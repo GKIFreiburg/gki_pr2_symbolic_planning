@@ -111,7 +111,7 @@ double liftTorsoCost(const modules::ParameterList & parameterList,
 	double table_height, torso_position;
 
 	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
-		return INFINITE_COST;
+		return modules::INFINITE_COST;
 
 	double cost = fabs(computeLiftDistance(table_height, torso_position));
 
@@ -129,7 +129,7 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 	double table_height, torso_position;
 
 	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
-		return INFINITE_COST;
+		return modules::INFINITE_COST;
 
 	// Taking fabs() of lift distance, since it is not important if going up or down
 	double distance = fabs(computeLiftDistance(table_height, torso_position));
@@ -140,7 +140,7 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 	// because no need to lift torso, otherwise return true
     if (distance < vdist_threshold_)
     {
-    	return INFINITE_COST;
+    	return modules::INFINITE_COST;
     }
     else
     {
@@ -157,7 +157,7 @@ double torsoLifted(const modules::ParameterList & parameterList,
 	double table_height, torso_position;
 
 	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
-		return INFINITE_COST;
+		return modules::INFINITE_COST;
 
 	// Taking fabs() of lift distance, since it is not important if going up or down
 	double distance = fabs(computeLiftDistance(table_height, torso_position));
@@ -173,7 +173,7 @@ double torsoLifted(const modules::ParameterList & parameterList,
     else
     {
 //    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
-    	return INFINITE_COST;
+    	return modules::INFINITE_COST;
     }
 }
 

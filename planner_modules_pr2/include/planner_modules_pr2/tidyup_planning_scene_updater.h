@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Pose2D.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 
 using namespace modules;
@@ -21,37 +22,52 @@ typedef std::map<std::string, std::pair<std::string, geometry_msgs::Pose> > Gras
 class TidyupPlanningSceneUpdater
 {
 public:
+	static TidyupPlanningSceneUpdater* instance();
 	virtual ~TidyupPlanningSceneUpdater();
 
-	static bool readState(const string& robotLocation, predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, geometry_msgs::Pose& robotPose, std::map<std::string, geometry_msgs::Pose>& movableObjects, GraspedObjectMap& graspedObjects,
-			std::map<std::string, std::string>& objectsOnStatic);
-
-	static bool update(const geometry_msgs::Pose& robotPose,
-			const std::map<std::string, geometry_msgs::Pose>& movableObjects,
-			const GraspedObjectMap& graspedObjects,
-			planning_scene::PlanningScenePtr& scene);
-
-	static bool fillPoseFromState(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
-
-	static bool fillPointFromState(geometry_msgs::Point& point, const string& poseName, numericalFluentCallbackType numericalFluentCallback);
-
-private:
-	TidyupPlanningSceneUpdater();
-	bool readState_(const string& robotLocation,
+	bool readObjects(
 			predicateCallbackType predicateCallback,
 			numericalFluentCallbackType numericalFluentCallback,
-			geometry_msgs::Pose& robotPose,
 			std::map<std::string, geometry_msgs::Pose>& movableObjects,
 			GraspedObjectMap& graspedObjects,
 			std::map<std::string, std::string>& objectsOnStatic);
-	bool update_(const geometry_msgs::Pose& robotPose,
-			const std::map<std::string,
-			geometry_msgs::Pose>& movableObjects,
-			const GraspedObjectMap& graspedObjects,
-			planning_scene::PlanningScenePtr& scene);
-	bool fillPoseFromState_(geometry_msgs::Pose& pose, const std::string& poseName, numericalFluentCallbackType numericalFluentCallback);
-	bool fillPointFromState_(geometry_msgs::Point& point, const string& poseName, numericalFluentCallbackType numericalFluentCallback);
-	void attachObject(const string& arm_prefix, const string& object, const std::vector<shapes::ShapeConstPtr>& shapes, const geometry_msgs::Pose& grasp, robot_state::RobotState& robot_state);
+
+	bool readRobotPose2D(
+			geometry_msgs::Pose2D& robot_pose,
+			modules::numericalFluentCallbackType numericalFluentCallback);
+
+	bool readPose(
+			geometry_msgs::Pose& pose,
+			const std::string& poseName,
+			numericalFluentCallbackType numericalFluentCallback);
+
+	bool readPoint(
+			geometry_msgs::Point& point,
+			const string& poseName,
+			numericalFluentCallbackType numericalFluentCallback);
+
+	planning_scene::PlanningScenePtr getEmptyScene();
+
+	void updateRobotPose2D(planning_scene::PlanningScenePtr scene,
+			const geometry_msgs::Pose& robot_pose);
+	void updateRobotPose2D(
+			planning_scene::PlanningScenePtr scene,
+			const geometry_msgs::Pose2D& robot_pose);
+
+	void updateObjects(
+			planning_scene::PlanningScenePtr scene,
+			const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			const GraspedObjectMap& graspedObjects);
+
+private:
+	TidyupPlanningSceneUpdater();
+
+	void attachObject(
+			const string& arm_prefix,
+			const string& object,
+			const std::vector<shapes::ShapeConstPtr>& shapes,
+			const geometry_msgs::Pose& grasp,
+			robot_state::RobotState& robot_state);
 
 	void setArmJointsToSidePosition(const std::string& arm, planning_scene::PlanningScenePtr scene);
 
@@ -59,7 +75,7 @@ private:
 	geometry_msgs::Pose defaultAttachPose;
 	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;
 
-	static TidyupPlanningSceneUpdater* instance;
+	static TidyupPlanningSceneUpdater* instance_;
 
 };
 

@@ -1,3 +1,5 @@
+#include "planner_modules_pr2/drive_pose_module.h"
+
 #include "planner_modules_pr2/navstack_module.h"
 #include <ros/ros.h>
 #include <nav_msgs/GetPlan.h>
@@ -311,7 +313,8 @@ double pathCost(const ParameterList & parameterList,
     bool callSuccessful;
     ros::WallTime startCallTime = ros::WallTime::now();
     cost = callPlanningService(srv, parameterList[0].value, parameterList[1].value, callSuccessful);
-    if(callSuccessful) {      // only cache real computed paths (including INFINITE_COST)
+    if(callSuccessful) {
+        // only cache real computed paths (including INFINITE_COST)
         //bool isRobotLocation =
         //    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");
         //g_PathCostCache.set(cacheKey, cost, !isRobotLocation);  // do no param cache robot_location calls
@@ -319,5 +322,151 @@ double pathCost(const ParameterList & parameterList,
         g_PathCostCache.set(cacheKey, cost, true, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
     }
     return cost;
+}
+
+double pathCostGrounding(const ParameterList & parameterList,
+		predicateCallbackType predicateCallback,
+		numericalFluentCallbackType numericalFluentCallback,
+		int relaxed)
+{
+	if (g_Debug)
+	{ // prevent spamming ROS_DEBUG calls unless we really want debug
+	  // debugging raw planner calls
+		static unsigned long calls = 0;
+		calls++;
+		ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
+	}
+	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
+	//ROS_ASSERT(parameterList.size() == 1);
+	const std::string& goal = parameterList[0].value;
+
+	nav_msgs::GetPlan srv;
+	if (! fillRobotPoseXYT(numericalFluentCallback, srv.request.start))
+	{
+		return INFINITE_COST;
+	}
+	// get goal from grounding
+	srv.request.goal = lookUpPoseFromSurfaceId(goal);
+
+	// first lookup in the cache if we answered the query already
+	double cost = INFINITE_COST;
+	string cacheKey = computePathCacheKey("robot_location", parameterList[0].value, srv.request.start.pose, srv.request.goal.pose);
+	if (g_PathCostCache.get(cacheKey, cost))
+	{
+		return cost;
+	}
+
+	bool callSuccessful;
+	ros::WallTime startCallTime = ros::WallTime::now();
+	cost = callPlanningService(srv, "robot_location", parameterList[0].value, callSuccessful);
+	if (callSuccessful)
+	{      // only cache real computed paths (including INFINITE_COST)
+		//bool isRobotLocation =
+		//    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");
+		//g_PathCostCache.set(cacheKey, cost, !isRobotLocation);  // do no param cache robot_location calls
+		ros::WallTime endCallTime = ros::WallTime::now();
+		g_PathCostCache.set(cacheKey, cost, true, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
+	}
+	return cost;
+}
+
+double pathConditionGrounding(const ParameterList & parameterList,
+		predicateCallbackType predicateCallback,
+		numericalFluentCallbackType numericalFluentCallback,
+		int relaxed)
+{
+	if (g_Debug)
+	{ // prevent spamming ROS_DEBUG calls unless we really want debug
+	  // debugging raw planner calls
+		static unsigned long calls = 0;
+		calls++;
+		ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
+	}
+	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
+	//ROS_ASSERT(parameterList.size() == 1);
+	const std::string& goal = parameterList[0].value;
+
+	nav_msgs::GetPlan srv;
+	if (! fillRobotPoseXYT(numericalFluentCallback, srv.request.start))
+	{
+		return INFINITE_COST;
+	}
+	// get goal from grounding
+	srv.request.goal = lookUpPoseFromSurfaceId(goal);
+
+	// first lookup in the cache if we answered the query already
+	double cost = INFINITE_COST;
+	string cacheKey = computePathCacheKey("robot_location", parameterList[0].value, srv.request.start.pose, srv.request.goal.pose);
+	if (g_PathCostCache.get(cacheKey, cost))
+	{
+		return cost;
+	}
+
+	bool callSuccessful;
+	ros::WallTime startCallTime = ros::WallTime::now();
+	cost = callPlanningService(srv, "robot_location", parameterList[0].value, callSuccessful);
+	if (callSuccessful)
+	{      // only cache real computed paths (including INFINITE_COST)
+		//bool isRobotLocation =
+		//    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");
+		//g_PathCostCache.set(cacheKey, cost, !isRobotLocation);  // do no param cache robot_location calls
+		ros::WallTime endCallTime = ros::WallTime::now();
+		g_PathCostCache.set(cacheKey, cost, true, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
+	}
+	return cost;
+}
+
+int updateRobotPose(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars)
+{
+	ROS_ASSERT(parameterList.size() == 1);
+	const std::string& goal = parameterList[0].value;
+	geometry_msgs::PoseStamped goalPose = lookUpPoseFromSurfaceId(goal);
+	ROS_ASSERT(writtenVars.size() == 3);
+	writtenVars[0] = goalPose.pose.position.x;
+	writtenVars[1] = goalPose.pose.position.y;
+	tf::Quaternion q;
+	tf::quaternionMsgToTF(goalPose.pose.orientation, q);
+	writtenVars[2] = tf::getYaw(q);
+
+	return 1;
+}
+
+bool fillRobotPoseXYT(
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		geometry_msgs::PoseStamped& robot_pose)
+{
+	ParameterList poseParams;
+	NumericalFluentList nfRequest;
+	nfRequest.reserve(3);
+	nfRequest.push_back(NumericalFluent("robot-x", poseParams));
+	nfRequest.push_back(NumericalFluent("robot-y", poseParams));
+	nfRequest.push_back(NumericalFluent("robot-theta", poseParams));
+
+	NumericalFluentList* nfRequestP = &nfRequest;
+	if ( !numericalFluentCallback(nfRequestP))
+	{
+		ROS_ERROR("numericalFluentCallback failed.");
+		return false;
+	}
+
+	robot_pose.header.frame_id = g_WorldFrame;
+	robot_pose.pose.position.x = nfRequest[0].value;
+	robot_pose.pose.position.y = nfRequest[1].value;
+	robot_pose.pose.position.z = 0.0;
+	robot_pose.pose.orientation = tf::createQuaternionMsgFromYaw(nfRequest[2].value);
+	return true;
 }
 

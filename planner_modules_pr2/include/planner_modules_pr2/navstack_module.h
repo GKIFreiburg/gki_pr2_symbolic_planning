@@ -41,6 +41,8 @@ string computePathCacheKey(const string& startLocation, const string& goalLocati
 bool fillPathRequest(const modules::ParameterList & parameterList, modules::numericalFluentCallbackType numericalFluentCallback,
         nav_msgs::GetPlan::Request& request);
 
+bool fillRobotPoseXYT(modules::numericalFluentCallbackType numericalFluentCallback, geometry_msgs::PoseStamped& robot_pose);
+
 /// Return the cost of the plan.
 /**
  * \param [out] callFailure is set to true, if there was some failure during the call, i.e. the 
@@ -57,8 +59,30 @@ extern "C" {
 
 void navstack_init(int argc, char** argv);
 
-double pathCost(const modules::ParameterList & parameterList, modules::predicateCallbackType predicateCallback, 
-        modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
+double pathCost(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed);
+
+double pathCostGrounding(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed);
+
+double pathConditionGrounding(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed);
+
+int updateRobotPose(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+        vector<double> & writtenVars);
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,8 @@
 #include <planner_modules_pr2/EmptyAction.h>
 #include <actionlib/client/simple_action_client.h>
 
+// debug tools, g_actionDebug enable the triggering of the published msgs
+boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction> > g_action_debug;
 /* The DEBUG_PLANNING_SCENE can be used to trigger if the generated planning scene from
  * the symbolic state should be published or not - useful for debugging to see what's
  * going on.
@@ -119,29 +121,34 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
         int relaxed, const void* statePtr)
 {
     // 1. Get state and request (even if not needed - filter later)
-    ROS_ASSERT(parameterList.size() == 2);
-    std::string loc = parameterList.at(1).value; // = table1_loc4_room1
-    char delim = '_';
-    std::vector<std::string> loc_splitted = StringUtil::split(loc, &delim);
-    std::string surface = loc_splitted[0]; // = table1
+//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
+//	for (size_t i = 0; i < parameterList.size(); i++)
+//	{
+//		ROS_INFO_STREAM(parameterList[i].value);
+//	}
+    //ROS_ASSERT(parameterList.size() == 2);
+//    std::string loc = parameterList.at(1).value; // = table1_loc4_room1
+//    char delim = '_';
+//    std::vector<std::string> loc_splitted = StringUtil::split(loc, &delim);
+//    std::string surface = loc_splitted[0]; // = table1
+    std::string surface = parameterList[0].value;
 
-    // input for readState function
-    std::string robotLocation = "robot_location";
-
-    ROS_INFO("robot_location: %s", robotLocation.c_str());
+//    // input for readState function
+//    std::string robotLocation = "robot_location";
+//
+//    ROS_INFO("robot_location: %s", robotLocation.c_str());
 
 	// output of readState function
-	geometry_msgs::Pose robotPose;
-	std::map<std::string, geometry_msgs::Pose> movableObjects;
+	geometry_msgs::Pose2D robotPose;
+	map<string, geometry_msgs::Pose> movableObjects;
 	GraspedObjectMap graspedObjects;
-	std::map<std::string, std::string> objectsOnStatic;
-
-	TidyupPlanningSceneUpdater::readState(robotLocation, predicateCallback, numericalFluentCallback,
-			robotPose, movableObjects, graspedObjects, objectsOnStatic);
-
-	planning_scene::PlanningScenePtr planning_scene;
-	TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects, planning_scene);
-
+	map<string, string> objectsOnStatic;
+	TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, numericalFluentCallback);
+	TidyupPlanningSceneUpdater::instance()->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic);
+	// set planning scene
+	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getEmptyScene();
+	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose);
+	TidyupPlanningSceneUpdater::instance()->updateObjects(scene, movableObjects, graspedObjects);
 
 	std::map<std::string, geometry_msgs::PoseStamped>::iterator it_pose;
 	std::map<std::string, InverseCapabilityOcTree*>::iterator it_irm;
@@ -161,7 +168,7 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 		return "";
 	}
 
-	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(planning_scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
+	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
 	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
 
     int next_free_id = g_drive_pose_next_free_cache[surface];   // auto inits to 0
@@ -169,6 +176,7 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
     std::stringstream ss;
     ss << next_free_id;
     std::string surface_id = surface + "_" + ss.str();
+    ROS_INFO_STREAM("Sampled Pose Id: "<<surface_id);
 
     // a new pose is created - store it in cache
     next_free_id++;
@@ -180,8 +188,7 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 	// rosrun actionlib axserver.py /empty_action planner_modules_pr2/EmptyAction
 	// rosrun actionlib axclient.py /empty_action
 
-	robotPose = sampled_pose.pose.pose;
-	TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects, planning_scene);
+	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, sampled_pose.pose.pose);
 
 	moveit_msgs::PlanningScene psMsg;
 //	moveit_msgs::PlanningSceneComponents components;
@@ -191,7 +198,7 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 //	planning_scene->getPlanningSceneMsg(psMsg, components);
 //	ROS_WARN_STREAM(psMsg);
 
-	planning_scene->getPlanningSceneMsg(psMsg);
+	scene->getPlanningSceneMsg(psMsg);
 	ROS_INFO("drive_pose_module::%s: Publishing planning scene message to topic: %s", __func__, g_debug_ps_pub.getTopic().c_str());
 
 	g_debug_ps_pub.publish(psMsg);
