@@ -21,8 +21,16 @@ const double INFINITE_COST = HUGE_VAL;
 extern std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
 // storing the table names with their inverse reachability map
 extern std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
-
 extern int g_inv_reach_sample_draws;
+
+// Cache storing the next free id of a surface
+extern std::map<std::string, int> g_drive_pose_next_free_cache;
+
+// Grounded Base Pose Name -> Pose
+extern std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
+
+// Look up surface id in cache and return corresponding pose
+geometry_msgs::PoseStamped lookUpPoseFromSurfaceId(const std::string& surface);
 
 #ifdef __cplusplus
 extern "C" {

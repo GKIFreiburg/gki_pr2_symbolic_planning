@@ -28,6 +28,9 @@ std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
 
 int g_inv_reach_sample_draws = 20;
 
+std::map<std::string, int> g_drive_pose_next_free_cache;
+std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
+
 //#include <boost/foreach.hpp>
 //#define forEach BOOST_FOREACH
 
@@ -35,6 +38,12 @@ int g_inv_reach_sample_draws = 20;
 //VERIFY_APPLYEFFECT_DEF(XXX);
 
 VERIFY_GROUNDINGMODULE_DEF(determineDrivePose);
+
+// ________________________________________________________________________________________________
+geometry_msgs::PoseStamped lookUpPoseFromSurfaceId(const std::string& surface)
+{
+	return g_drive_pose_cache[surface];
+}
 
 // ________________________________________________________________________________________________
 void drivePoseInit(int argc, char** argv)
@@ -155,14 +164,24 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(planning_scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
 	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
 
-	robotPose = sampled_pose.pose.pose;
-	TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects, planning_scene);
+    int next_free_id = g_drive_pose_next_free_cache[surface];   // auto inits to 0
+    // add next free id to surface name
+    std::stringstream ss;
+    ss << next_free_id;
+    std::string surface_id = surface + "_" + ss.str();
 
+    // a new pose is created - store it in cache
+    next_free_id++;
+    g_drive_pose_next_free_cache[surface_id] = next_free_id;
+    g_drive_pose_cache[surface_id] = sampled_pose.pose;
 
 
 #ifdef DEBUG_PLANNING_SCENE
 	// rosrun actionlib axserver.py /empty_action planner_modules_pr2/EmptyAction
 	// rosrun actionlib axclient.py /empty_action
+
+	robotPose = sampled_pose.pose.pose;
+	TidyupPlanningSceneUpdater::update(robotPose, movableObjects, graspedObjects, planning_scene);
 
 	moveit_msgs::PlanningScene psMsg;
 //	moveit_msgs::PlanningSceneComponents components;
@@ -184,9 +203,8 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 	g_action_debug->waitForResult(ros::Duration(5*60));
 #endif
 
+    ROS_WARN("drive_pose_module::%s: new pose with name: %s", __func__, surface_id.c_str());
 
-    ROS_WARN("drive_pose_module::%s: baseSurface: %s", __func__, surface.c_str());
-
-    return surface;
+    return surface_id;
 }
 
