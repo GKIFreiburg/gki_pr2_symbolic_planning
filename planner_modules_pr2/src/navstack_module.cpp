@@ -391,8 +391,11 @@ double pathConditionGrounding(const ParameterList & parameterList,
 	{
 		ROS_INFO_STREAM(parameterList[i].value);
 	}
-	//ROS_ASSERT(parameterList.size() == 1);
-	const std::string& goal = parameterList[0].value;
+
+	// ([path-condition ?t])
+	// should be table grounded_place => param + 1 (due to grounding)
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& grounded_goal = parameterList[1].value;
 
 	nav_msgs::GetPlan srv;
 	if (! fillRobotPoseXYT(numericalFluentCallback, srv.request.start))
@@ -400,11 +403,11 @@ double pathConditionGrounding(const ParameterList & parameterList,
 		return INFINITE_COST;
 	}
 	// get goal from grounding
-	srv.request.goal = lookUpPoseFromSurfaceId(goal);
+	srv.request.goal = lookUpPoseFromSurfaceId(grounded_goal);
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
-	string cacheKey = computePathCacheKey("robot_location", parameterList[0].value, srv.request.start.pose, srv.request.goal.pose);
+	string cacheKey = computePathCacheKey("robot_location", grounded_goal, srv.request.start.pose, srv.request.goal.pose);
 	if (g_PathCostCache.get(cacheKey, cost))
 	{
 		return cost;
@@ -412,7 +415,7 @@ double pathConditionGrounding(const ParameterList & parameterList,
 
 	bool callSuccessful;
 	ros::WallTime startCallTime = ros::WallTime::now();
-	cost = callPlanningService(srv, "robot_location", parameterList[0].value, callSuccessful);
+	cost = callPlanningService(srv, "robot_location", grounded_goal, callSuccessful);
 	if (callSuccessful)
 	{      // only cache real computed paths (including INFINITE_COST)
 		//bool isRobotLocation =
@@ -431,9 +434,17 @@ int updateRobotPose(
 		int relaxed,
 		vector<double> & writtenVars)
 {
-	ROS_ASSERT(parameterList.size() == 1);
-	const std::string& goal = parameterList[0].value;
-	geometry_msgs::PoseStamped goalPose = lookUpPoseFromSurfaceId(goal);
+	ROS_INFO_STREAM("navstack_module::" << __func__ << ": parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
+
+	// ([path-condition ?t])
+	// should be table grounded_place => param + 1 (due to grounding)
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& grounded_goal = parameterList[1].value;
+	geometry_msgs::PoseStamped goalPose = lookUpPoseFromSurfaceId(grounded_goal);
 	ROS_ASSERT(writtenVars.size() == 3);
 	writtenVars[0] = goalPose.pose.position.x;
 	writtenVars[1] = goalPose.pose.position.y;

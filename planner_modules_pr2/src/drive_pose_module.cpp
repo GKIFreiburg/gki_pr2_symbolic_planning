@@ -7,8 +7,10 @@
 #include <symbolic_planning_utils/load_tables.h>
 #include <inverse_capability_map/InverseCapabilitySampling.h>
 
+// include for debugging
 #include <planner_modules_pr2/EmptyAction.h>
 #include <actionlib/client/simple_action_client.h>
+#include <geometry_msgs/PoseArray.h>
 
 // debug tools, g_actionDebug enable the triggering of the published msgs
 boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction> > g_action_debug;
@@ -95,6 +97,7 @@ void drivePoseInit(int argc, char** argv)
 		g_inv_reach_maps.insert(irm);
 	}
 
+
 	nhPriv.param("inv_reach_sample_draws", g_inv_reach_sample_draws, g_inv_reach_sample_draws);
 
 
@@ -120,6 +123,10 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr)
 {
+	//ROS_INFO("determineDrivePose::%s: Number of parameters: %lu (expected 1)!", parameterList.size());
+//	ROS_ASSERT(parameterList.size() == 2);
+
+
     // 1. Get state and request (even if not needed - filter later)
 //	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
 //	for (size_t i = 0; i < parameterList.size(); i++)
@@ -168,19 +175,43 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 		return "";
 	}
 
+	ROS_INFO("determineDrivePose::%s: TESTING START", __func__);
+
+		for (size_t i = 0; i < parameterList.size(); i++)
+		{
+			ROS_INFO_STREAM(parameterList[i].value);
+		}
+		ROS_INFO_STREAM("RobotPose2d " << robotPose);
+
+
+	ROS_INFO("determineDrivePose::%s: TESTING END", __func__);
+
+
 	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
 	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
+    ///////// HACK !!!!!!
+	// set hardcoded sampled pose (5.07, 6.043, 0.921, -pi --> pose sideways to table)
+//    sampled_pose.pose.pose.position.x = 5.07;
+//    sampled_pose.pose.pose.position.y = 6.043;
+//    sampled_pose.pose.pose.position.z = 0.921;
+//    sampled_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(-3.14);
+
+   /////////
+
 
     int next_free_id = g_drive_pose_next_free_cache[surface];   // auto inits to 0
     // add next free id to surface name
     std::stringstream ss;
     ss << next_free_id;
     std::string surface_id = surface + "_" + ss.str();
-    ROS_INFO_STREAM("Sampled Pose Id: "<<surface_id);
+    ROS_INFO_STREAM("Sampled Pose Id: " << surface_id);
 
     // a new pose is created - store it in cache
     next_free_id++;
     g_drive_pose_next_free_cache[surface_id] = next_free_id;
+
+
+
     g_drive_pose_cache[surface_id] = sampled_pose.pose;
 
 
@@ -200,8 +231,30 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 
 	scene->getPlanningSceneMsg(psMsg);
 	ROS_INFO("drive_pose_module::%s: Publishing planning scene message to topic: %s", __func__, g_debug_ps_pub.getTopic().c_str());
-
 	g_debug_ps_pub.publish(psMsg);
+
+////////
+//	// create a lof of samples and publish them via an PoseArray
+//	ros::NodeHandle nh;
+//	std::string poses_topic = "sampled_poses";
+//	ros::Publisher pub_poses = nh.advertise<geometry_msgs::PoseArray>(poses_topic, 1, true);
+//	geometry_msgs::PoseArray samples;
+//	samples.header = sampled_pose.pose.header;
+//	InverseCapabilitySampling::PosePercent sample;
+//	int num_samples = 1000;
+//	ROS_INFO("drive_pose_module::%s: Drawing %d samples", __func__, num_samples);
+//	for (int i = 0; i < num_samples; i++)
+//	{
+//		if (i % (num_samples/10) == 0)
+//			ROS_INFO("drive_pose_module: number of samples generated: %d", i);
+//		sample = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
+//		samples.poses.push_back(sample.pose.pose);
+//	}
+//
+//	ROS_INFO("drive_pose_module::%s: Publish samples to: /%s", __func__, poses_topic.c_str());
+//	pub_poses.publish(samples);
+////////
+
 	ros::spinOnce();
 
 	ROS_INFO("drive_pose_module::%s: Waiting for user input from Action Server!", __func__);
