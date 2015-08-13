@@ -85,7 +85,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES symbolic_planning_utils
-  CATKIN_DEPENDS moveit_msgs roscpp
+  CATKIN_DEPENDS moveit_msgs roscpp moveit_core	moveit_ros_planning_interface
 #  DEPENDS system_lib
 )
 
@@ -107,10 +107,11 @@ add_library(symbolic_planning_utils
   src/moveGroupInterface.cpp
   src/extractPose.cpp
   src/planning_scene_interface.cpp
+  src/planning_scene_service.cpp
   src/planning_scene_monitor.cpp
+  src/planning_scene_monitor_singleton.cpp
   src/joint_limits.cpp
   src/load_tables.cpp
-  src/planning_scene_monitor_singleton.cpp
 )
 
 ## Declare a cpp executable

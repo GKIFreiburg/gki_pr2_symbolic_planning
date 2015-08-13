@@ -47,8 +47,10 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
     // Namespace is "/continual_planning_executive"(/degrees)
     nhPriv.param("degrees", degrees_, 30);
 
-	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
-	//psi_.reset(new symbolic_planning_utils::PlanningSceneService());
+	// better use service calls rather than planningSceneMontior,
+	// which needs the initialize the robot description - takes time)
+	// psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
+	psi_.reset(new symbolic_planning_utils::PlanningSceneService());
 }
 
 ActionExecutorInspectLocation::~ActionExecutorInspectLocation()

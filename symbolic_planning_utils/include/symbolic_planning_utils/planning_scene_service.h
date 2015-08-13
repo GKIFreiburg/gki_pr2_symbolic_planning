@@ -1,10 +1,11 @@
 #ifndef PLANNING_SCENE_SERVICE_H_
 #define PLANNING_SCENE_SERVICE_H_
 
-#include "planning_scene_interface.h"
+#include "symbolic_planning_utils/planning_scene_interface.h"
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/AttachedCollisionObject.h>
-
+#include <ros/service.h>
+#include <ros/publisher.h>
 
 namespace symbolic_planning_utils
 {

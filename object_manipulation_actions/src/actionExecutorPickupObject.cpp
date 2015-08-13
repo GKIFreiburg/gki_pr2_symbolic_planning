@@ -33,10 +33,10 @@ ActionExecutorPickupObject::ActionExecutorPickupObject() :
 
 	ROS_INFO("ActionExecutorInspectLocation::%s: Action client is ready", __func__);
 
-	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
-
-	// ROS_ERROR("ActionExecutorPickupObject::%s: Loading planning scene monitor.", __func__);
-    psm_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
+	// better use service calls rather than planningSceneMontior,
+	// which needs the initialize the robot description - takes time)
+	// psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
+	psi_.reset(new symbolic_planning_utils::PlanningSceneService());
 }
 
 ActionExecutorPickupObject::~ActionExecutorPickupObject()
@@ -98,79 +98,6 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 		ROS_ERROR("ActionExecutorPickupObject::%s: No arm group could be specified.", __func__);
 		return false;
 	}
-
-
-
-
-
-//    // update manually, don't start monitors that continuously update
-//    psm_->requestPlanningSceneState();
-//    planning_scene_monitor::LockedPlanningSceneRO ps(psm_);
-//
-//    collision_detection::AllowedCollisionMatrix acm = ps->getAllowedCollisionMatrix();
-//    robot_state::RobotState copied_state = ps->getCurrentState();
-//
-//    collision_detection::CollisionRequest collision_request;
-//    collision_detection::CollisionResult collision_result;
-//    collision_request.contacts = true;
-//    collision_request.max_contacts = 10000;
-//    collision_result.clear();
-////    ps->checkSelfCollision(collision_request, collision_result);
-//    ps->checkCollision(collision_request, collision_result);
-//    ROS_WARN_STREAM("ActionExecutorPickupObject::" << __func__ << ": Test 1: Current state is "
-//                    << (collision_result.collision ? "in" : "not in")
-//                    << " self collision");
-//    collision_detection::CollisionResult::ContactMap::const_iterator it2;
-//    for(it2 = collision_result.contacts.begin();
-//        it2 != collision_result.contacts.end();
-//        ++it2)
-//    {
-//    	ROS_INFO("ActionExecutorPickupObject::%s: Collision found between %s and %s", __func__,
-//    			it2->first.first.c_str(), it2->first.second.c_str());
-//    	std::string link1 = it2->first.first;
-//    	std::string link2 = it2->first.second;
-////    	if (StringUtil::startsWith(link1, "r_") || StringUtil::startsWith(link1, "l_") ||
-////    		StringUtil::startsWith(link2, "r_") || StringUtil::startsWith(link2, "l_"))
-//    	{
-//        	ROS_WARN("ActionExecutorPickupObject::%s: Allow collision between %s and %s", __func__,
-//        			link1.c_str(), link2.c_str());
-//			acm.setEntry(link1, link2, true);
-//			acm.setEntry(table, link1, true);
-//			acm.setEntry(table, link2, true);
-//    	}
-//    }
-//
-//    collision_result.clear();
-////    ps->checkSelfCollision(collision_request, collision_result);
-//    ps->checkCollision(collision_request, collision_result);
-//    ROS_WARN_STREAM("ActionExecutorPickupObject::" << __func__ << ": Test 2: Current state is "
-//                    << (collision_result.collision ? "in" : "not in")
-//                    << " self collision");
-//
-//
-//	moveit_msgs::PlanningScene psMsg;
-//	ps->getPlanningSceneMsg(psMsg);
-//
-//    psMsg.is_diff = true;  // this is fine, we don't leave anything unspecified that we don't want
-//    moveit_msgs::AllowedCollisionMatrix acmMsg;
-//    acm.getMessage(acmMsg);
-//    psMsg.allowed_collision_matrix = acmMsg;
-//
-//    ros::NodeHandle nh;
-//    ros::Publisher pubPlanningScene = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
-//    pubPlanningScene.publish(psMsg);
-//    ros::Duration(2.0).sleep();
-
-
-
-
-
-
-
-
-
-
-
 
 	arm_group->getCurrentState();
 	goal.eef_group_name = eef_name;

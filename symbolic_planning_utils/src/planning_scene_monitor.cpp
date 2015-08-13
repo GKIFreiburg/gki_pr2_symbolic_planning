@@ -5,7 +5,7 @@ namespace symbolic_planning_utils
 
 	PlanningSceneMonitor::PlanningSceneMonitor()
 	{
-	    psm_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
+	    psm_ = PlanningSceneMonitorSingleton::getInstance()->getPlanningSceneMonitorPtr();
 
 	    ros::NodeHandle nh;
 	    pubPlanningScene_ = pubPlanningScene_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);

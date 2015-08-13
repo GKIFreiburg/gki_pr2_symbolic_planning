@@ -25,14 +25,16 @@ namespace object_manipulation_actions
 
 ActionExecutorPutdownObject::ActionExecutorPutdownObject()
 {
-	psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
-	//psi_.reset(new symbolic_planning_utils::PlanningSceneService());
-
     //placement_gen_.reset(new object_surface_placements::PlacementGeneratorSampling(20, 50));
     placement_gen_.reset(new object_surface_placements::PlacementGeneratorDiscretization());
 
     collision_method_ = object_surface_placements::CM_CONTOUR_CONTOUR;
     z_above_table_ = 0.01;
+
+	// better use service calls rather than planningSceneMontior,
+	// which needs the initialize the robot description - takes time)
+	// psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
+	psi_.reset(new symbolic_planning_utils::PlanningSceneService());
 }
 
 ActionExecutorPutdownObject::~ActionExecutorPutdownObject()
