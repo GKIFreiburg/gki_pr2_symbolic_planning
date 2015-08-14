@@ -12,6 +12,9 @@ actionlib
 continual_planning_executive
 move_base_msgs
 tidyup_utils
+planner_modules_pr2
+tfd_modules
+inverse_capability_map
 )
 
 catkin_package(
@@ -27,7 +30,10 @@ include_directories(
 add_library(navigation_actions
     src/stateCreatorROSNavigation.cpp
     src/actionExecutorROSNavigation.cpp
-    src/goalCreatorROSNavigation.cpp)
+    src/goalCreatorROSNavigation.cpp
+    ### Grounding Stuff
+    src/actionExecutorROSNavigationGrounding.cpp
+)
 
 target_link_libraries(navigation_actions
   ${catkin_LIBRARIES}

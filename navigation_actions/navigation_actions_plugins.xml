@@ -8,4 +8,8 @@
     <class name="navigation_actions/goal_creator_ros_navigation" type="navigation_actions::GoalCreatorROSNavigation" base_class_type="continual_planning_executive::GoalCreator">
         <description>Goal initialized from hardcoded goal locations.</description>
     </class>
+    <!-- Grounding Stuff -->
+    <class name="navigation_actions/action_executor_ros_navigation_grounding" type="navigation_actions::ActionExecutorROSNavigationGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
+        <description>An action executor that moves the base.</description>
+    </class>
 </library>
