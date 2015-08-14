@@ -336,21 +336,23 @@ double pathCostGrounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
 	}
-	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-	for (size_t i = 0; i < parameterList.size(); i++)
-	{
-		ROS_INFO_STREAM(parameterList[i].value);
-	}
-	//ROS_ASSERT(parameterList.size() == 1);
-	const std::string& goal = parameterList[0].value;
+//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
+//	for (size_t i = 0; i < parameterList.size(); i++)
+//	{
+//		ROS_INFO_STREAM(parameterList[i].value);
+//	}
+
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& grounded_goal = parameterList[1].value;
 
 	nav_msgs::GetPlan srv;
 	if (! fillRobotPoseXYT(numericalFluentCallback, srv.request.start))
 	{
 		return INFINITE_COST;
 	}
-	// get goal from grounding
-	srv.request.goal = lookUpPoseFromSurfaceId(goal);
+	// get goal from grounding - if not found return inf cost
+	if (!lookUpPoseFromSurfaceId(grounded_goal, srv.request.goal))
+		return INFINITE_COST;
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
@@ -386,11 +388,11 @@ double pathConditionGrounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
 	}
-	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-	for (size_t i = 0; i < parameterList.size(); i++)
-	{
-		ROS_INFO_STREAM(parameterList[i].value);
-	}
+//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
+//	for (size_t i = 0; i < parameterList.size(); i++)
+//	{
+//		ROS_INFO_STREAM(parameterList[i].value);
+//	}
 
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
@@ -402,8 +404,10 @@ double pathConditionGrounding(const ParameterList & parameterList,
 	{
 		return INFINITE_COST;
 	}
-	// get goal from grounding
-	srv.request.goal = lookUpPoseFromSurfaceId(grounded_goal);
+
+	// get goal from grounding - if not found return inf cost
+	if (!lookUpPoseFromSurfaceId(grounded_goal, srv.request.goal))
+		return INFINITE_COST;
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
@@ -444,7 +448,10 @@ int updateRobotPose(
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
-	geometry_msgs::PoseStamped goalPose = lookUpPoseFromSurfaceId(grounded_goal);
+	geometry_msgs::PoseStamped goalPose;
+	// get goal from grounding - if not found return 0 (state unchanged)
+	if (!lookUpPoseFromSurfaceId(grounded_goal, goalPose))
+		return 0;
 	ROS_ASSERT(writtenVars.size() == 3);
 	writtenVars[0] = goalPose.pose.position.x;
 	writtenVars[1] = goalPose.pose.position.y;

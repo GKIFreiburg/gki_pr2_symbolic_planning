@@ -25,7 +25,7 @@ boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction
  * If no feedback is provided the timeout is set to 5 minutes, then the next planning scene is published -
  * how this should be enough time to check in rviz.
  */
-#define DEBUG_PLANNING_SCENE
+//#define DEBUG_PLANNING_SCENE
 ros::Publisher g_debug_ps_pub;
 std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
 std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
@@ -44,9 +44,16 @@ std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 VERIFY_GROUNDINGMODULE_DEF(determineDrivePose);
 
 // ________________________________________________________________________________________________
-geometry_msgs::PoseStamped lookUpPoseFromSurfaceId(const std::string& surface)
+bool lookUpPoseFromSurfaceId(const std::string& surface,
+		geometry_msgs::PoseStamped& pose)
 {
-	return g_drive_pose_cache[surface];
+	std::map<std::string, geometry_msgs::PoseStamped>::iterator it;
+	it = g_drive_pose_cache.find(surface);
+	if (it == g_drive_pose_cache.end())
+		return false;
+
+	pose = it->second;
+	return true;
 }
 
 // ________________________________________________________________________________________________
@@ -123,22 +130,19 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr)
 {
-	//ROS_INFO("determineDrivePose::%s: Number of parameters: %lu (expected 1)!", parameterList.size());
-//	ROS_ASSERT(parameterList.size() == 2);
+	ROS_ASSERT(parameterList.size() == 1);
 
-
-    // 1. Get state and request (even if not needed - filter later)
-//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-//	for (size_t i = 0; i < parameterList.size(); i++)
-//	{
-//		ROS_INFO_STREAM(parameterList[i].value);
-//	}
-    //ROS_ASSERT(parameterList.size() == 2);
-//    std::string loc = parameterList.at(1).value; // = table1_loc4_room1
-//    char delim = '_';
-//    std::vector<std::string> loc_splitted = StringUtil::split(loc, &delim);
-//    std::string surface = loc_splitted[0]; // = table1
     std::string surface = parameterList[0].value;
+
+///////// HACK
+	if (g_drive_pose_cache.size() > 6)
+	{
+		ROS_WARN("Gounded out");
+		return "";
+	}
+/////////
+
+
 
 //    // input for readState function
 //    std::string robotLocation = "robot_location";
@@ -175,18 +179,6 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 		return "";
 	}
 
-	ROS_INFO("determineDrivePose::%s: TESTING START", __func__);
-
-		for (size_t i = 0; i < parameterList.size(); i++)
-		{
-			ROS_INFO_STREAM(parameterList[i].value);
-		}
-		ROS_INFO_STREAM("RobotPose2d " << robotPose);
-
-
-	ROS_INFO("determineDrivePose::%s: TESTING END", __func__);
-
-
 	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
 	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
     ///////// HACK !!!!!!
@@ -206,13 +198,19 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
     std::string surface_id = surface + "_" + ss.str();
     ROS_INFO_STREAM("Sampled Pose Id: " << surface_id);
 
+
     // a new pose is created - store it in cache
     next_free_id++;
-    g_drive_pose_next_free_cache[surface_id] = next_free_id;
-
-
-
+    g_drive_pose_next_free_cache[surface] = next_free_id;
     g_drive_pose_cache[surface_id] = sampled_pose.pose;
+
+	ROS_INFO("determineDrivePose::%s: TESTING START", __func__);
+
+	std::map<std::string, int>::iterator it;
+	for (it = g_drive_pose_next_free_cache.begin(); it != g_drive_pose_next_free_cache.end(); it++)
+		ROS_INFO("Table: %s - id: %d", it->first.c_str(), it->second);
+
+	ROS_INFO("determineDrivePose::%s: TESTING END", __func__);
 
 
 #ifdef DEBUG_PLANNING_SCENE

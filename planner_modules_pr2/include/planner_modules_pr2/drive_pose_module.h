@@ -1,7 +1,7 @@
 #ifndef DRIVE_POSE_MODULE_H
 #define DRIVE_POSE_MODULE_H
 
-#include "tfd_modules/module_api/pddlModuleTypes.h"
+#include <tfd_modules/module_api/pddlModuleTypes.h>
 #include <ros/ros.h>
 
 #include <geometry_msgs/PoseStamped.h>
@@ -26,7 +26,8 @@ extern std::map<std::string, int> g_drive_pose_next_free_cache;
 extern std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 
 // Look up surface id in cache and return corresponding pose
-geometry_msgs::PoseStamped lookUpPoseFromSurfaceId(const std::string& surface);
+bool lookUpPoseFromSurfaceId(const std::string& surface,
+		geometry_msgs::PoseStamped& pose);
 
 #ifdef __cplusplus
 extern "C" {

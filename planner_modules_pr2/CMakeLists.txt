@@ -100,7 +100,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES planner_modules_pr2 drive_pose_modules
+  LIBRARIES planner_modules_pr2
 #  CATKIN_DEPENDS continual_planning_msgs moveit_msgs nav_msgs planner_benchmarks pluginlib tf tfd_modules tidyup_msgs tidyup_utils
 #  DEPENDS system_lib
 )
@@ -139,7 +139,6 @@ target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
 #target_link_libraries(precache_navigation planner_modules_pr2)
 
 #target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
-#target_link_libraries(drive_pose_modules ${catkin_LIBRARIES})
 #target_link_libraries(putdown_modules ${catkin_LIBRARIES})
 
 #target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
