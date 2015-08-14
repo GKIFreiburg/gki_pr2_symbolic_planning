@@ -30,4 +30,14 @@
     <class name="tidyup_state_creators/state_creator_lift_torso" type="tidyup_state_creators::StateCreatorLiftTorso" base_class_type="continual_planning_executive::StateCreator">
     <description>Writing torso position into current state.</description>
   </class>
+  <!-- Grounding Stuff -->
+  <class name="tidyup_state_creators/goal_creator_tidyup_initialize_grounding" type="tidyup_state_creators::GoalCreatorTidyupInitializeGrounding" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Loads the types from the domain file.</description>
+  </class>  
+  <class name="tidyup_state_creators/goal_creator_move_objects_to_table_grounding" type="tidyup_state_creators::GoalCreatorMoveObjectsToTableGrounding" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Sets goal condition to move all objects to a certain table.</description>
+  </class>
+  <class name="tidyup_state_creators/state_creator_robot_pose_grounding" type="tidyup_state_creators::StateCreatorRobotPoseGrounding" base_class_type="continual_planning_executive::StateCreator">
+    <description>Sets the current robot pose in the state and possible robot-near-table predicates.</description>
+  </class>
 </library>

@@ -49,8 +49,6 @@ namespace tidyup_state_creators
 
             void normalizeJointValue(double& jointValue);
 
-
-
     };
 
 };

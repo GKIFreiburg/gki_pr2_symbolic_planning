@@ -30,6 +30,7 @@ namespace tidyup_state_creators
 
 		private:
 
+			string type_table_;
 			ros::Publisher pubPlanningScene_;
 
 			// Create collision objects and publish them into the planning scene

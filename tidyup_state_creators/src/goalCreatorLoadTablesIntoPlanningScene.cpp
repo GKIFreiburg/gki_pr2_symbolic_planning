@@ -37,7 +37,8 @@ namespace tidyup_state_creators
 
 	void GoalCreatorLoadTablesIntoPlanningScene::initialize(const std::deque<std::string> & arguments)
 	{
-
+		ROS_ASSERT(arguments.size() == 1);
+		type_table_ = arguments[0];
 	}
 
 	bool GoalCreatorLoadTablesIntoPlanningScene::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
@@ -54,7 +55,7 @@ namespace tidyup_state_creators
 		forEach(const TableLocation& tl, tables)
 		{
 			const string& tablename = tl.name;
-			currentState.addObject(tablename, "table");
+			currentState.addObject(tablename, type_table_);
 			currentState.setNumericalFluent("timestamp", tablename, tl.pose.header.stamp.toSec());
             currentState.addObject(tl.pose.header.frame_id, "frameid");
             currentState.setObjectFluent("frame-id", tablename, tl.pose.header.frame_id);

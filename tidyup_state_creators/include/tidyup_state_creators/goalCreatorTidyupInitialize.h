@@ -19,5 +19,5 @@ namespace tidyup_state_creators
 
 };
 
-#endif
+#endif // GOAL_CREATOR_TIDYUP_INITIALIZE_H
 
