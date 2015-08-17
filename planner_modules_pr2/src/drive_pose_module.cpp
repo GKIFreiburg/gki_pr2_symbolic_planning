@@ -25,7 +25,7 @@ boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction
  * If no feedback is provided the timeout is set to 5 minutes, then the next planning scene is published -
  * how this should be enough time to check in rviz.
  */
-//#define DEBUG_PLANNING_SCENE
+#define DEBUG_PLANNING_SCENE
 ros::Publisher g_debug_ps_pub;
 std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
 std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
@@ -42,6 +42,7 @@ std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 //VERIFY_APPLYEFFECT_DEF(XXX);
 
 VERIFY_GROUNDINGMODULE_DEF(determineDrivePose);
+VERIFY_EXIT_MODULE_DEF(drivePoseExit);
 
 // ________________________________________________________________________________________________
 bool lookUpPoseFromSurfaceId(const std::string& surface,
@@ -126,6 +127,22 @@ void drivePoseInit(int argc, char** argv)
 }
 
 // ________________________________________________________________________________________________
+void drivePoseExit(const modules::RawPlan & plan, int argc, char** argv,
+        modules::predicateCallbackType predicateCallback,
+        modules::numericalFluentCallbackType numericalFluentCallback)
+{
+	for (int i = 0; i < 100; i++)
+		ROS_INFO("drivePoseExit::%s: EXIT OF DRIVE POSE MODULE");
+
+	ROS_ASSERT(2 == 6);
+
+    if(plan.empty()) {
+        ROS_ERROR("drivePoseExit::%s: failed: No plan produced.", __func__);
+        return;
+    }
+}
+
+// ________________________________________________________________________________________________
 std::string determineDrivePose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr)
@@ -142,12 +159,6 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 	}
 /////////
 
-
-
-//    // input for readState function
-//    std::string robotLocation = "robot_location";
-//
-//    ROS_INFO("robot_location: %s", robotLocation.c_str());
 
 	// output of readState function
 	geometry_msgs::Pose2D robotPose;
@@ -255,10 +266,10 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
 
 	ros::spinOnce();
 
-	ROS_INFO("drive_pose_module::%s: Waiting for user input from Action Server!", __func__);
-	planner_modules_pr2::EmptyGoal goal;
-	g_action_debug->sendGoal(goal);
-	g_action_debug->waitForResult(ros::Duration(5*60));
+//	ROS_INFO("drive_pose_module::%s: Waiting for user input from Action Server!", __func__);
+//	planner_modules_pr2::EmptyGoal goal;
+//	g_action_debug->sendGoal(goal);
+//	g_action_debug->waitForResult(ros::Duration(5*60));
 #endif
 
     ROS_WARN("drive_pose_module::%s: new pose with name: %s", __func__, surface_id.c_str());

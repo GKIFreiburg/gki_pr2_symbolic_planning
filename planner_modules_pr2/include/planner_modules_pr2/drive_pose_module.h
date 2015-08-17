@@ -35,6 +35,10 @@ extern "C" {
 
 void drivePoseInit(int argc, char** argv);
 
+void drivePoseExit(const modules::RawPlan & plan, int argc, char** argv,
+        modules::predicateCallbackType predicateCallback,
+        modules::numericalFluentCallbackType numericalFluentCallback);
+
 //// Cost Module, computing real costs for lifting torso
 //double liftTorsoCost(const modules::ParameterList & parameterList,
 //		modules::predicateCallbackType predicateCallback,
