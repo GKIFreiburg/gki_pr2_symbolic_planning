@@ -42,7 +42,7 @@ std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 //VERIFY_APPLYEFFECT_DEF(XXX);
 
 VERIFY_GROUNDINGMODULE_DEF(determineDrivePose);
-VERIFY_EXIT_MODULE_DEF(drivePoseExit);
+VERIFY_EXIT_MODULE_DEF(drive_pose_exit);
 
 // ________________________________________________________________________________________________
 bool lookUpPoseFromSurfaceId(const std::string& surface,
@@ -58,7 +58,7 @@ bool lookUpPoseFromSurfaceId(const std::string& surface,
 }
 
 // ________________________________________________________________________________________________
-void drivePoseInit(int argc, char** argv)
+void drive_pose_init(int argc, char** argv)
 {
 	ROS_ASSERT(argc == 1);
 
@@ -127,19 +127,20 @@ void drivePoseInit(int argc, char** argv)
 }
 
 // ________________________________________________________________________________________________
-void drivePoseExit(const modules::RawPlan & plan, int argc, char** argv,
+void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback)
 {
-	for (int i = 0; i < 100; i++)
-		ROS_INFO("drivePoseExit::%s: EXIT OF DRIVE POSE MODULE");
-
-	ROS_ASSERT(2 == 6);
+//	for (int i = 0; i < 100; i++)
+//		ROS_INFO("drivePoseExit::%s: EXIT OF DRIVE POSE MODULE");
+//
+//	ROS_ASSERT(2 == 6);
 
     if(plan.empty()) {
         ROS_ERROR("drivePoseExit::%s: failed: No plan produced.", __func__);
         return;
     }
+
 }
 
 // ________________________________________________________________________________________________

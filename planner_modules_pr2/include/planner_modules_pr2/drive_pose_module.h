@@ -33,7 +33,7 @@ bool lookUpPoseFromSurfaceId(const std::string& surface,
 extern "C" {
 #endif // __cplusplus
 
-void drivePoseInit(int argc, char** argv);
+void drive_pose_init(int argc, char** argv);
 
 void drivePoseExit(const modules::RawPlan & plan, int argc, char** argv,
         modules::predicateCallbackType predicateCallback,

@@ -80,7 +80,7 @@ double computeLiftDistance(const double& table_height, const double& torso_posit
 }
 
 // ________________________________________________________________________________________________
-void liftTorsoInit(int argc, char** argv)
+void lift_torso_init(int argc, char** argv)
 {
 	ROS_ASSERT(argc == 1);
 

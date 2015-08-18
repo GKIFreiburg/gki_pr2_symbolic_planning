@@ -34,7 +34,7 @@ double computeLiftDistance(const double& table_height, const double& torso_posit
 extern "C" {
 #endif // __cplusplus
 
-void liftTorsoInit(int argc, char** argv);
+void lift_torso_init(int argc, char** argv);
 
 // Cost Module, computing real costs for lifting torso
 double liftTorsoCost(const modules::ParameterList & parameterList,
