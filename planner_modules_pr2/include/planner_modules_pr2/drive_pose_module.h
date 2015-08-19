@@ -26,8 +26,14 @@ extern std::map<std::string, int> g_drive_pose_next_free_cache;
 extern std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 
 // Look up surface id in cache and return corresponding pose
-bool lookUpPoseFromSurfaceId(const std::string& surface,
+bool lookup_pose_from_surface_id(const std::string& surface,
 		geometry_msgs::PoseStamped& pose);
+
+void set_poses_on_param(const std::string& name_space,
+		const std::map<std::string, geometry_msgs::PoseStamped>& drive_poses);
+
+void fetch_poses_from_param(const std::string& name_space, const std::string& surface,
+		std::map<std::string, geometry_msgs::PoseStamped>& drive_poses);
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +41,7 @@ extern "C" {
 
 void drive_pose_init(int argc, char** argv);
 
-void drivePoseExit(const modules::RawPlan & plan, int argc, char** argv,
+void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback);
 
@@ -65,7 +71,7 @@ void drivePoseExit(const modules::RawPlan & plan, int argc, char** argv,
 //        int relaxed, vector<double> & writtenVars);
 
 /// Determine a candidate pose to drive to the static ?s.
-std::string determineDrivePose(const modules::ParameterList & parameterList,
+std::string determine_drive_pose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr);
 

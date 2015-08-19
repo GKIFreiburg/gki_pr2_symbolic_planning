@@ -35,23 +35,23 @@ extern double g_RotSpeed;   // rad/s
 // Better: Can we assume symmetric path costs?
 //extern std::map< std::pair<std::string, std::string>, double> g_PathCostCache;
 extern ModuleParamCacheDouble g_PathCostCache;
-string computePathCacheKey(const string& startLocation, const string& goalLocation,
+string compute_path_cache_key(const string& startLocation, const string& goalLocation,
         const geometry_msgs::Pose & startPose, const geometry_msgs::Pose & goalPose);
 
-bool fillPathRequest(const modules::ParameterList & parameterList, modules::numericalFluentCallbackType numericalFluentCallback,
+bool fill_path_request(const modules::ParameterList & parameterList, modules::numericalFluentCallbackType numericalFluentCallback,
         nav_msgs::GetPlan::Request& request);
 
-bool fillRobotPoseXYT(modules::numericalFluentCallbackType numericalFluentCallback, geometry_msgs::PoseStamped& robot_pose);
+bool fill_robot_pose_XYT(modules::numericalFluentCallbackType numericalFluentCallback, geometry_msgs::PoseStamped& robot_pose);
 
 /// Return the cost of the plan.
 /**
  * \param [out] callFailure is set to true, if there was some failure during the call, i.e. the 
  * resulting INFINITE_COST does not represent necessarily the impossibility of a path.
  */
-double callPlanningService(nav_msgs::GetPlan& srv, const string& startLocationName, const string& goalLocationName,
+double call_planning_service(nav_msgs::GetPlan& srv, const string& startLocationName, const string& goalLocationName,
         bool & callFailure);
 
-double getPlanCost(const std::vector<geometry_msgs::PoseStamped> & plan);
+double get_plan_cost(const std::vector<geometry_msgs::PoseStamped> & plan);
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,25 +59,25 @@ extern "C" {
 
 void navstack_init(int argc, char** argv);
 
-double pathCost(
+double path_cost(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
-double pathCostGrounding(
+double path_cost_grounding(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
-double pathConditionGrounding(
+double path_condition_grounding(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
-int updateRobotPose(
+int update_robot_pose(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,

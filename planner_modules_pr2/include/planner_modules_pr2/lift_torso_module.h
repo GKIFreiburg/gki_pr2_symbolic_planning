@@ -19,14 +19,14 @@ double vdist_threshold_;
 double lift_speed_;
 
 // set the variable table_height_ and torso_position_
-bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
+bool fetch_variables_from_planner(const modules::ParameterList & parameterList,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		double& table_height, double& torso_position);
 
 // Compute the real distance that torso needs to be lifted, considering the joint limits of
 // torso_lift_link. If result is positiv, meaning torso is going to be raised, if otherwise
 // torso is lowered
-double computeLiftDistance(const double& table_height, const double& torso_position);
+double compute_lift_distance(const double& table_height, const double& torso_position);
 
 
 
@@ -37,26 +37,26 @@ extern "C" {
 void lift_torso_init(int argc, char** argv);
 
 // Cost Module, computing real costs for lifting torso
-double liftTorsoCost(const modules::ParameterList & parameterList,
+double lift_torso_cost(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 
 // Condition checker Module, check if torso needs to be lifted
 // INFINITE_COST if false or 0 (a value smaller INFINITE_COST) if true
-double needToLiftTorso(const modules::ParameterList & parameterList,
+double need_to_lift_torso(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 
 // Condition checker Module, check if torso is lifted
 // INFINITE_COST if false or 0 (a value smaller INFINITE_COST) if true
 // Inverse of needToLiftTorso
-double torsoLifted(const modules::ParameterList & parameterList,
+double torso_lifted(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 
 // Effect Module, set predicate "torso-lifted" with the corresponding table
 // If return value != 0, then writtenVars are applied to the state, otherwise state remains unchanged
-int updateTorsoPosition(const modules::ParameterList & parameterList,
+int update_torso_position(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, vector<double> & writtenVars);
