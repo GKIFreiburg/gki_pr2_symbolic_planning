@@ -116,14 +116,14 @@ void precacheEntry(const std::string & start, const std::string & goal, geometry
 
     // first lookup in the cache if we answered the query already
     double cost = modules::INFINITE_COST;
-    std::string cacheKey = computePathCacheKey(start, goal, srv.request.start.pose, srv.request.goal.pose);
+    std::string cacheKey = compute_path_cache_key(start, goal, srv.request.start.pose, srv.request.goal.pose);
     if(g_PathCostCache.get(cacheKey, cost)) {
         ROS_INFO("Already got cost %.f for: %s", cost, cacheKey.c_str());
         return;
     }
 
     bool callSuccessful;
-    cost = callPlanningService(srv, start, goal, callSuccessful);
+    cost = call_planning_service(srv, start, goal, callSuccessful);
     if(callSuccessful) {      // only cache real computed paths (including INFINITE_COST)
         //bool isRobotLocation =
         //    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");

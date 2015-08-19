@@ -5,14 +5,14 @@
 //#include <boost/foreach.hpp>
 //#define forEach BOOST_FOREACH
 
-VERIFY_CONDITIONCHECKER_DEF(liftTorsoCost);
-VERIFY_CONDITIONCHECKER_DEF(needToLiftTorso);
-VERIFY_CONDITIONCHECKER_DEF(torsoLifted);
-VERIFY_APPLYEFFECT_DEF(updateTorsoPosition);
+VERIFY_CONDITIONCHECKER_DEF(lift_torso_cost);
+VERIFY_CONDITIONCHECKER_DEF(need_to_lift_torso);
+VERIFY_CONDITIONCHECKER_DEF(torso_lifted);
+VERIFY_APPLYEFFECT_DEF(update_torso_position);
 
 
 // ________________________________________________________________________________________________
-bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
+bool fetch_variables_from_planner(const modules::ParameterList & parameterList,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		double& table_height,
 		double& torso_position)
@@ -48,7 +48,7 @@ bool fetchVariablesFromPlanner(const modules::ParameterList & parameterList,
 }
 
 // ________________________________________________________________________________________________
-double computeLiftDistance(const double& table_height, const double& torso_position)
+double compute_lift_distance(const double& table_height, const double& torso_position)
 {
 
 	double head_height = MIN_TORSO_POSITION + torso_position + OFFSET_TORSO_HEAD;
@@ -104,16 +104,16 @@ void lift_torso_init(int argc, char** argv)
 }
 
 // ________________________________________________________________________________________________
-double liftTorsoCost(const modules::ParameterList & parameterList,
+double lift_torso_cost(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
 	double table_height, torso_position;
 
-	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
+	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return modules::INFINITE_COST;
 
-	double cost = fabs(computeLiftDistance(table_height, torso_position));
+	double cost = fabs(compute_lift_distance(table_height, torso_position));
 
 	if (cost < vdist_threshold_)
 		cost = vdist_threshold_;
@@ -122,17 +122,17 @@ double liftTorsoCost(const modules::ParameterList & parameterList,
 }
 
 // ________________________________________________________________________________________________
-double needToLiftTorso(const modules::ParameterList & parameterList,
+double need_to_lift_torso(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
 	double table_height, torso_position;
 
-	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
+	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return modules::INFINITE_COST;
 
 	// Taking fabs() of lift distance, since it is not important if going up or down
-	double distance = fabs(computeLiftDistance(table_height, torso_position));
+	double distance = fabs(compute_lift_distance(table_height, torso_position));
 
 //	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
 
@@ -150,17 +150,17 @@ double needToLiftTorso(const modules::ParameterList & parameterList,
 }
 
 // ________________________________________________________________________________________________
-double torsoLifted(const modules::ParameterList & parameterList,
+double torso_lifted(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
 	double table_height, torso_position;
 
-	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
+	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return modules::INFINITE_COST;
 
 	// Taking fabs() of lift distance, since it is not important if going up or down
-	double distance = fabs(computeLiftDistance(table_height, torso_position));
+	double distance = fabs(compute_lift_distance(table_height, torso_position));
 
 //	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
 
@@ -178,7 +178,7 @@ double torsoLifted(const modules::ParameterList & parameterList,
 }
 
 // ________________________________________________________________________________________________
-int updateTorsoPosition(const modules::ParameterList & parameterList,
+int update_torso_position(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, vector<double> & writtenVars)
@@ -186,10 +186,10 @@ int updateTorsoPosition(const modules::ParameterList & parameterList,
 	double table_height, torso_position;
 
 //	ROS_INFO("lift_torso_modules::%s: ", __func__);
-	if (!fetchVariablesFromPlanner(parameterList, numericalFluentCallback, table_height, torso_position))
+	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
 		return 0.0; // state remains unchanged
 
-	double lift_distance = computeLiftDistance(table_height, torso_position);
+	double lift_distance = compute_lift_distance(table_height, torso_position);
 	double new_position = torso_position + lift_distance;
 
 	// For safety reason verify that new_position is not outside bounds

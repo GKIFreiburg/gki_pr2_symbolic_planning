@@ -22,7 +22,7 @@ using std::pair; using std::make_pair;
 using namespace modules;
 
 
-VERIFY_CONDITIONCHECKER_DEF(pathCost);
+VERIFY_CONDITIONCHECKER_DEF(path_cost);
 
 ros::NodeHandle* g_NodeHandle = NULL;
 ros::ServiceClient g_GetPlan;
@@ -39,7 +39,7 @@ double g_RotSpeed = angles::from_degrees(30);
 // Better: Can we assume symmetric path costs?
 //map< pair<string,string>, double> g_PathCostCache;
 ModuleParamCacheDouble g_PathCostCache;
-string computePathCacheKey(const string& startLocation, const string& goalLocation,
+string compute_path_cache_key(const string& startLocation, const string& goalLocation,
         const geometry_msgs::Pose & startPose, const geometry_msgs::Pose & goalPose)
 {
     std::string startPoseStr = createPoseParamString(startPose, 0.01, 0.02);
@@ -145,7 +145,7 @@ void navstack_init(int argc, char** argv)
     ROS_INFO("Initialized Navstack Module.");
 }
 
-bool fillPathRequest(const ParameterList & parameterList, numericalFluentCallbackType numericalFluentCallback,
+bool fill_path_request(const ParameterList & parameterList, numericalFluentCallbackType numericalFluentCallback,
         nav_msgs::GetPlan::Request & request)
 {
     // get robot and target location from planner interface
@@ -199,7 +199,7 @@ bool fillPathRequest(const ParameterList & parameterList, numericalFluentCallbac
     return true;
 }
 
-double getPlanCost(const std::vector<geometry_msgs::PoseStamped> & plan)
+double get_plan_cost(const std::vector<geometry_msgs::PoseStamped> & plan)
 {
     if(plan.empty())
         return 0;
@@ -222,7 +222,7 @@ double getPlanCost(const std::vector<geometry_msgs::PoseStamped> & plan)
     return pathLength/g_TransSpeed + rotLength/g_RotSpeed;
 }
 
-double callPlanningService(nav_msgs::GetPlan& srv, const string& startLocationName, const string& goalLocationName,
+double call_planning_service(nav_msgs::GetPlan& srv, const string& startLocationName, const string& goalLocationName,
         bool & callSuccessful)
 {
     callSuccessful = false;
@@ -258,7 +258,7 @@ double callPlanningService(nav_msgs::GetPlan& srv, const string& startLocationNa
             if (!srv.response.plan.poses.empty())
             {
                 // get plan cost
-                cost = getPlanCost(srv.response.plan.poses);
+                cost = get_plan_cost(srv.response.plan.poses);
                 ROS_DEBUG("Got plan: %s -> %s cost: %f.", startLocationName.c_str(), goalLocationName.c_str(), cost);
             }
             else    // no plan found.
@@ -284,7 +284,7 @@ double callPlanningService(nav_msgs::GetPlan& srv, const string& startLocationNa
     return cost;
 }
 
-double pathCost(const ParameterList & parameterList,
+double path_cost(const ParameterList & parameterList,
         predicateCallbackType predicateCallback, numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
     if (g_Debug)
@@ -292,19 +292,19 @@ double pathCost(const ParameterList & parameterList,
         // debugging raw planner calls
         static unsigned long calls = 0;
         calls++;
-        ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
+        ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
     }
     ROS_ASSERT(parameterList.size() == 2);
 
     nav_msgs::GetPlan srv;
-    if (!fillPathRequest(parameterList, numericalFluentCallback, srv.request))
+    if (!fill_path_request(parameterList, numericalFluentCallback, srv.request))
     {
         return INFINITE_COST;
     }
 
     // first lookup in the cache if we answered the query already
     double cost = INFINITE_COST;
-    string cacheKey = computePathCacheKey(parameterList[0].value, parameterList[1].value, srv.request.start.pose, srv.request.goal.pose);
+    string cacheKey = compute_path_cache_key(parameterList[0].value, parameterList[1].value, srv.request.start.pose, srv.request.goal.pose);
     if (g_PathCostCache.get(cacheKey, cost))
     {
         return cost;
@@ -312,7 +312,7 @@ double pathCost(const ParameterList & parameterList,
 
     bool callSuccessful;
     ros::WallTime startCallTime = ros::WallTime::now();
-    cost = callPlanningService(srv, parameterList[0].value, parameterList[1].value, callSuccessful);
+    cost = call_planning_service(srv, parameterList[0].value, parameterList[1].value, callSuccessful);
     if(callSuccessful) {
         // only cache real computed paths (including INFINITE_COST)
         //bool isRobotLocation =
@@ -324,7 +324,7 @@ double pathCost(const ParameterList & parameterList,
     return cost;
 }
 
-double pathCostGrounding(const ParameterList & parameterList,
+double path_cost_grounding(const ParameterList & parameterList,
 		predicateCallbackType predicateCallback,
 		numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
@@ -334,7 +334,7 @@ double pathCostGrounding(const ParameterList & parameterList,
 	  // debugging raw planner calls
 		static unsigned long calls = 0;
 		calls++;
-		ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
+		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
 //	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
 //	for (size_t i = 0; i < parameterList.size(); i++)
@@ -346,17 +346,17 @@ double pathCostGrounding(const ParameterList & parameterList,
 	const std::string& grounded_goal = parameterList[1].value;
 
 	nav_msgs::GetPlan srv;
-	if (! fillRobotPoseXYT(numericalFluentCallback, srv.request.start))
+	if (! fill_robot_pose_XYT(numericalFluentCallback, srv.request.start))
 	{
 		return INFINITE_COST;
 	}
 	// get goal from grounding - if not found return inf cost
-	if (!lookUpPoseFromSurfaceId(grounded_goal, srv.request.goal))
+	if (!lookup_pose_from_surface_id(grounded_goal, srv.request.goal))
 		return INFINITE_COST;
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
-	string cacheKey = computePathCacheKey("robot_location", parameterList[0].value, srv.request.start.pose, srv.request.goal.pose);
+	string cacheKey = compute_path_cache_key("robot_location", parameterList[0].value, srv.request.start.pose, srv.request.goal.pose);
 	if (g_PathCostCache.get(cacheKey, cost))
 	{
 		return cost;
@@ -364,7 +364,7 @@ double pathCostGrounding(const ParameterList & parameterList,
 
 	bool callSuccessful;
 	ros::WallTime startCallTime = ros::WallTime::now();
-	cost = callPlanningService(srv, "robot_location", parameterList[0].value, callSuccessful);
+	cost = call_planning_service(srv, "robot_location", parameterList[0].value, callSuccessful);
 	if (callSuccessful)
 	{      // only cache real computed paths (including INFINITE_COST)
 		//bool isRobotLocation =
@@ -376,7 +376,7 @@ double pathCostGrounding(const ParameterList & parameterList,
 	return cost;
 }
 
-double pathConditionGrounding(const ParameterList & parameterList,
+double path_condition_grounding(const ParameterList & parameterList,
 		predicateCallbackType predicateCallback,
 		numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
@@ -386,7 +386,7 @@ double pathConditionGrounding(const ParameterList & parameterList,
 	  // debugging raw planner calls
 		static unsigned long calls = 0;
 		calls++;
-		ROS_DEBUG_THROTTLE(1.0, "Got %d module calls.\n", calls);
+		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
 //	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
 //	for (size_t i = 0; i < parameterList.size(); i++)
@@ -400,18 +400,18 @@ double pathConditionGrounding(const ParameterList & parameterList,
 	const std::string& grounded_goal = parameterList[1].value;
 
 	nav_msgs::GetPlan srv;
-	if (! fillRobotPoseXYT(numericalFluentCallback, srv.request.start))
+	if (! fill_robot_pose_XYT(numericalFluentCallback, srv.request.start))
 	{
 		return INFINITE_COST;
 	}
 
 	// get goal from grounding - if not found return inf cost
-	if (!lookUpPoseFromSurfaceId(grounded_goal, srv.request.goal))
+	if (!lookup_pose_from_surface_id(grounded_goal, srv.request.goal))
 		return INFINITE_COST;
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
-	string cacheKey = computePathCacheKey("robot_location", grounded_goal, srv.request.start.pose, srv.request.goal.pose);
+	string cacheKey = compute_path_cache_key("robot_location", grounded_goal, srv.request.start.pose, srv.request.goal.pose);
 	if (g_PathCostCache.get(cacheKey, cost))
 	{
 		return cost;
@@ -419,7 +419,7 @@ double pathConditionGrounding(const ParameterList & parameterList,
 
 	bool callSuccessful;
 	ros::WallTime startCallTime = ros::WallTime::now();
-	cost = callPlanningService(srv, "robot_location", grounded_goal, callSuccessful);
+	cost = call_planning_service(srv, "robot_location", grounded_goal, callSuccessful);
 	if (callSuccessful)
 	{      // only cache real computed paths (including INFINITE_COST)
 		//bool isRobotLocation =
@@ -431,7 +431,7 @@ double pathConditionGrounding(const ParameterList & parameterList,
 	return cost;
 }
 
-int updateRobotPose(
+int update_robot_pose(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
@@ -450,7 +450,7 @@ int updateRobotPose(
 	const std::string& grounded_goal = parameterList[1].value;
 	geometry_msgs::PoseStamped goalPose;
 	// get goal from grounding - if not found return 0 (state unchanged)
-	if (!lookUpPoseFromSurfaceId(grounded_goal, goalPose))
+	if (!lookup_pose_from_surface_id(grounded_goal, goalPose))
 		return 0;
 	ROS_ASSERT(writtenVars.size() == 3);
 	writtenVars[0] = goalPose.pose.position.x;
@@ -462,7 +462,7 @@ int updateRobotPose(
 	return 1;
 }
 
-bool fillRobotPoseXYT(
+bool fill_robot_pose_XYT(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		geometry_msgs::PoseStamped& robot_pose)
 {

@@ -25,7 +25,7 @@ boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction
  * If no feedback is provided the timeout is set to 5 minutes, then the next planning scene is published -
  * how this should be enough time to check in rviz.
  */
-#define DEBUG_PLANNING_SCENE
+//#define DEBUG_PLANNING_SCENE
 ros::Publisher g_debug_ps_pub;
 std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
 std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
@@ -35,17 +35,19 @@ int g_inv_reach_sample_draws = 20;
 std::map<std::string, int> g_drive_pose_next_free_cache;
 std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 
+std::string name_space_param_;
+
 //#include <boost/foreach.hpp>
 //#define forEach BOOST_FOREACH
 
 //VERIFY_CONDITIONCHECKER_DEF(XXX);
 //VERIFY_APPLYEFFECT_DEF(XXX);
 
-VERIFY_GROUNDINGMODULE_DEF(determineDrivePose);
+VERIFY_GROUNDINGMODULE_DEF(determine_drive_pose);
 VERIFY_EXIT_MODULE_DEF(drive_pose_exit);
 
 // ________________________________________________________________________________________________
-bool lookUpPoseFromSurfaceId(const std::string& surface,
+bool lookup_pose_from_surface_id(const std::string& surface,
 		geometry_msgs::PoseStamped& pose)
 {
 	std::map<std::string, geometry_msgs::PoseStamped>::iterator it;
@@ -58,6 +60,60 @@ bool lookUpPoseFromSurfaceId(const std::string& surface,
 }
 
 // ________________________________________________________________________________________________
+void set_poses_on_param(const std::string& name_space,
+		const std::map<std::string, geometry_msgs::PoseStamped>& drive_poses)
+{
+    std::map<std::string, geometry_msgs::PoseStamped>::const_iterator it;
+    for (it = drive_poses.begin(); it != drive_poses.end(); it++)
+    {
+		// f.ex. /tfd_modules/drive_pose/table1_0/x
+		ros::param::set(name_space + "/" + it->first + "/x", it->second.pose.position.x);
+		ros::param::set(name_space + "/" + it->first + "/y", it->second.pose.position.y);
+		ros::param::set(name_space + "/" + it->first + "/z", it->second.pose.position.z);
+
+		ros::param::set(name_space + "/" + it->first + "/qx", it->second.pose.orientation.x);
+		ros::param::set(name_space + "/" + it->first + "/qy", it->second.pose.orientation.y);
+		ros::param::set(name_space + "/" + it->first + "/qz", it->second.pose.orientation.z);
+		ros::param::set(name_space + "/" + it->first + "/qw", it->second.pose.orientation.w);
+
+		ros::param::set(name_space + "/" + it->first + "/frame_id", it->second.header.frame_id);
+    }
+}
+
+// ________________________________________________________________________________________________
+void fetch_poses_from_param(const std::string& name_space, const std::string& surface,
+		std::map<std::string, geometry_msgs::PoseStamped>& drive_poses)
+{
+	int id = 0;
+	geometry_msgs::PoseStamped pose;
+	while (true)
+	{
+		std::stringstream ss;
+		ss << id;
+		std::string surface_id = surface + "_" + ss.str();
+		if (!ros::param::get(name_space + "/" + surface_id + "/x", pose.pose.position.x))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/y", pose.pose.position.y))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/z", pose.pose.position.z))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/qx", pose.pose.orientation.x))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/qy", pose.pose.orientation.y))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/qz", pose.pose.orientation.z))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/qw", pose.pose.orientation.w))
+			break;
+		if (!ros::param::get(name_space + "/" + surface_id + "/frame_id", pose.header.frame_id))
+			break;
+
+		drive_poses[surface_id] = pose;
+		id++;
+	}
+}
+
+// ________________________________________________________________________________________________
 void drive_pose_init(int argc, char** argv)
 {
 	ROS_ASSERT(argc == 1);
@@ -65,6 +121,7 @@ void drive_pose_init(int argc, char** argv)
     ros::NodeHandle nhPriv("~");
     ros::NodeHandle nh;
     std::string tfPrefix = tf::getPrefixParam(nhPriv);
+    name_space_param_ = nhPriv.getNamespace() + "/drive_pose";
 
     // first load tables from tables.dat file
 	// load table pose
@@ -103,8 +160,10 @@ void drive_pose_init(int argc, char** argv)
 
 		std::pair<std::string, InverseCapabilityOcTree*> irm = std::make_pair(tableName, tree);
 		g_inv_reach_maps.insert(irm);
-	}
 
+		// for each table check if there are already some sampled poses
+		fetch_poses_from_param(name_space_param_, tableName, g_drive_pose_cache);
+	}
 
 	nhPriv.param("inv_reach_sample_draws", g_inv_reach_sample_draws, g_inv_reach_sample_draws);
 
@@ -120,7 +179,7 @@ void drive_pose_init(int argc, char** argv)
 	g_debug_ps_pub = nh.advertise<moveit_msgs::PlanningScene>(ps_topic, 1, true);
 #endif
 
-   	ROS_INFO_STREAM("drive_pose_modules::" << __func__ << ": param namespace: " << nhPriv.getNamespace() << "\n"
+   	ROS_INFO_STREAM("drive_pose_module::" << __func__ << ": param namespace: " << nhPriv.getNamespace() << "\n"
    			"inv_reach_sample_draws: " << g_inv_reach_sample_draws);
 
     ROS_INFO("drive_pose_module::%s: Initialized drive pose Module.", __func__);
@@ -131,20 +190,21 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback)
 {
-//	for (int i = 0; i < 100; i++)
-//		ROS_INFO("drivePoseExit::%s: EXIT OF DRIVE POSE MODULE");
-//
-//	ROS_ASSERT(2 == 6);
+	// empty plan (dummy-plan) is returned by time out
+//    if(plan.empty()) {
+//        ROS_ERROR("drivePoseExit::%s: failed: No plan produced.", __func__);
+//        return;
+//    }
 
-    if(plan.empty()) {
-        ROS_ERROR("drivePoseExit::%s: failed: No plan produced.", __func__);
-        return;
-    }
+    ROS_INFO("drive_pose_module::%s: Putting drive pose cache on param server", __func__);
+
+    // putting drive_pose_cache to param server so actionExec can access
+	set_poses_on_param(name_space_param_, g_drive_pose_cache);
 
 }
 
 // ________________________________________________________________________________________________
-std::string determineDrivePose(const modules::ParameterList & parameterList,
+std::string determine_drive_pose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr)
 {
@@ -153,11 +213,11 @@ std::string determineDrivePose(const modules::ParameterList & parameterList,
     std::string surface = parameterList[0].value;
 
 ///////// HACK
-	if (g_drive_pose_cache.size() > 6)
-	{
-		ROS_WARN("Gounded out");
-		return "";
-	}
+//	if (g_drive_pose_cache.size() > 6)
+//	{
+//		ROS_WARN("Gounded out");
+//		return "";
+//	}
 /////////
 
 
