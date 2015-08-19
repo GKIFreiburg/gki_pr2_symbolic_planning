@@ -46,6 +46,10 @@ namespace navigation_actions
                 _goalPredicates.push_back(std::make_pair(pred, set));
             curArg += 2;
         }
+
+        // move-robot-to-table move_base start sensor-data-stale true
+        ROS_ASSERT(arguments.size() == 5);
+        predicate_sensor_data_stale_ = arguments[3];
     }
 
     bool ActionExecutorROSNavigationGrounding::fillGoal(move_base_msgs::MoveBaseGoal & goal,
@@ -62,27 +66,32 @@ namespace navigation_actions
         ROS_INFO("ActionExecutorROSNavigationGrounding::%s: surface: %s, grounded surface name: %s",
         		__func__, surface_name.c_str(), grounded_surface_name.c_str());
 
-        std::string name_space = "tfd_modules/drive_pose/";
+        std::string name_space = "grounding/drive_pose_module/";
+        bool ret = true;
         if (!ros::param::get(name_space + grounded_surface_name + "/x", goal.target_pose.pose.position.x))
-        	return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/y", goal.target_pose.pose.position.y))
-			return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/z", goal.target_pose.pose.position.z))
-        			return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/qx", goal.target_pose.pose.orientation.x))
-        	return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/qy", goal.target_pose.pose.orientation.y))
-			return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/qz", goal.target_pose.pose.orientation.z))
-			return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/qw", goal.target_pose.pose.orientation.w))
-			return false;
+        	ret = false;
         if (!ros::param::get(name_space + grounded_surface_name + "/frame_id", goal.target_pose.header.frame_id))
-			return false;
+        	ret = false;
 
-        ROS_INFO_STREAM("Created goal for ActionExecutorROSNavigationGrounding as: " << goal);
+        if (!ret)
+        	ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: Could not load pose with name: %s",
+        			__func__, grounded_surface_name.c_str());
+        else
+        	ROS_INFO_STREAM("Created goal for ActionExecutorROSNavigationGrounding as: " << goal);
 
-        return true;
+        return ret;
     }
 
     void ActionExecutorROSNavigationGrounding::updateState(const actionlib::SimpleClientGoalState & actionReturnState,
@@ -93,11 +102,25 @@ namespace navigation_actions
         string surface_name 		  = a.parameters[0];
         string grounded_surface_name  = a.parameters[1];
 
-        // start predicates are always applied independent of success
-        for(std::vector<std::pair<std::string, bool> >::iterator it = _startPredicates.begin();
-                it != _startPredicates.end(); it++) {
-            current.setBooleanPredicate(it->first, surface_name, it->second);
-        }
+        // as soon as a drive action is executed, the sensor data is stale
+    	string table_name;
+    	pair<SymbolicState::TypedObjectConstIterator,
+    			SymbolicState::TypedObjectConstIterator> targets =
+    			current.getTypedObjects().equal_range("table");
+    	for (SymbolicState::TypedObjectConstIterator it = targets.first;
+    			it != targets.second; it++)
+    	{
+    		table_name = it->second;
+    		current.setBooleanPredicate(predicate_sensor_data_stale_, table_name, true);
+    	}
+
+
+//    	 // old code
+//        // start predicates are always applied independent of success
+//        for(std::vector<std::pair<std::string, bool> >::iterator it = _startPredicates.begin();
+//                it != _startPredicates.end(); it++) {
+//            current.setBooleanPredicate(it->first, surface_name, it->second);
+//        }
 
 //        if(actionReturnState == actionlib::SimpleClientGoalState::SUCCEEDED) {
 //            for(std::vector<std::pair<std::string, bool> >::iterator it = _goalPredicates.begin();

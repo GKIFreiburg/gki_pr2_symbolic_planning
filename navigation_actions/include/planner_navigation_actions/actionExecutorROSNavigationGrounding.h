@@ -30,11 +30,13 @@ namespace navigation_actions
                     const DurativeAction & a, SymbolicState & current);
 
         protected:
-            ///< predicates to set/unset for the start location on successfull execution
+            ///< predicates to set/unset for the start location on successful execution
             std::vector<std::pair<std::string, bool> > _startPredicates;
 
-            ///< predicates to set/unset for the goal location on successfull execution
+            ///< predicates to set/unset for the goal location on successful execution
             std::vector<std::pair<std::string, bool> > _goalPredicates;
+
+            std::string predicate_sensor_data_stale_;
 
     };
 
