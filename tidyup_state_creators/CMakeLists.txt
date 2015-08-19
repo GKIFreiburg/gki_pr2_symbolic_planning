@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   tidyup_msgs
   geometry_msgs
+  inverse_capability_map
 )
 
 catkin_package(
