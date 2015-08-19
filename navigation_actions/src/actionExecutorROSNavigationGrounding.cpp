@@ -2,11 +2,7 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <tf/transform_datatypes.h>
-#include <planner_modules_pr2/drive_pose_module.h>
 
-//PLUGINLIB_DECLARE_CLASS(planner_navigation_actions, action_executor_ros_navigation,
-//        planner_navigation_actions::ActionExecutorROSNavigationGrounding,
-//        continual_planning_executive::ActionExecutorInterface)
 PLUGINLIB_EXPORT_CLASS(navigation_actions::ActionExecutorROSNavigationGrounding, continual_planning_executive::ActionExecutorInterface)
 
 namespace navigation_actions
@@ -63,44 +59,26 @@ namespace navigation_actions
         string surface_name 		  = a.parameters[0];
         string grounded_surface_name  = a.parameters[1];
 
-        ROS_WARN("HERE: %s, %s", surface_name.c_str(), grounded_surface_name.c_str());
+        ROS_INFO("ActionExecutorROSNavigationGrounding::%s: surface: %s, grounded surface name: %s",
+        		__func__, surface_name.c_str(), grounded_surface_name.c_str());
 
-        // extract nicer + warn.
-        Predicate p;
-        p.parameters.push_back(surface_name);
-        p.name = "frame-id";
-        if(!current.hasObjectFluent(p, &goal.target_pose.header.frame_id))
-            return false;
-
-        ROS_WARN("table frameid: %s", goal.target_pose.header.frame_id.c_str());
-
-        geometry_msgs::PoseStamped grounded_pose;
-
-    	if (!lookUpPoseFromSurfaceId(grounded_surface_name, grounded_pose))
-    	{
-    		ROS_ERROR("Could not load grounded surface pose for: %s", grounded_surface_name.c_str());
-    		return false;
-    	}
-        ROS_WARN_STREAM("grounded pose " << grounded_pose);
-
-
-        p.parameters.clear();
-        p.name = "robot-x";
-        if(!current.hasNumericalFluent(p, &goal.target_pose.pose.position.x))
-            return false;
-
-        ROS_WARN("robot pose: x = %lf", goal.target_pose.pose.position.x);
-        p.name = "robot-y";
-        if(!current.hasNumericalFluent(p, &goal.target_pose.pose.position.y))
-            return false;
-        goal.target_pose.pose.position.z = 0.0;
-
-        p.name = "robot-theta";
-        double theta;
-        if(!current.hasNumericalFluent(p, &theta))
-            return false;
-
-        goal.target_pose.pose.orientation = tf::createQuaternionMsgFromYaw(theta);
+        std::string name_space = "tfd_modules/drive_pose/";
+        if (!ros::param::get(name_space + grounded_surface_name + "/x", goal.target_pose.pose.position.x))
+        	return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/y", goal.target_pose.pose.position.y))
+			return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/z", goal.target_pose.pose.position.z))
+        			return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/qx", goal.target_pose.pose.orientation.x))
+        	return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/qy", goal.target_pose.pose.orientation.y))
+			return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/qz", goal.target_pose.pose.orientation.z))
+			return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/qw", goal.target_pose.pose.orientation.w))
+			return false;
+        if (!ros::param::get(name_space + grounded_surface_name + "/frame_id", goal.target_pose.header.frame_id))
+			return false;
 
         ROS_INFO_STREAM("Created goal for ActionExecutorROSNavigationGrounding as: " << goal);
 
