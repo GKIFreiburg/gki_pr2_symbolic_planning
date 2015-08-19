@@ -6,6 +6,8 @@
 #include <tf/transform_listener.h>
 #include <ros/ros.h>
 
+#include <inverse_capability_map/InverseCapabilityOcTree.h>
+
 namespace tidyup_state_creators
 {
 
@@ -43,6 +45,10 @@ namespace tidyup_state_creators
             string robot_y_;
             string robot_theta_;
             string prediate_robot_near_table_;
+
+            std::map<std::string, InverseCapabilityOcTree*> inv_cap_maps_;
+
+            tf::Pose transformTorsoInTableFrame(const geometry_msgs::PoseStamped& table);
     };
 
 };
