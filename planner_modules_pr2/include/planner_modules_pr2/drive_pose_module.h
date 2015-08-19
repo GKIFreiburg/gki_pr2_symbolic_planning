@@ -29,9 +29,11 @@ extern std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 bool lookup_pose_from_surface_id(const std::string& surface,
 		geometry_msgs::PoseStamped& pose);
 
+// Push drive_pose_cache on param
 void set_poses_on_param(const std::string& name_space,
 		const std::map<std::string, geometry_msgs::PoseStamped>& drive_poses);
 
+// Fetch drive poses from param and store in cache again
 void fetch_poses_from_param(const std::string& name_space, const std::string& surface,
 		std::map<std::string, geometry_msgs::PoseStamped>& drive_poses);
 
