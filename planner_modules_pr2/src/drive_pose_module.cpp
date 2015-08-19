@@ -25,7 +25,8 @@ boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction
  * If no feedback is provided the timeout is set to 5 minutes, then the next planning scene is published -
  * how this should be enough time to check in rviz.
  */
-//#define DEBUG_PLANNING_SCENE
+#define DEBUG_PLANNING_SCENE
+//#define DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
 ros::Publisher g_debug_ps_pub;
 std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
 std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
@@ -35,7 +36,7 @@ int g_inv_reach_sample_draws = 20;
 std::map<std::string, int> g_drive_pose_next_free_cache;
 std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
 
-std::string name_space_param_;
+std::string grounding_namespace_;
 
 //#include <boost/foreach.hpp>
 //#define forEach BOOST_FOREACH
@@ -121,14 +122,14 @@ void drive_pose_init(int argc, char** argv)
     ros::NodeHandle nhPriv("~");
     ros::NodeHandle nh;
     std::string tfPrefix = tf::getPrefixParam(nhPriv);
-    name_space_param_ = nhPriv.getNamespace() + "/drive_pose";
+    grounding_namespace_ = "grounding/drive_pose_module";
 
     // first load tables from tables.dat file
 	// load table pose
 	std::vector<symbolic_planning_utils::LoadTables::TableLocation> tables;
 	if (!symbolic_planning_utils::LoadTables::getTables(tables))
 	{
-		ROS_ERROR("Could not load tables", __func__);
+		ROS_ERROR("drive_pose_module::%s: Could not load tables!", __func__);
 		return;
 	}
 
@@ -153,26 +154,27 @@ void drive_pose_init(int argc, char** argv)
 		}
 		std::string pkg_path = ros::package::getPath(package);
 		std::string path = pkg_path + "/" + relative_path;
+		// ROS_INFO("path to inv_reach: %s", path.c_str());
 
-		ROS_INFO("path to inv_reach: %s", path.c_str());
 		// store inverse reachability maps into global variable
 		InverseCapabilityOcTree* tree = InverseCapabilityOcTree::readFile(path);
-
 		std::pair<std::string, InverseCapabilityOcTree*> irm = std::make_pair(tableName, tree);
 		g_inv_reach_maps.insert(irm);
 
 		// for each table check if there are already some sampled poses
-		fetch_poses_from_param(name_space_param_, tableName, g_drive_pose_cache);
+		fetch_poses_from_param(grounding_namespace_, tableName, g_drive_pose_cache);
 	}
 
 	nhPriv.param("inv_reach_sample_draws", g_inv_reach_sample_draws, g_inv_reach_sample_draws);
 
 
 #ifdef DEBUG_PLANNING_SCENE
-    g_action_debug.reset(new actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction>("empty_action", true));
-	ROS_INFO("drive_pose_module::%s: Waiting for empty_action action.", __func__);
-	ROS_INFO("drive_pose_module::%s: Execute: rosrun actionlib axserver.py /empty_action planner_modules_pr2/EmptyAction", __func__);
-	g_action_debug->waitForServer();
+	#ifdef DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
+		g_action_debug.reset(new actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction>("empty_action", true));
+		ROS_INFO("drive_pose_module::%s: Waiting for empty_action action.", __func__);
+		ROS_INFO("drive_pose_module::%s: Execute: rosrun actionlib axserver.py /empty_action planner_modules_pr2/EmptyAction", __func__);
+		g_action_debug->waitForServer();
+	#endif
 
 	std::string ps_topic = "virtual_planning_scene";
 	ROS_INFO("drive_pose_module::%s: Debugging of PS enabled, publishing to topic: /%s", __func__, ps_topic.c_str());
@@ -199,7 +201,7 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
     ROS_INFO("drive_pose_module::%s: Putting drive pose cache on param server", __func__);
 
     // putting drive_pose_cache to param server so actionExec can access
-	set_poses_on_param(name_space_param_, g_drive_pose_cache);
+	set_poses_on_param(grounding_namespace_, g_drive_pose_cache);
 
 }
 
@@ -228,7 +230,7 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	map<string, string> objectsOnStatic;
 	TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, numericalFluentCallback);
 	TidyupPlanningSceneUpdater::instance()->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic);
-	// set planning scene
+	// set planning scene, needed by inv_reach sampling for collision checks
 	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getEmptyScene();
 	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose);
 	TidyupPlanningSceneUpdater::instance()->updateObjects(scene, movableObjects, graspedObjects);
@@ -252,37 +254,19 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	}
 
 	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
-	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
-    ///////// HACK !!!!!!
-	// set hardcoded sampled pose (5.07, 6.043, 0.921, -pi --> pose sideways to table)
-//    sampled_pose.pose.pose.position.x = 5.07;
-//    sampled_pose.pose.pose.position.y = 6.043;
-//    sampled_pose.pose.pose.position.z = 0.921;
-//    sampled_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(-3.14);
-
-   /////////
-
+	// ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
 
     int next_free_id = g_drive_pose_next_free_cache[surface];   // auto inits to 0
     // add next free id to surface name
     std::stringstream ss;
     ss << next_free_id;
     std::string surface_id = surface + "_" + ss.str();
-    ROS_INFO_STREAM("Sampled Pose Id: " << surface_id);
-
+    // ROS_INFO_STREAM("Sampled Pose Id: " << surface_id);
 
     // a new pose is created - store it in cache
     next_free_id++;
     g_drive_pose_next_free_cache[surface] = next_free_id;
     g_drive_pose_cache[surface_id] = sampled_pose.pose;
-
-	ROS_INFO("determineDrivePose::%s: TESTING START", __func__);
-
-	std::map<std::string, int>::iterator it;
-	for (it = g_drive_pose_next_free_cache.begin(); it != g_drive_pose_next_free_cache.end(); it++)
-		ROS_INFO("Table: %s - id: %d", it->first.c_str(), it->second);
-
-	ROS_INFO("determineDrivePose::%s: TESTING END", __func__);
 
 
 #ifdef DEBUG_PLANNING_SCENE
@@ -326,11 +310,12 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 ////////
 
 	ros::spinOnce();
-
-//	ROS_INFO("drive_pose_module::%s: Waiting for user input from Action Server!", __func__);
-//	planner_modules_pr2::EmptyGoal goal;
-//	g_action_debug->sendGoal(goal);
-//	g_action_debug->waitForResult(ros::Duration(5*60));
+	#ifdef DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
+		ROS_INFO("drive_pose_module::%s: Waiting for user input from Action Server!", __func__);
+		planner_modules_pr2::EmptyGoal goal;
+		g_action_debug->sendGoal(goal);
+		g_action_debug->waitForResult(ros::Duration(5*60));
+	#endif
 #endif
 
     ROS_WARN("drive_pose_module::%s: new pose with name: %s", __func__, surface_id.c_str());

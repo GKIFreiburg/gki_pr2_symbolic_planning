@@ -149,7 +149,7 @@ bool ActionExecutorInspectTableGrounding::executeBlocking(const DurativeAction &
 
 	// after detection is completed, set predicates: table-inspected and sensor-data-stale
 	currentState.setBooleanPredicate(predicate_table_inspected_, surface_name, true);
-	currentState.setBooleanPredicate(predicate_sensor_data_stale_, surface_name, true);
+	currentState.setBooleanPredicate(predicate_sensor_data_stale_, surface_name, false);
 
 	// Cut off _number from table detection and readd table to PS
 	renameTableCollisionObject(surface_name);
