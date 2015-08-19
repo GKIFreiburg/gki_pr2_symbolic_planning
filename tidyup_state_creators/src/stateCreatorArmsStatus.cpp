@@ -98,9 +98,9 @@ namespace tidyup_state_creators
   			normalizeJointValue(current_joint_values[i]);
   			normalizeJointValue(target_joint_values[i]);
 
-  			ROS_INFO("StateCreatorArmsStatus::%s: Target: %s || %s [current] - [target] : %lf - %lf",__func__, target.c_str(),
-  					 joint_names[i].c_str(),
-  					 current_joint_values[i], target_joint_values[i]);
+//  			ROS_INFO("StateCreatorArmsStatus::%s: Target: %s || %s [current] - [target] : %lf - %lf",__func__, target.c_str(),
+//  					 joint_names[i].c_str(),
+//  					 current_joint_values[i], target_joint_values[i]);
   			if (std::fabs((double)current_joint_values[i] - (double)target_joint_values[i]) > error)
   				return false;
   		}
