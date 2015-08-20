@@ -60,10 +60,10 @@ ActionExecutorInspectTableGrounding::~ActionExecutorInspectTableGrounding()
 void ActionExecutorInspectTableGrounding::initialize(const std::deque<std::string> & arguments)
 {
 	ROS_ASSERT(arguments.size() == 4);
-	action_name_ = arguments[0];
-	action_topic_ = arguments[1];
-	predicate_table_inspected_ = arguments[2];
-	predicate_sensor_data_stale_ = arguments[3];
+	action_name_ 						= arguments[0];
+	action_topic_ 						= arguments[1];
+	predicate_table_inspected_ 			= arguments[2];
+	predicate_table_inspected_recently_ = arguments[3];
 }
 
 bool ActionExecutorInspectTableGrounding::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -149,7 +149,7 @@ bool ActionExecutorInspectTableGrounding::executeBlocking(const DurativeAction &
 
 	// after detection is completed, set predicates: table-inspected and sensor-data-stale
 	currentState.setBooleanPredicate(predicate_table_inspected_, surface_name, true);
-	currentState.setBooleanPredicate(predicate_sensor_data_stale_, surface_name, false);
+	currentState.setBooleanPredicate(predicate_table_inspected_recently_, surface_name, true);
 
 	// Cut off _number from table detection and readd table to PS
 	renameTableCollisionObject(surface_name);

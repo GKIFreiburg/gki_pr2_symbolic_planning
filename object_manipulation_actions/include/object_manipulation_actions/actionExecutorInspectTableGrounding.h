@@ -43,7 +43,7 @@ namespace object_manipulation_actions
         std::string action_topic_;
         std::string action_name_;
         std::string predicate_table_inspected_;
-        std::string predicate_sensor_data_stale_;
+        std::string predicate_table_inspected_recently_;
         std::string joint_name_head_yaw_;
 
         std::set<std::string> expected_objects_;

@@ -47,9 +47,9 @@ namespace navigation_actions
             curArg += 2;
         }
 
-        // move-robot-to-table move_base start sensor-data-stale true
+        // move-robot-to-table move_base start table-inspected-recently false
         ROS_ASSERT(arguments.size() == 5);
-        predicate_sensor_data_stale_ = arguments[3];
+        predicate_table_inspected_recently_ = arguments[3];
     }
 
     bool ActionExecutorROSNavigationGrounding::fillGoal(move_base_msgs::MoveBaseGoal & goal,
@@ -102,7 +102,8 @@ namespace navigation_actions
         string surface_name 		  = a.parameters[0];
         string grounded_surface_name  = a.parameters[1];
 
-        // as soon as a drive action is executed, the sensor data is stale
+        // as soon as a drive action is executed, table-inspected-recently is set to false for all
+        // table elements
     	string table_name;
     	pair<SymbolicState::TypedObjectConstIterator,
     			SymbolicState::TypedObjectConstIterator> targets =
@@ -111,7 +112,7 @@ namespace navigation_actions
     			it != targets.second; it++)
     	{
     		table_name = it->second;
-    		current.setBooleanPredicate(predicate_sensor_data_stale_, table_name, true);
+    		current.setBooleanPredicate(predicate_table_inspected_recently_, table_name, false);
     	}
 
 

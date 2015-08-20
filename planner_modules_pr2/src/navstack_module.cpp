@@ -242,8 +242,8 @@ double call_planning_service(nav_msgs::GetPlan& srv, const string& startLocation
     ros::WallTime callStartTime = ros::WallTime::now();
     // This construct is here, because when the robot is moving move_base will not produce other paths
     // we retry for a certain amount of time to not fail directly.
-    ROS_INFO_STREAM("planner call: start " << startLocationName << " (" << srv.request.start.pose.position
-            << "). goal " << goalLocationName << " (" << srv.request.goal.pose.position << ")");
+    ROS_INFO_STREAM("planner call: start-location: " << startLocationName << "\n" << srv.request.start.pose.position
+            << "goal-location: " << goalLocationName << "\n" << srv.request.goal.pose.position);
     static unsigned int failCounter = 0;
     ros::Rate retryRate = 1;
     do
@@ -388,11 +388,6 @@ double path_condition_grounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
-//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-//	for (size_t i = 0; i < parameterList.size(); i++)
-//	{
-//		ROS_INFO_STREAM(parameterList[i].value);
-//	}
 
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
@@ -438,12 +433,6 @@ int update_robot_pose(
 		int relaxed,
 		vector<double> & writtenVars)
 {
-	ROS_INFO_STREAM("navstack_module::" << __func__ << ": parameter count: "<<parameterList.size());
-	for (size_t i = 0; i < parameterList.size(); i++)
-	{
-		ROS_INFO_STREAM(parameterList[i].value);
-	}
-
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);

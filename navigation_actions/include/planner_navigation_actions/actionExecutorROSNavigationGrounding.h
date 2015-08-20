@@ -36,7 +36,7 @@ namespace navigation_actions
             ///< predicates to set/unset for the goal location on successful execution
             std::vector<std::pair<std::string, bool> > _goalPredicates;
 
-            std::string predicate_sensor_data_stale_;
+            std::string predicate_table_inspected_recently_;
 
     };
 

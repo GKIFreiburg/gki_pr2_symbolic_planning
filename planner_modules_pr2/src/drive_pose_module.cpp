@@ -318,7 +318,7 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	#endif
 #endif
 
-    ROS_WARN("drive_pose_module::%s: new pose with name: %s", __func__, surface_id.c_str());
+    ROS_INFO("drive_pose_module::%s: new pose with name: %s", __func__, surface_id.c_str());
 
     return surface_id;
 }
