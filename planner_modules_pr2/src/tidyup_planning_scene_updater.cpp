@@ -8,10 +8,7 @@
 #include "planner_modules_pr2/tidyup_planning_scene_updater.h"
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
-//#include "tidyup_utils/planning_scene_interface.h"
-//#include "tidyup_utils/arm_state.h"
 #include "tidyup_utils/stringutil.h"
-//#include "tidyup_utils/geometryPoses.h"
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
 #include <geometry_msgs/Pose2D.h>
@@ -54,9 +51,9 @@ TidyupPlanningSceneUpdater::~TidyupPlanningSceneUpdater()
 bool TidyupPlanningSceneUpdater::readObjects(
 		predicateCallbackType predicateCallback,
 		numericalFluentCallbackType numericalFluentCallback,
-		map<string, geometry_msgs::Pose>& movableObjects,
+		MovableObjectsMap& movableObjects,
 		GraspedObjectMap& graspedObjects,
-		map<string, string>& objectsOnStatic)
+		ObjectsOnTablesMap& objectsOnStatic)
 {
 	// get poses of all movable objects
 	planning_scene::PlanningScenePtr scene = scene_monitor->getPlanningScene();
@@ -151,7 +148,7 @@ void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScene
 
 void TidyupPlanningSceneUpdater::updateObjects(
 		planning_scene::PlanningScenePtr scene,
-		const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+		const MovableObjectsMap& movableObjects,
 		const GraspedObjectMap& graspedObjects)
 {
 	collision_detection::WorldPtr world = scene->getWorldNonConst();

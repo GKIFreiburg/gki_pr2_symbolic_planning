@@ -31,13 +31,15 @@
 namespace planner_modules_pr2
 {
 
+class ManipulationPlanning;
+typedef boost::shared_ptr<ManipulationPlanning> ManipulationPlanningPtr;
 class ManipulationPlanning
 {
 public:
-	static boost::weak_ptr<ManipulationPlanning> instance();
+	static ManipulationPlanningPtr instance();
 	virtual ~ManipulationPlanning();
 
-	void pickup(planning_scene::PlanningScenePtr scene,
+	double pickup(planning_scene::PlanningScenePtr scene,
 			const std::string& object,
 			const std::string& arm_prefix,
 			const std::string& support_surface);
@@ -47,7 +49,7 @@ public:
 	void move_torso();
 
 private:
-	static boost::shared_ptr<ManipulationPlanning> instance_;
+	static ManipulationPlanningPtr instance_;
 	ManipulationPlanning();
 
 	boost::shared_ptr<object_surface_placements::PlacementGenerator> g_placement_gen;
@@ -66,8 +68,8 @@ private:
 	object_surface_placements::CollisionMethod g_CollisionMode;
 	double z_above_table;
 
-	void planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal);
-	void applyManipulationPlan(planning_scene::PlanningScenePtr scene,
+	double planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal);
+	double applyManipulationPlan(planning_scene::PlanningScenePtr scene,
 			const pick_place::ManipulationPlanPtr manipulation_plan,
 			const trajectory_msgs::JointTrajectory detach_posture);
 
@@ -85,6 +87,7 @@ private:
 			const std::vector<shapes::ShapeConstPtr> & shapes,
 			const EigenSTL::vector_Affine3d & shape_transforms);
 };
+
 
 }
 #endif /* MANIPULATIONPLANNING_H_ */

@@ -18,6 +18,8 @@
 using namespace modules;
 
 typedef std::map<std::string, std::pair<std::string, geometry_msgs::Pose> > GraspedObjectMap;
+typedef std::map<std::string, geometry_msgs::Pose> MovableObjectsMap;
+typedef std::map<std::string, std::string> ObjectsOnTablesMap;
 
 class TidyupPlanningSceneUpdater
 {
@@ -28,9 +30,9 @@ public:
 	bool readObjects(
 			predicateCallbackType predicateCallback,
 			numericalFluentCallbackType numericalFluentCallback,
-			std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			MovableObjectsMap& movableObjects,
 			GraspedObjectMap& graspedObjects,
-			std::map<std::string, std::string>& objectsOnStatic);
+			ObjectsOnTablesMap& objectsOnStatic);
 
 	bool readRobotPose2D(
 			geometry_msgs::Pose2D& robot_pose,
@@ -56,7 +58,7 @@ public:
 
 	void updateObjects(
 			planning_scene::PlanningScenePtr scene,
-			const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			const MovableObjectsMap& movableObjects,
 			const GraspedObjectMap& graspedObjects);
 
 private:

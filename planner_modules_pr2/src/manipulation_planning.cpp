@@ -5,8 +5,8 @@
  *      Author: andreas
  */
 
-#include "planner_modules_pr2/ManipulationExceptions.h"
-#include "planner_modules_pr2/ManipulationPlanning.h"
+#include "planner_modules_pr2/manipulation_exceptions.h"
+#include "planner_modules_pr2/manipulation_planning.h"
 #include <boost/variant.hpp>
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
@@ -14,9 +14,9 @@
 namespace planner_modules_pr2
 {
 
-boost::shared_ptr<ManipulationPlanning> ManipulationPlanning::instance_;
+ManipulationPlanningPtr ManipulationPlanning::instance_;
 
-boost::weak_ptr<ManipulationPlanning> ManipulationPlanning::instance()
+ManipulationPlanningPtr ManipulationPlanning::instance()
 {
 	if (instance_ == NULL)
 	{
@@ -66,7 +66,7 @@ ManipulationPlanning::~ManipulationPlanning()
 {
 }
 
-void ManipulationPlanning::pickup(planning_scene::PlanningScenePtr psc,
+double ManipulationPlanning::pickup(planning_scene::PlanningScenePtr psc,
 			const std::string& object,
 			const std::string& arm_prefix,
 			const std::string& support_surface)
@@ -80,33 +80,33 @@ void ManipulationPlanning::pickup(planning_scene::PlanningScenePtr psc,
 	goal.end_effector = arm_prefix + "_eef";
 
 	fillGrasps(psc, goal.target_name, arm_prefix, goal.possible_grasps);
-	planPickupAndUpdateScene(psc, goal);
+	return planPickupAndUpdateScene(psc, goal);
 }
 
-void ManipulationPlanning::planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal)
+double ManipulationPlanning::planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal)
 {
-    pick_place::PickPlanPtr plan;
-    plan = g_pick_place->planPick(scene, goal);
+	pick_place::PickPlanPtr plan;
+	plan = g_pick_place->planPick(scene, goal);
 	const std::vector<pick_place::ManipulationPlanPtr> &success = plan->getSuccessfulManipulationPlans();
 	if (success.empty())
 	{
 		throw PickupPlanFailedException(plan->getErrorCode());
 	}
 	pick_place::ManipulationPlanPtr manipulation_plan = success.back();
-	applyManipulationPlan(scene, manipulation_plan, manipulation_plan->approach_posture_);
+	return applyManipulationPlan(scene, manipulation_plan, manipulation_plan->approach_posture_);
 }
 
-void ManipulationPlanning::applyManipulationPlan(planning_scene::PlanningScenePtr scene,
+double ManipulationPlanning::applyManipulationPlan(planning_scene::PlanningScenePtr scene,
 		const pick_place::ManipulationPlanPtr manipulation_plan,
 		const trajectory_msgs::JointTrajectory detach_posture)
 {
+	double cost = 0;
 	forEach(const plan_execution::ExecutableTrajectory & traj, manipulation_plan->trajectories_)
 	{
-		ROS_INFO("At Stage: %s", traj.description_.c_str());
-		//visualizeTrajectory(*traj.trajectory_);
-		ROS_INFO("Has effect_on_success_: %d ?", traj.effect_on_success_?1:0);
-		//ros::Duration(3.0).sleep();
-		ROS_INFO("Setting planning scene to resulting state");
+		cost += traj.trajectory_->getWaypointDurationFromStart(traj.trajectory_->getWayPointCount());
+		ROS_DEBUG("At Stage: %s", traj.description_.c_str());
+		ROS_DEBUG("Has effect_on_success_: %d ?", traj.effect_on_success_?1:0);
+		ROS_DEBUG("Setting planning scene to resulting state");
 		scene->setCurrentState(traj.trajectory_->getLastWayPoint());
 		if(traj.effect_on_success_)
 		{
@@ -117,11 +117,12 @@ void ManipulationPlanning::applyManipulationPlan(planning_scene::PlanningScenePt
 			{
 				moveit_msgs::AttachedCollisionObject obj = manipulation_plan->shared_data_->diff_attached_object_;
 				obj.detach_posture = detach_posture;
-				ROS_INFO_STREAM("PROCESSING" << obj);
+				ROS_DEBUG_STREAM("PROCESSING" << obj);
 				scene->processAttachedCollisionObjectMsg(obj);
 			}
 		}
 	}
+	return cost;
 }
 
 void ManipulationPlanning::fillGrasps(const planning_scene::PlanningScenePtr & scene,
