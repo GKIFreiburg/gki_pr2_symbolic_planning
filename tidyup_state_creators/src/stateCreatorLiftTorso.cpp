@@ -135,7 +135,7 @@ namespace tidyup_state_creators
     	ROS_ASSERT(joint_names.size() == 1);
 
     	// get joint limits
-    	symbolic_planning_utils::limits limits =
+    	symbolic_planning_utils::JointLimits::Limits limits =
     			symbolic_planning_utils::JointLimits::getJointLimit(torso_group_, joint_names[0]);
 
     	// get current joint values

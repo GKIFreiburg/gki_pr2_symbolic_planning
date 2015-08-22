@@ -43,6 +43,7 @@ add_library(tidyup_state_creators
     src/StateAccessException.cpp
     ### Grounding stuff ###
     src/stateCreatorRobotPoseGrounding.cpp
+    src/stateCreatorLiftTorsoGrounding.cpp
     src/goalCreatorTidyupInitializeGrounding.cpp
     src/goalCreatorMoveObjectsToTableGrounding.cpp
 )

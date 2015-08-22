@@ -40,4 +40,7 @@
   <class name="tidyup_state_creators/state_creator_robot_pose_grounding" type="tidyup_state_creators::StateCreatorRobotPoseGrounding" base_class_type="continual_planning_executive::StateCreator">
     <description>Sets the current robot pose in the state and possible robot-near-table predicates.</description>
   </class>
+  <class name="tidyup_state_creators/state_creator_lift_torso_grounding" type="tidyup_state_creators::StateCreatorLiftTorsoGrounding" base_class_type="continual_planning_executive::StateCreator">
+    <description>Writing torso position into current state.</description>
+  </class>
 </library>
