@@ -15,7 +15,7 @@ namespace tidyup_state_creators
 
 	    ros::NodeHandle nhPriv("~");
 	    // Namespace is "/continual_planning_executive"(/vdist_head_to_table)
-	    nhPriv.param("vdist_threshold", vdist_threshold_, 0.002);
+	    nhPriv.param("vdist_threshold", vdist_threshold_, 0.02);
     }
 
     StateCreatorLiftTorsoGrounding::~StateCreatorLiftTorsoGrounding()

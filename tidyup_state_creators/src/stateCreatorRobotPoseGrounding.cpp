@@ -179,7 +179,7 @@ bool StateCreatorRobotPoseGrounding::fillState(SymbolicState & state)
 		InverseCapabilityOcTree* tree = inv_cap_maps_[table_name];
 		ROS_ASSERT(tree);
 
-		// convert torso pose into table frame
+		// fetch torso pose and convert into table frame
 		tf::Pose torso_table = transformTorsoInTableFrame(table_pose);
 
 //		geometry_msgs::Pose debug;
