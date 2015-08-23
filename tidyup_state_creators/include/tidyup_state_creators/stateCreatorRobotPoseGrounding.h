@@ -48,6 +48,7 @@ namespace tidyup_state_creators
 
             std::map<std::string, InverseCapabilityOcTree*> inv_cap_maps_;
 
+            // Fetch torso pose and convert into table frame
             tf::Pose transformTorsoInTableFrame(const geometry_msgs::PoseStamped& table);
     };
 
