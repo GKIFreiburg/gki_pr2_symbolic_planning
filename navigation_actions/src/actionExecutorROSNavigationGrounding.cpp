@@ -13,43 +13,10 @@ namespace navigation_actions
         ActionExecutorActionlib<move_base_msgs::MoveBaseAction, move_base_msgs::MoveBaseGoal,
             move_base_msgs::MoveBaseResult>::initialize(arguments);
 
-        if(arguments.size() < 3)
-            return;
-
-        bool parseStart = true;
-        if(arguments[2] == "goal") {
-            parseStart = false;
-        } else {
-            ROS_ASSERT(arguments[2] == "start");
-        }
-
-        unsigned int curArg = 3;
-        while(curArg < arguments.size()) {
-            if(arguments[curArg] == "goal") {
-                parseStart = false;
-                curArg++;
-                continue;
-            }
-            ROS_ASSERT(arguments.size() >= curArg + 2);  // need to access curArg, curArg+1
-            string pred = arguments[curArg];
-            string setS = arguments[curArg + 1];
-            bool set = false;
-            if(setS == "true")
-                set = true;
-            else if(setS == "false")
-                set = false;
-            else
-                ROS_ASSERT(false);
-            if(parseStart)
-                _startPredicates.push_back(std::make_pair(pred, set));
-            else
-                _goalPredicates.push_back(std::make_pair(pred, set));
-            curArg += 2;
-        }
-
-        // move-robot-to-table move_base start table-inspected-recently false
-        ROS_ASSERT(arguments.size() == 5);
-        predicate_table_inspected_recently_ = arguments[3];
+        // move-robot-to-table move_base table-inspected-recently sampled-torso-height
+        ROS_ASSERT(arguments.size() == 4);
+        predicate_table_inspected_recently_ = arguments[2];
+        sampled_torso_height_ 				= arguments[3];
     }
 
     bool ActionExecutorROSNavigationGrounding::fillGoal(move_base_msgs::MoveBaseGoal & goal,
@@ -115,20 +82,16 @@ namespace navigation_actions
     		current.setBooleanPredicate(predicate_table_inspected_recently_, table_name, false);
     	}
 
+    	// set sampled torso height in symbolic state
+    	std::string name_space = "grounding/drive_pose_module/";
+    	double torso_height;
+        if (!ros::param::get(name_space + grounded_surface_name + "/z", torso_height))
+        {
+        	ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: Could not set sampled torso height!", __func__);
+        	return;
+        }
+    	current.setNumericalFluent(sampled_torso_height_, "", torso_height);
 
-//    	 // old code
-//        // start predicates are always applied independent of success
-//        for(std::vector<std::pair<std::string, bool> >::iterator it = _startPredicates.begin();
-//                it != _startPredicates.end(); it++) {
-//            current.setBooleanPredicate(it->first, surface_name, it->second);
-//        }
-
-//        if(actionReturnState == actionlib::SimpleClientGoalState::SUCCEEDED) {
-//            for(std::vector<std::pair<std::string, bool> >::iterator it = _goalPredicates.begin();
-//                    it != _goalPredicates.end(); it++) {
-//                current.setBooleanPredicate(it->first, targetName, it->second);
-//            }
-//        }
     }
 
 };

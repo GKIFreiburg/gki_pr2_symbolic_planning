@@ -72,10 +72,18 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
 //        modules::numericalFluentCallbackType numericalFluentCallback,
 //        int relaxed, vector<double> & writtenVars);
 
-/// Determine a candidate pose to drive to the static ?s.
+/// Determine a candidate pose to drive to the static ?t - table.
 std::string determine_drive_pose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr);
+
+// Set the sampled-torso-height in symbolic state from sampled robot pose.
+int set_sampled_torso_height(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+        vector<double> & writtenVars);
 
 #ifdef __cplusplus
 }

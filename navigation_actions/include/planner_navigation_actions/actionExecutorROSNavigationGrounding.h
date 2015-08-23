@@ -37,6 +37,7 @@ namespace navigation_actions
             std::vector<std::pair<std::string, bool> > _goalPredicates;
 
             std::string predicate_table_inspected_recently_;
+            std::string sampled_torso_height_;
 
     };
 

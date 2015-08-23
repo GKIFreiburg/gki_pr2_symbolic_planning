@@ -323,3 +323,24 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
     return surface_id;
 }
 
+// ________________________________________________________________________________________________
+int set_sampled_torso_height(const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed, vector<double> & writtenVars)
+{
+	// should be table grounded_place => param + 1 (due to grounding)
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& grounded_goal = parameterList[1].value;
+	geometry_msgs::PoseStamped goalPose;
+	// get goal from grounding - if not found return 0 (state unchanged)
+	if (!lookup_pose_from_surface_id(grounded_goal, goalPose))
+		return 0;
+	ROS_ASSERT(writtenVars.size() == 1);
+	writtenVars[0] = goalPose.pose.position.z;
+
+	ROS_WARN("drive_pose_module::%s: wrote value: %lf", __func__, goalPose.pose.position.z);
+
+	return 1;
+}
+

@@ -123,7 +123,7 @@ namespace object_manipulation_actions
 					__func__, joint_name.c_str(), torso_position);
 
 			// get torso joint limit
-		    symbolic_planning_utils::limits joint_limits = symbolic_planning_utils::JointLimits::getJointLimit(torso_group_, joint_name);
+		    symbolic_planning_utils::JointLimits::Limits joint_limits = symbolic_planning_utils::JointLimits::getJointLimit(torso_group_, joint_name);
 		    ROS_INFO("ActionExecutorLiftTorso::%s: Joint %s has limits [%lf, %lf]",
 		    		__func__, joint_name.c_str(), joint_limits.min_position, joint_limits.max_position);
 

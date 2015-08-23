@@ -7,29 +7,21 @@
 
 VERIFY_CONDITIONCHECKER_DEF(lift_torso_cost);
 VERIFY_CONDITIONCHECKER_DEF(need_to_lift_torso);
-VERIFY_CONDITIONCHECKER_DEF(torso_lifted);
-VERIFY_APPLYEFFECT_DEF(update_torso_position);
+VERIFY_CONDITIONCHECKER_DEF(is_torso_lifted);
+VERIFY_APPLYEFFECT_DEF(update_torso_height);
 
 
 // ________________________________________________________________________________________________
-bool fetch_variables_from_planner(const modules::ParameterList & parameterList,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		double& table_height,
-		double& torso_position)
+bool fetch_torso_heights_from_state(modules::numericalFluentCallbackType numericalFluentCallback,
+		double& sampled_torso_height, double& current_torso_height)
 {
-	// get table name from planner interface
-	ROS_ASSERT(parameterList.size() == 1);
-
-	modules::ParameterList table;
-	table.push_back(parameterList[0]);
-
 	modules::ParameterList empty;
 
 	// fetch values from planner
 	modules::NumericalFluentList nfRequest;
 	nfRequest.reserve(2);
-	nfRequest.push_back(modules::NumericalFluent("z", table));
-	nfRequest.push_back(modules::NumericalFluent("torso-position", empty));
+	nfRequest.push_back(modules::NumericalFluent("sampled-torso-height", empty));
+	nfRequest.push_back(modules::NumericalFluent("current-torso-height", empty));
 
     modules::NumericalFluentList* nfRequestP = &nfRequest;
     if(!numericalFluentCallback(nfRequestP)) {
@@ -38,45 +30,13 @@ bool fetch_variables_from_planner(const modules::ParameterList & parameterList,
     }
 
     // initialize values
-    table_height 	= nfRequest[0].value;
-    torso_position  = nfRequest[1].value;
+    sampled_torso_height 	= nfRequest[0].value;
+    current_torso_height    = nfRequest[1].value;
 
-//    ROS_INFO("lift_torso_modules::%s: table height: %lf and torso_position: %lf",
-//    		__func__, table_height, torso_position);
+    ROS_INFO("lift_torso_modules::%s: sampled-torso-height: %lf and current-torso-height: %lf",
+    		__func__, sampled_torso_height, current_torso_height);
 
     return true;
-}
-
-// ________________________________________________________________________________________________
-double compute_lift_distance(const double& table_height, const double& torso_position)
-{
-
-	double head_height = MIN_TORSO_POSITION + torso_position + OFFSET_TORSO_HEAD;
-//	ROS_WARN("%s: head_height = %lf + %lf + %lf = %lf", __func__, MIN_TORSO_POSITION,
-//			torso_position, OFFSET_TORSO_HEAD, head_height);
-	double head_table_dist = head_height - table_height;
-//	ROS_WARN("%s: head_table_dist = %lf - %lf = %lf", __func__, head_height, table_height,
-//			head_table_dist);
-
-	// Compute height that torso needs to be lifted
-	double real_distance = vdist_head_to_table_ - head_table_dist;
-//	ROS_WARN("%s: real_distance = %lf - %lf = %lf", __func__, vdist_head_to_table_,
-//			head_table_dist, real_distance);
-
-	double new_position = torso_position + real_distance;
-//	ROS_WARN("%s: new_position = %lf + %lf = %lf", __func__, torso_position, real_distance, new_position);
-	if (new_position < MIN_TORSO_JOINT)
-		new_position = MIN_TORSO_JOINT;
-	else if (new_position > MAX_TORSO_JOINT)
-		new_position = MAX_TORSO_JOINT;
-
-	double lift_distance = new_position - torso_position;
-//	ROS_WARN("%s: lift_distance = %lf - %lf = %lf", new_position, torso_position, lift_distance);
-
-//	ROS_INFO("lift_torso_modules::%s: Real distance: %lf, lift distance: %lf", __func__,
-//			real_distance, lift_distance);
-
-	return lift_distance;
 }
 
 // ________________________________________________________________________________________________
@@ -88,14 +48,12 @@ void lift_torso_init(int argc, char** argv)
     std::string tfPrefix = tf::getPrefixParam(nhPriv);
 
     // /continual_planning_executive/vdist_head_to_table)
-    nhPriv.param("/continual_planning_executive/vdist_head_to_table", vdist_head_to_table_, 0.60);
     nhPriv.param("/continual_planning_executive/vdist_module_threshold", vdist_threshold_, 0.02);
 
     // If not defined on param server, take 0.02 m/s which is an arbitrary chosen value
     nhPriv.param("lift_speed", lift_speed_, 0.02);
 
    	ROS_INFO_STREAM("lift_torso_modules::" << __func__ << ": param namespace: " << nhPriv.getNamespace() << "\n"
-		"vdist_head_to_table: " << vdist_head_to_table_ << "\n"
 		"vdist_module_threshold: " << vdist_threshold_ << "\n"
 		"lift_speed: " << lift_speed_);
 
@@ -108,12 +66,13 @@ double lift_torso_cost(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
-	double table_height, torso_position;
+	double sampled_torso_height, current_torso_height;
 
-	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
+	ROS_WARN("lift_torso_module::%s: followed by fetch_torso_height", __func__);
+	if (!fetch_torso_heights_from_state(numericalFluentCallback, sampled_torso_height, current_torso_height))
 		return modules::INFINITE_COST;
 
-	double cost = fabs(compute_lift_distance(table_height, torso_position));
+	double cost = fabs(sampled_torso_height - current_torso_height);
 
 	if (cost < vdist_threshold_)
 		cost = vdist_threshold_;
@@ -126,86 +85,102 @@ double need_to_lift_torso(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
-	double table_height, torso_position;
+	double sampled_torso_height, current_torso_height;
 
-	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
-		return modules::INFINITE_COST;
+	ROS_WARN("lift_torso_module::%s: followed by fetch_torso_height", __func__);
+	if (!fetch_torso_heights_from_state(numericalFluentCallback, sampled_torso_height, current_torso_height))
+	{
+		ROS_ERROR("lift_torso_module::%s: STH WENT WRONG", __func__);
+		// return 0.0 = true to signal that sth went wrong
+		return 0.0;
+	}
+
+	if (sampled_torso_height < 0)
+	{
+		ROS_WARN("lift_torso_module::%s: DID NOT SAMPLED TORSO HEIGHT");
+		return 0.0;
+	}
 
 	// Taking fabs() of lift distance, since it is not important if going up or down
-	double distance = fabs(compute_lift_distance(table_height, torso_position));
+	double distance = fabs(sampled_torso_height - current_torso_height);
 
-//	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
-
-	// If head to table distance satisfies the given tolerance, then return INFITINITE_COST (= false)
+	// If distance satisfies the given tolerance, then return INFITINITE_COST (= false)
 	// because no need to lift torso, otherwise return true
+	double result;
     if (distance < vdist_threshold_)
     {
-    	return modules::INFINITE_COST;
+    	result = modules::INFINITE_COST;
+    	ROS_WARN("lift_torso_module::%s: Do NOT need to lift torso", __func__);
     }
     else
     {
-//    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
-    	return 0.0;
+    	result = 0.0;
+    	ROS_WARN("lift_torso_module::%s: Need to lift torso", __func__);
     }
+
+    return result;
 }
 
 // ________________________________________________________________________________________________
-double torso_lifted(const modules::ParameterList & parameterList,
+double is_torso_lifted(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
-	double table_height, torso_position;
+	double sampled_torso_height, current_torso_height;
 
-	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
+	ROS_WARN("lift_torso_module::%s: followed by fetch_torso_height", __func__);
+	if (!fetch_torso_heights_from_state(numericalFluentCallback, sampled_torso_height, current_torso_height))
+	{
+		ROS_ERROR("lift_torso_module::%s: STH WENT WRONG", __func__);
+		// return 0.0 = true to signal that sth went wrong
 		return modules::INFINITE_COST;
+	}
+
+	if (sampled_torso_height < 0)
+	{
+		ROS_WARN("lift_torso_module::%s: DID NOT SAMPLED TORSO HEIGHT");
+		return modules::INFINITE_COST;
+	}
 
 	// Taking fabs() of lift distance, since it is not important if going up or down
-	double distance = fabs(compute_lift_distance(table_height, torso_position));
+	double distance = fabs(sampled_torso_height - current_torso_height);
 
-//	ROS_WARN("%s: check if: distance < threshold: %lf < %lf", __func__, distance, vdist_threshold_);
-
-	// If head to table distance satisfies the given tolerance, then return INFITINITE_COST (= false)
-	// because no need to lift torso, otherwise return true
+	// If distance satisfies the given tolerance, then return 0.0 (= true)
+	// because torso is already lifted
+	double result;
     if (distance < vdist_threshold_)
     {
-    	return 0.0;
+    	ROS_WARN("lift_torso_module::%s: Torso is lifted", __func__);
+    	result = 0.0;
     }
     else
     {
-//    	ROS_INFO("lift_torso_modules::%s: Need to lift torso", __func__);
-    	return modules::INFINITE_COST;
+    	ROS_WARN("lift_torso_module::%s: Torso is NOT lifted", __func__);
+    	result = modules::INFINITE_COST;
     }
+
+    ROS_WARN("lift_torso_module::%s: RESULT: %lf", __func__, result);
+    return result;
 }
 
 // ________________________________________________________________________________________________
-int update_torso_position(const modules::ParameterList & parameterList,
+int update_torso_height(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, vector<double> & writtenVars)
 {
-	double table_height, torso_position;
+	double sampled_torso_height, current_torso_height;
 
-//	ROS_INFO("lift_torso_modules::%s: ", __func__);
-	if (!fetch_variables_from_planner(parameterList, numericalFluentCallback, table_height, torso_position))
-		return 0.0; // state remains unchanged
-
-	double lift_distance = compute_lift_distance(table_height, torso_position);
-	double new_position = torso_position + lift_distance;
-
-	// For safety reason verify that new_position is not outside bounds
-	if (new_position < MIN_TORSO_JOINT)
+	if (!fetch_torso_heights_from_state(numericalFluentCallback, sampled_torso_height, current_torso_height))
 	{
-		ROS_WARN("lift_torso_module::%s: new_position (%lf) < MIN_TORSO_JOINT!", __func__, new_position);
-		new_position = MIN_TORSO_JOINT;
-	} else if (new_position > MAX_TORSO_JOINT)
-	{
-		ROS_WARN("lift_torso_module::%s: new_position (%lf) > MAX_TORSO_JOINT!", __func__, new_position);
-		new_position = MAX_TORSO_JOINT;
+		ROS_ERROR("lift_torso_module::%s: STH WENT WRONG", __func__);
+		// return 0.0 to signal that no variables have been written
+		return 0.0;
 	}
 
 	ROS_ASSERT(writtenVars.size() == 1);
-	writtenVars[0] = new_position;
-	ROS_WARN("lift_torso_modules::%s: new torso position: %lf", __func__, writtenVars[0]);
+	writtenVars[0] = sampled_torso_height;
+	ROS_WARN("lift_torso_modules::%s: current torso height: %lf", __func__, writtenVars[0]);
 
 	return 1.0; // update state
 }

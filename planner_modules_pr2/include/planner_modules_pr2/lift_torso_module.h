@@ -12,23 +12,12 @@ const double OFFSET_TORSO_HEAD = 0.38145;
 const double MIN_TORSO_JOINT = 0.00115;
 const double MAX_TORSO_JOINT = 0.325;
 
-//double table_height_;
-//double torso_position_;
-double vdist_head_to_table_;
 double vdist_threshold_;
 double lift_speed_;
 
 // set the variable table_height_ and torso_position_
-bool fetch_variables_from_planner(const modules::ParameterList & parameterList,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		double& table_height, double& torso_position);
-
-// Compute the real distance that torso needs to be lifted, considering the joint limits of
-// torso_lift_link. If result is positiv, meaning torso is going to be raised, if otherwise
-// torso is lowered
-double compute_lift_distance(const double& table_height, const double& torso_position);
-
-
+bool fetch_torso_heights_from_state(modules::numericalFluentCallbackType numericalFluentCallback,
+		double& sampled_torso_height, double& current_torso_height);
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,13 +39,13 @@ double need_to_lift_torso(const modules::ParameterList & parameterList,
 // Condition checker Module, check if torso is lifted
 // INFINITE_COST if false or 0 (a value smaller INFINITE_COST) if true
 // Inverse of needToLiftTorso
-double torso_lifted(const modules::ParameterList & parameterList,
+double is_torso_lifted(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 
 // Effect Module, set predicate "torso-lifted" with the corresponding table
 // If return value != 0, then writtenVars are applied to the state, otherwise state remains unchanged
-int update_torso_position(const modules::ParameterList & parameterList,
+int update_torso_height(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, vector<double> & writtenVars);
