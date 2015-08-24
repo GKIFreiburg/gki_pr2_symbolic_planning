@@ -18,6 +18,8 @@
 using namespace modules;
 
 typedef std::map<std::string, std::pair<std::string, geometry_msgs::Pose> > GraspedObjectMap;
+typedef std::map<std::string, geometry_msgs::Pose> MovableObjectsMap;
+typedef std::map<std::string, std::string> ObjectsOnTablesMap;
 
 class TidyupPlanningSceneUpdater
 {
@@ -28,12 +30,13 @@ public:
 	bool readObjects(
 			predicateCallbackType predicateCallback,
 			numericalFluentCallbackType numericalFluentCallback,
-			std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			MovableObjectsMap& movableObjects,
 			GraspedObjectMap& graspedObjects,
-			std::map<std::string, std::string>& objectsOnStatic);
+			ObjectsOnTablesMap& objectsOnStatic);
 
 	bool readRobotPose2D(
 			geometry_msgs::Pose2D& robot_pose,
+			double& torso_position,
 			modules::numericalFluentCallbackType numericalFluentCallback);
 
 	bool readPose(
@@ -49,15 +52,19 @@ public:
 	planning_scene::PlanningScenePtr getEmptyScene();
 
 	void updateRobotPose2D(planning_scene::PlanningScenePtr scene,
-			const geometry_msgs::Pose& robot_pose);
+			const geometry_msgs::Pose& robot_pose,
+			const double torso_position);
 	void updateRobotPose2D(
 			planning_scene::PlanningScenePtr scene,
-			const geometry_msgs::Pose2D& robot_pose);
+			const geometry_msgs::Pose2D& robot_pose,
+			const double torso_position);
 
 	void updateObjects(
 			planning_scene::PlanningScenePtr scene,
-			const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+			const MovableObjectsMap& movableObjects,
 			const GraspedObjectMap& graspedObjects);
+
+	void visualize(planning_scene::PlanningScenePtr scene);
 
 private:
 	TidyupPlanningSceneUpdater();
@@ -76,6 +83,8 @@ private:
 	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;
 
 	static TidyupPlanningSceneUpdater* instance_;
+
+	ros::Publisher scene_publisher;
 
 };
 

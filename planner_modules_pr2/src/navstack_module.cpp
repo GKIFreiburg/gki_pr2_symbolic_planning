@@ -18,11 +18,18 @@ using std::pair; using std::make_pair;
 #include <sys/times.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include "planner_modules_pr2/tidyup_planning_scene_updater.h"
 
 using namespace modules;
 
 
 VERIFY_CONDITIONCHECKER_DEF(path_cost);
+VERIFY_CONDITIONCHECKER_DEF(path_cost_grounding);
+VERIFY_CONDITIONCHECKER_DEF(path_condition_grounding);
+VERIFY_APPLYEFFECT_DEF(update_robot_pose);
+
+// Distance measured from ground when torso is at minimum (= not lifted)
+const double MIN_TORSO_POSITION = 0.802;
 
 ros::NodeHandle* g_NodeHandle = NULL;
 ros::ServiceClient g_GetPlan;
@@ -336,11 +343,11 @@ double path_cost_grounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
-//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-//	for (size_t i = 0; i < parameterList.size(); i++)
-//	{
-//		ROS_INFO_STREAM(parameterList[i].value);
-//	}
+	ROS_INFO_STREAM("navstack_module::" << __func__ << ": parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
 
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
@@ -388,11 +395,25 @@ double path_condition_grounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
+	ROS_INFO_STREAM("navstack_module::" << __func__ << ": parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
 
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
+
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position;
+	TidyupPlanningSceneUpdater* updater = TidyupPlanningSceneUpdater::instance();
+	updater->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+	planning_scene::PlanningScenePtr scene = updater->getEmptyScene();
+	updater->updateRobotPose2D(scene, robot_pose, torso_position);
+	updater->visualize(scene);
+
 
 	nav_msgs::GetPlan srv;
 	if (! fill_robot_pose_XYT(numericalFluentCallback, srv.request.start))
@@ -403,6 +424,7 @@ double path_condition_grounding(const ParameterList & parameterList,
 	// get goal from grounding - if not found return inf cost
 	if (!lookup_pose_from_surface_id(grounded_goal, srv.request.goal))
 		return INFINITE_COST;
+	srv.request.goal.pose.position.z = 0;
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
@@ -441,12 +463,13 @@ int update_robot_pose(
 	// get goal from grounding - if not found return 0 (state unchanged)
 	if (!lookup_pose_from_surface_id(grounded_goal, goalPose))
 		return 0;
-	ROS_ASSERT(writtenVars.size() == 3);
+	ROS_ASSERT(writtenVars.size() == 4);
 	writtenVars[0] = goalPose.pose.position.x;
 	writtenVars[1] = goalPose.pose.position.y;
 	tf::Quaternion q;
 	tf::quaternionMsgToTF(goalPose.pose.orientation, q);
 	writtenVars[2] = tf::getYaw(q);
+	writtenVars[3] = goalPose.pose.position.z - MIN_TORSO_POSITION;
 
 	return 1;
 }

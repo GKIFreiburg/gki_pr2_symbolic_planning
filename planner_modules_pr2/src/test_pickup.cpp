@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 // this header needs to be included first!!
-#include "planner_modules_pr2/ManipulationPlanning.h"
+#include "planner_modules_pr2/manipulation_planning.h"
 
 
 #include <boost/shared_ptr.hpp>
@@ -15,12 +15,11 @@
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <geometric_shapes/shapes.h>
 #include <tf_conversions/tf_eigen.h>
-#include "planner_modules_pr2/ManipulationExceptions.h"
+#include "planner_modules_pr2/manipulation_exceptions.h"
 
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "manipualion_pickup_test");
-	boost::weak_ptr<planner_modules_pr2::ManipulationPlanning> planning = planner_modules_pr2::ManipulationPlanning::instance();
 
 	planning_scene_monitor::PlanningSceneMonitorPtr monitor(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	ROS_INFO_STREAM("requesting planning scene");
@@ -63,24 +62,22 @@ int main(int argc, char** argv)
 	scene->getPlanningSceneMsg(msg);
 	initial_scene_publisher.publish(msg);
 
-	if(boost::shared_ptr<planner_modules_pr2::ManipulationPlanning> p = planning.lock())
+	try
 	{
-		try
-		{
-			ROS_INFO_STREAM("trying pickup");
-			p->pickup(scene, object_name, "right", "table1");
-			moveit_msgs::PlanningScene msg;
-			scene->getPlanningSceneMsg(msg);
-			final_scene_publisher.publish(msg);
-		}
-		catch (planner_modules_pr2::ManipulationException& ex)
-		{
-			ROS_ERROR("Pickup failed: %s", ex.what());
-		}
-		catch (std::exception& ex)
-		{
-			ROS_ERROR("Error: %s", ex.what());
-		}
+		planner_modules_pr2::ManipulationPlanningPtr p = planner_modules_pr2::ManipulationPlanning::instance();
+		ROS_INFO_STREAM("trying pickup");
+		p->pickup(scene, object_name, "right", "table1");
+		moveit_msgs::PlanningScene msg;
+		scene->getPlanningSceneMsg(msg);
+		final_scene_publisher.publish(msg);
+	}
+	catch (planner_modules_pr2::ManipulationException& ex)
+	{
+		ROS_ERROR("Pickup failed: %s", ex.what());
+	}
+	catch (std::exception& ex)
+	{
+		ROS_ERROR("Error: %s", ex.what());
 	}
 
 	ros::spin();

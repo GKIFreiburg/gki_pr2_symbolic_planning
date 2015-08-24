@@ -25,7 +25,7 @@ boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction
  * If no feedback is provided the timeout is set to 5 minutes, then the next planning scene is published -
  * how this should be enough time to check in rviz.
  */
-#define DEBUG_PLANNING_SCENE
+//#define DEBUG_PLANNING_SCENE
 //#define DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
 ros::Publisher g_debug_ps_pub;
 std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
@@ -228,11 +228,13 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	map<string, geometry_msgs::Pose> movableObjects;
 	GraspedObjectMap graspedObjects;
 	map<string, string> objectsOnStatic;
-	TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, numericalFluentCallback);
+	double torsoPosition = 0.0;
+	TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, torsoPosition, numericalFluentCallback);
+	ROS_INFO_STREAM(__func__<<": torso: "<< torsoPosition);
 	TidyupPlanningSceneUpdater::instance()->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic);
 	// set planning scene, needed by inv_reach sampling for collision checks
 	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getEmptyScene();
-	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose);
+	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose, torsoPosition);
 	TidyupPlanningSceneUpdater::instance()->updateObjects(scene, movableObjects, graspedObjects);
 
 	std::map<std::string, geometry_msgs::PoseStamped>::iterator it_pose;
@@ -273,7 +275,8 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	// rosrun actionlib axserver.py /empty_action planner_modules_pr2/EmptyAction
 	// rosrun actionlib axclient.py /empty_action
 
-	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, sampled_pose.pose.pose);
+    double torsoPosition;
+	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, sampled_pose.pose.pose, torsoPosition);
 
 	moveit_msgs::PlanningScene psMsg;
 //	moveit_msgs::PlanningSceneComponents components;

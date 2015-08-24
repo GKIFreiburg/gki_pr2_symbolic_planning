@@ -8,10 +8,7 @@
 #include "planner_modules_pr2/tidyup_planning_scene_updater.h"
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
-//#include "tidyup_utils/planning_scene_interface.h"
-//#include "tidyup_utils/arm_state.h"
 #include "tidyup_utils/stringutil.h"
-//#include "tidyup_utils/geometryPoses.h"
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
 #include <geometry_msgs/Pose2D.h>
@@ -30,6 +27,8 @@ TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance()
 	return instance_;
 }
 
+// TODO: provide debug visualization
+
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
 {
@@ -44,6 +43,9 @@ TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	scene_monitor->requestPlanningSceneState("/get_planning_scene");
 
+	ros::NodeHandle nh("~");
+	scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("tfd_planning/planning_scene", 1, true);
+
 	ROS_INFO("%s initialized.\n", logName.c_str());
 }
 
@@ -54,9 +56,9 @@ TidyupPlanningSceneUpdater::~TidyupPlanningSceneUpdater()
 bool TidyupPlanningSceneUpdater::readObjects(
 		predicateCallbackType predicateCallback,
 		numericalFluentCallbackType numericalFluentCallback,
-		map<string, geometry_msgs::Pose>& movableObjects,
+		MovableObjectsMap& movableObjects,
 		GraspedObjectMap& graspedObjects,
-		map<string, string>& objectsOnStatic)
+		ObjectsOnTablesMap& objectsOnStatic)
 {
 	// get poses of all movable objects
 	planning_scene::PlanningScenePtr scene = scene_monitor->getPlanningScene();
@@ -129,7 +131,8 @@ planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getEmptyScene()
 }
 
 void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
-		const geometry_msgs::Pose& robot_pose)
+		const geometry_msgs::Pose& robot_pose,
+		const double torso_position)
 {
 	geometry_msgs::Pose2D pose;
 	pose.x = robot_pose.position.x;
@@ -137,21 +140,24 @@ void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScene
 	tf::Quaternion orientation;
 	tf::quaternionMsgToTF(robot_pose.orientation, orientation);
 	pose.theta = tf::getYaw(orientation);
-	updateRobotPose2D(scene, pose);
+	updateRobotPose2D(scene, pose, torso_position);
 }
 
 void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
-		const geometry_msgs::Pose2D& robot_pose)
+		const geometry_msgs::Pose2D& robot_pose,
+		const double torso_position)
 {
 	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
 	robot_state.setVariablePosition("world_joint/x", robot_pose.x);
 	robot_state.setVariablePosition("world_joint/y", robot_pose.y);
 	robot_state.setVariablePosition("world_joint/theta", robot_pose.theta);
+	robot_state.setVariablePosition("torso_lift_joint", torso_position);
+	robot_state.update();
 }
 
 void TidyupPlanningSceneUpdater::updateObjects(
 		planning_scene::PlanningScenePtr scene,
-		const std::map<std::string, geometry_msgs::Pose>& movableObjects,
+		const MovableObjectsMap& movableObjects,
 		const GraspedObjectMap& graspedObjects)
 {
 	collision_detection::WorldPtr world = scene->getWorldNonConst();
@@ -165,21 +171,23 @@ void TidyupPlanningSceneUpdater::updateObjects(
 	{
 		string object_name = movabelObjectIt->first;
 		ROS_INFO("%s updating object %s", logName.c_str(), object_name.c_str());
-		const moveit::core::AttachedBody* attachedObject = scene->getCurrentStateNonConst().getAttachedBody(object_name);
-		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
+		bool is_attached = scene->getCurrentStateNonConst().hasAttachedBody(object_name);
+		bool exist_in_world = world->hasObject(object_name);
 		tf::Pose object_pose_tf;
 		Eigen::Affine3d object_pose_eigen;
 		tf::poseMsgToTF(movabelObjectIt->second, object_pose_tf);
 		tf::transformTFToEigen(object_pose_tf, object_pose_eigen);
-		if (attachedObject != NULL)
+		if (is_attached)
 		{
 			// if this object is attached somewhere we need to detach it
+			const moveit::core::AttachedBody* attachedObject = scene->getCurrentStateNonConst().getAttachedBody(object_name);
 			scene->getCurrentStateNonConst().clearAttachedBody(movabelObjectIt->first);
 			world->addToObject(object_name, attachedObject->getShapes().front(), object_pose_eigen);
 		}
-		else if (object != NULL)
+		else if (exist_in_world)
 		{
 			// object is not attached, update pose
+			collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
 			world->moveShapeInObject(object_name, object->shapes_.front(), object_pose_eigen);
 		}
 		else
@@ -196,17 +204,19 @@ void TidyupPlanningSceneUpdater::updateObjects(
 		const string& arm = graspedIt->second.first;
 		string arm_prefix = arm.substr(0, arm.find_first_of("_"));
 		ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), object_name.c_str(), arm.c_str());
-		const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
-		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
-		if (object != NULL)
+		bool is_attached = scene->getCurrentStateNonConst().hasAttachedBody(object_name);
+		bool exist_in_world = world->hasObject(object_name);
+		if (exist_in_world)
 		{
 			// attach
+			collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
 			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
 			world->removeObject(object_name);
 		}
-		else if (attachedObject != NULL)
+		else if (is_attached)
 		{
 			// if incorrect arm update arm
+			const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
 			string attach_link_name = arm_prefix[0]+"_wrist_roll_link";
 			if (attachedObject->getAttachedLinkName() != attach_link_name)
 			{
@@ -220,14 +230,16 @@ void TidyupPlanningSceneUpdater::updateObjects(
 
 bool TidyupPlanningSceneUpdater::readRobotPose2D(
 		geometry_msgs::Pose2D& robot_pose,
+		double& torso_position,
 		modules::numericalFluentCallbackType numericalFluentCallback)
 {
 	ParameterList poseParams;
 	NumericalFluentList nfRequest;
-	nfRequest.reserve(3);
+	nfRequest.reserve(4);
 	nfRequest.push_back(NumericalFluent("robot-x", poseParams));
 	nfRequest.push_back(NumericalFluent("robot-y", poseParams));
 	nfRequest.push_back(NumericalFluent("robot-theta", poseParams));
+	nfRequest.push_back(NumericalFluent("robot-torso-position", poseParams));
 
 	NumericalFluentList* nfRequestP = &nfRequest;
 	if ( !numericalFluentCallback(nfRequestP))
@@ -239,6 +251,7 @@ bool TidyupPlanningSceneUpdater::readRobotPose2D(
 	robot_pose.x = nfRequest[0].value;
 	robot_pose.y = nfRequest[1].value;
 	robot_pose.theta = nfRequest[2].value;
+	torso_position = nfRequest[3].value;
 	return true;
 }
 
@@ -306,6 +319,13 @@ bool TidyupPlanningSceneUpdater::readPose(
 	pose.orientation.z = nfRequest[5].value;
 	pose.orientation.w = nfRequest[6].value;
 	return true;
+}
+
+void TidyupPlanningSceneUpdater::visualize(planning_scene::PlanningScenePtr scene)
+{
+	moveit_msgs::PlanningScene msg;
+	scene->getPlanningSceneMsg(msg);
+	scene_publisher.publish(msg);
 }
 
 void TidyupPlanningSceneUpdater::attachObject(

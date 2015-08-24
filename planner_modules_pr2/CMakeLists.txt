@@ -118,12 +118,13 @@ include_directories(
 
 ## Declare a cpp library
 add_library(planner_modules_pr2
-	src/ManipulationPlanning.cpp
+	src/manipulation_planning.cpp
 	src/tidyup_planning_scene_updater.cpp
 	src/module_param_cache.cpp
 	src/navstack_module.cpp	
-	src/lift_torso_module.cpp
+	#src/lift_torso_module.cpp
 	src/drive_pose_module.cpp
+	src/pickup_modules.cpp
 )
 
 add_dependencies(planner_modules_pr2 planner_modules_pr2_generate_messages_cpp)
