@@ -64,6 +64,8 @@ public:
 			const MovableObjectsMap& movableObjects,
 			const GraspedObjectMap& graspedObjects);
 
+	void visualize(planning_scene::PlanningScenePtr scene);
+
 private:
 	TidyupPlanningSceneUpdater();
 
@@ -81,6 +83,8 @@ private:
 	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;
 
 	static TidyupPlanningSceneUpdater* instance_;
+
+	ros::Publisher scene_publisher;
 
 };
 

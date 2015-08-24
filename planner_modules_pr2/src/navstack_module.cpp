@@ -18,6 +18,7 @@ using std::pair; using std::make_pair;
 #include <sys/times.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include "planner_modules_pr2/tidyup_planning_scene_updater.h"
 
 using namespace modules;
 
@@ -404,6 +405,15 @@ double path_condition_grounding(const ParameterList & parameterList,
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
+
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position;
+	TidyupPlanningSceneUpdater* updater = TidyupPlanningSceneUpdater::instance();
+	updater->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+	planning_scene::PlanningScenePtr scene = updater->getEmptyScene();
+	updater->updateRobotPose2D(scene, robot_pose, torso_position);
+	updater->visualize(scene);
+
 
 	nav_msgs::GetPlan srv;
 	if (! fill_robot_pose_XYT(numericalFluentCallback, srv.request.start))

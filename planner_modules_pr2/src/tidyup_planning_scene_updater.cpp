@@ -43,6 +43,9 @@ TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	scene_monitor->requestPlanningSceneState("/get_planning_scene");
 
+	ros::NodeHandle nh("~");
+	scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("tfd_planning/planning_scene", 1, true);
+
 	ROS_INFO("%s initialized.\n", logName.c_str());
 }
 
@@ -236,7 +239,7 @@ bool TidyupPlanningSceneUpdater::readRobotPose2D(
 	nfRequest.push_back(NumericalFluent("robot-x", poseParams));
 	nfRequest.push_back(NumericalFluent("robot-y", poseParams));
 	nfRequest.push_back(NumericalFluent("robot-theta", poseParams));
-	nfRequest.push_back(NumericalFluent("torso-position", poseParams));
+	nfRequest.push_back(NumericalFluent("robot-torso-position", poseParams));
 
 	NumericalFluentList* nfRequestP = &nfRequest;
 	if ( !numericalFluentCallback(nfRequestP))
@@ -316,6 +319,13 @@ bool TidyupPlanningSceneUpdater::readPose(
 	pose.orientation.z = nfRequest[5].value;
 	pose.orientation.w = nfRequest[6].value;
 	return true;
+}
+
+void TidyupPlanningSceneUpdater::visualize(planning_scene::PlanningScenePtr scene)
+{
+	moveit_msgs::PlanningScene msg;
+	scene->getPlanningSceneMsg(msg);
+	scene_publisher.publish(msg);
 }
 
 void TidyupPlanningSceneUpdater::attachObject(
