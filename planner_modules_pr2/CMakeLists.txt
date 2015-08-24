@@ -122,7 +122,7 @@ add_library(planner_modules_pr2
 	src/tidyup_planning_scene_updater.cpp
 	src/module_param_cache.cpp
 	src/navstack_module.cpp	
-	src/lift_torso_module.cpp
+	#src/lift_torso_module.cpp
 	src/drive_pose_module.cpp
 	src/pickup_modules.cpp
 )

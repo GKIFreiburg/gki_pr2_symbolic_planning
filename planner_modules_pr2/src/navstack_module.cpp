@@ -23,6 +23,12 @@ using namespace modules;
 
 
 VERIFY_CONDITIONCHECKER_DEF(path_cost);
+VERIFY_CONDITIONCHECKER_DEF(path_cost_grounding);
+VERIFY_CONDITIONCHECKER_DEF(path_condition_grounding);
+VERIFY_APPLYEFFECT_DEF(update_robot_pose);
+
+// Distance measured from ground when torso is at minimum (= not lifted)
+const double MIN_TORSO_POSITION = 0.802;
 
 ros::NodeHandle* g_NodeHandle = NULL;
 ros::ServiceClient g_GetPlan;
@@ -453,12 +459,13 @@ int update_robot_pose(
 	// get goal from grounding - if not found return 0 (state unchanged)
 	if (!lookup_pose_from_surface_id(grounded_goal, goalPose))
 		return 0;
-	ROS_ASSERT(writtenVars.size() == 3);
+	ROS_ASSERT(writtenVars.size() == 4);
 	writtenVars[0] = goalPose.pose.position.x;
 	writtenVars[1] = goalPose.pose.position.y;
 	tf::Quaternion q;
 	tf::quaternionMsgToTF(goalPose.pose.orientation, q);
 	writtenVars[2] = tf::getYaw(q);
+	writtenVars[3] = goalPose.pose.position.z - MIN_TORSO_POSITION;
 
 	return 1;
 }

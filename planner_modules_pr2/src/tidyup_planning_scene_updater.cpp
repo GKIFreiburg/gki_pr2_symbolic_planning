@@ -168,21 +168,23 @@ void TidyupPlanningSceneUpdater::updateObjects(
 	{
 		string object_name = movabelObjectIt->first;
 		ROS_INFO("%s updating object %s", logName.c_str(), object_name.c_str());
-		const moveit::core::AttachedBody* attachedObject = scene->getCurrentStateNonConst().getAttachedBody(object_name);
-		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
+		bool is_attached = scene->getCurrentStateNonConst().hasAttachedBody(object_name);
+		bool exist_in_world = world->hasObject(object_name);
 		tf::Pose object_pose_tf;
 		Eigen::Affine3d object_pose_eigen;
 		tf::poseMsgToTF(movabelObjectIt->second, object_pose_tf);
 		tf::transformTFToEigen(object_pose_tf, object_pose_eigen);
-		if (attachedObject != NULL)
+		if (is_attached)
 		{
 			// if this object is attached somewhere we need to detach it
+			const moveit::core::AttachedBody* attachedObject = scene->getCurrentStateNonConst().getAttachedBody(object_name);
 			scene->getCurrentStateNonConst().clearAttachedBody(movabelObjectIt->first);
 			world->addToObject(object_name, attachedObject->getShapes().front(), object_pose_eigen);
 		}
-		else if (object != NULL)
+		else if (exist_in_world)
 		{
 			// object is not attached, update pose
+			collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
 			world->moveShapeInObject(object_name, object->shapes_.front(), object_pose_eigen);
 		}
 		else
@@ -199,17 +201,19 @@ void TidyupPlanningSceneUpdater::updateObjects(
 		const string& arm = graspedIt->second.first;
 		string arm_prefix = arm.substr(0, arm.find_first_of("_"));
 		ROS_INFO("%s attaching object %s to arm %s", logName.c_str(), object_name.c_str(), arm.c_str());
-		const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
-		collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
-		if (object != NULL)
+		bool is_attached = scene->getCurrentStateNonConst().hasAttachedBody(object_name);
+		bool exist_in_world = world->hasObject(object_name);
+		if (exist_in_world)
 		{
 			// attach
+			collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
 			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
 			world->removeObject(object_name);
 		}
-		else if (attachedObject != NULL)
+		else if (is_attached)
 		{
 			// if incorrect arm update arm
+			const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
 			string attach_link_name = arm_prefix[0]+"_wrist_roll_link";
 			if (attachedObject->getAttachedLinkName() != attach_link_name)
 			{
