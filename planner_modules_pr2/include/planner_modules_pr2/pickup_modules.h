@@ -11,26 +11,30 @@
 
 #include <tfd_modules/module_api/pddlModuleTypes.h>
 #include "planner_modules_pr2/tidyup_planning_scene_updater.h"
+#include "planner_modules_pr2/module_param_cache.h"
 
 #include <string>
 #include <ros/ros.h>
 
-double compute_pickup(
+double pickup(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
-std::string compute_cache_key(
+std::string compute_pickup_cache_key(
 		const string& object_name,
 		const string& arm_name,
 		const string& table_name,
 		const geometry_msgs::Pose2D& robot_pose,
+		const map<string, geometry_msgs::Pose>& movableObjects,
 		const ObjectsOnTablesMap& objectsOnTables);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void pickup_init(int argc, char** argv);
 
 double pickup_cost(
 		const modules::ParameterList& parameterList,

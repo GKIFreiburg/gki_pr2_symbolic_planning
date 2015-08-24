@@ -8,7 +8,21 @@
 #include "planner_modules_pr2/pickup_modules.h"
 #include "planner_modules_pr2/manipulation_exceptions.h"
 
-double compute_pickup(
+VERIFY_INIT_MODULE_DEF(pickup_init);
+VERIFY_CONDITIONCHECKER_DEF(can_pickup);
+VERIFY_CONDITIONCHECKER_DEF(pickup_cost);
+
+ros::NodeHandlePtr node;
+ModuleParamCache<double> costCache;
+
+void pickup_init(int argc, char** argv)
+{
+	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
+	node.reset(new ros::NodeHandle());
+	costCache.initialize("pickup/cost", node.get());
+}
+
+double pickup(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
@@ -22,16 +36,26 @@ double compute_pickup(
 
 	TidyupPlanningSceneUpdater* updater = TidyupPlanningSceneUpdater::instance();
 	geometry_msgs::Pose2D robot_pose;
-	updater->readRobotPose2D(robot_pose, numericalFluentCallback);
-	MovableObjectsMap& movableObjects;
-	GraspedObjectMap& graspedObjects;
-	ObjectsOnTablesMap& objectsOnStatic;
-	updater->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic);
+	double torsoPosition = 0.0;
+	updater->readRobotPose2D(robot_pose, torsoPosition, numericalFluentCallback);
+	ROS_INFO_STREAM(__func__<<": torso: "<< torsoPosition);
+	MovableObjectsMap movableObjects;
+	GraspedObjectMap graspedObjects;
+	ObjectsOnTablesMap objectsOnTables;
+	updater->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
+
+	// cache
+	string key = compute_pickup_cache_key(object_name, arm_name, table_name, robot_pose, movableObjects, objectsOnTables);
+	double cost;
+	if (costCache.get(key, cost))
+	{
+		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": cache hit, cost: "<<cost);
+		return cost;
+	}
 
 	planning_scene::PlanningScenePtr scene = updater->getEmptyScene();
-	updater->updateRobotPose2D(scene, robot_pose);
+	updater->updateRobotPose2D(scene, robot_pose, torsoPosition);
 	updater->updateObjects(scene, movableObjects, graspedObjects);
-	//TODO: cache
 
 	try
 	{
@@ -52,7 +76,7 @@ double compute_pickup(
 	return modules::INFINITE_COST;
 }
 
-string compute_cache_key(const string& object,
+string compute_pickup_cache_key(const string& object,
 		const string& arm,
 		const string& table,
 		const geometry_msgs::Pose2D& robot_pose,
@@ -64,6 +88,7 @@ string compute_cache_key(const string& object,
 	// using type for caching, doesn't matter which object it is.
 	std::stringstream stream;
 	stream << std::fixed << object << arm << table;
+	stream << "R" << createPoseParamString(robot_pose);
 	for (map<string, string>::const_iterator objectIt = objectsOnStatic.begin(); objectIt != objectsOnStatic.end(); objectIt++)
 	{
 		ROS_DEBUG_STREAM(__PRETTY_FUNCTION__<<": "<<objectIt->first<<" on "<<objectIt->second);
@@ -96,7 +121,8 @@ double pickup_cost(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
-	return modules::INFINITE_COST;
+	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
+	return pickup(parameterList, predicateCallback, numericalFluentCallback, relaxed);
 }
 
 double can_pickup(
@@ -105,6 +131,7 @@ double can_pickup(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
-	return modules::INFINITE_COST;
+	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
+	return pickup(parameterList, predicateCallback, numericalFluentCallback, relaxed);
 }
 

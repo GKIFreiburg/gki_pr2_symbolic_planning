@@ -336,11 +336,11 @@ double path_cost_grounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
-//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-//	for (size_t i = 0; i < parameterList.size(); i++)
-//	{
-//		ROS_INFO_STREAM(parameterList[i].value);
-//	}
+	ROS_INFO_STREAM("navstack_module::" << __func__ << ": parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
 
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
@@ -388,11 +388,11 @@ double path_condition_grounding(const ParameterList & parameterList,
 		calls++;
 		ROS_DEBUG_THROTTLE(1.0, "Got %lu module calls.\n", calls);
 	}
-//	ROS_INFO_STREAM("parameter count: "<<parameterList.size());
-//	for (size_t i = 0; i < parameterList.size(); i++)
-//	{
-//		ROS_INFO_STREAM(parameterList[i].value);
-//	}
+	ROS_INFO_STREAM("navstack_module::" << __func__ << ": parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
 
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
@@ -408,6 +408,7 @@ double path_condition_grounding(const ParameterList & parameterList,
 	// get goal from grounding - if not found return inf cost
 	if (!lookup_pose_from_surface_id(grounded_goal, srv.request.goal))
 		return INFINITE_COST;
+	srv.request.goal.pose.position.z = 0;
 
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;

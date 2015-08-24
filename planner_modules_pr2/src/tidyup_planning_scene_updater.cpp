@@ -27,6 +27,8 @@ TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance()
 	return instance_;
 }
 
+// TODO: provide debug visualization
+
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
 {
@@ -126,7 +128,8 @@ planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getEmptyScene()
 }
 
 void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
-		const geometry_msgs::Pose& robot_pose)
+		const geometry_msgs::Pose& robot_pose,
+		const double torso_position)
 {
 	geometry_msgs::Pose2D pose;
 	pose.x = robot_pose.position.x;
@@ -134,16 +137,19 @@ void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScene
 	tf::Quaternion orientation;
 	tf::quaternionMsgToTF(robot_pose.orientation, orientation);
 	pose.theta = tf::getYaw(orientation);
-	updateRobotPose2D(scene, pose);
+	updateRobotPose2D(scene, pose, torso_position);
 }
 
 void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
-		const geometry_msgs::Pose2D& robot_pose)
+		const geometry_msgs::Pose2D& robot_pose,
+		const double torso_position)
 {
 	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
 	robot_state.setVariablePosition("world_joint/x", robot_pose.x);
 	robot_state.setVariablePosition("world_joint/y", robot_pose.y);
 	robot_state.setVariablePosition("world_joint/theta", robot_pose.theta);
+	robot_state.setVariablePosition("torso_lift_joint", torso_position);
+	robot_state.update();
 }
 
 void TidyupPlanningSceneUpdater::updateObjects(
@@ -217,14 +223,16 @@ void TidyupPlanningSceneUpdater::updateObjects(
 
 bool TidyupPlanningSceneUpdater::readRobotPose2D(
 		geometry_msgs::Pose2D& robot_pose,
+		double& torso_position,
 		modules::numericalFluentCallbackType numericalFluentCallback)
 {
 	ParameterList poseParams;
 	NumericalFluentList nfRequest;
-	nfRequest.reserve(3);
+	nfRequest.reserve(4);
 	nfRequest.push_back(NumericalFluent("robot-x", poseParams));
 	nfRequest.push_back(NumericalFluent("robot-y", poseParams));
 	nfRequest.push_back(NumericalFluent("robot-theta", poseParams));
+	nfRequest.push_back(NumericalFluent("torso-position", poseParams));
 
 	NumericalFluentList* nfRequestP = &nfRequest;
 	if ( !numericalFluentCallback(nfRequestP))
@@ -236,6 +244,7 @@ bool TidyupPlanningSceneUpdater::readRobotPose2D(
 	robot_pose.x = nfRequest[0].value;
 	robot_pose.y = nfRequest[1].value;
 	robot_pose.theta = nfRequest[2].value;
+	torso_position = nfRequest[3].value;
 	return true;
 }
 

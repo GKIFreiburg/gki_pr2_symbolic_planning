@@ -36,6 +36,7 @@ public:
 
 	bool readRobotPose2D(
 			geometry_msgs::Pose2D& robot_pose,
+			double& torso_position,
 			modules::numericalFluentCallbackType numericalFluentCallback);
 
 	bool readPose(
@@ -51,10 +52,12 @@ public:
 	planning_scene::PlanningScenePtr getEmptyScene();
 
 	void updateRobotPose2D(planning_scene::PlanningScenePtr scene,
-			const geometry_msgs::Pose& robot_pose);
+			const geometry_msgs::Pose& robot_pose,
+			const double torso_position);
 	void updateRobotPose2D(
 			planning_scene::PlanningScenePtr scene,
-			const geometry_msgs::Pose2D& robot_pose);
+			const geometry_msgs::Pose2D& robot_pose,
+			const double torso_position);
 
 	void updateObjects(
 			planning_scene::PlanningScenePtr scene,

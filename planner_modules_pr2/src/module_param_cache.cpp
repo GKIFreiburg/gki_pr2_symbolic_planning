@@ -5,7 +5,7 @@ using namespace std;
 #include <sstream>
 using namespace modules;
 
-std::string createPoseParamString(const geometry_msgs::Pose & pose, double precPose, double precQuat)
+std::string createPoseParamString(const geometry_msgs::Pose& pose, double precPose, double precQuat)
 {
     std::stringstream ss;
     ss.precision(0);
@@ -41,6 +41,30 @@ std::string createPoseParamString(const geometry_msgs::Pose & pose, double precP
     if(pose.orientation.w < 0)
         ss << "N";
     ss << abs(lrint(1.0/precQuat * pose.orientation.w));
+
+    return ss.str();
+}
+
+std::string createPoseParamString(const geometry_msgs::Pose2D & pose, double precPose, double precTheta)
+{
+    std::stringstream ss;
+    ss.precision(0);
+    ss << std::fixed;
+    // the actual values don't matter as long as they are unique for this pose
+    // cannot use doubles here, as param keys are not allowed to contain '.' or '-'
+    ss << "x";
+    if(pose.x < 0)
+        ss << "N";
+    ss << abs(lrint(1.0/precPose * pose.x));
+    ss << "y";
+    if(pose.y < 0)
+        ss << "N";
+    ss << abs(lrint(1.0/precPose * pose.y));
+
+    ss << "th";
+    if(pose.theta < 0)
+        ss << "N";
+    ss << abs(lrint(1.0/precTheta * pose.theta));
 
     return ss.str();
 }

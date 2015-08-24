@@ -12,6 +12,7 @@
 #include <map>
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Pose2D.h>
 #include "tfd_modules/module_api/pddlModuleTypes.h"
 
 /// Module cache that allows to cache entries locally (for one run) or additionally
@@ -79,7 +80,9 @@ private:
 };
 
 /// Create a string from a Pose that is unique and can be stored in the param daemon.
-std::string createPoseParamString(const geometry_msgs::Pose & ps, double precPose = 0.01, double precQuat = 0.01);
+std::string createPoseParamString(const geometry_msgs::Pose & pose, double precPose = 0.01, double precQuat = 0.01);
+/// Create a string from a Pose that is unique and can be stored in the param daemon.
+std::string createPoseParamString(const geometry_msgs::Pose2D & pose, double precPose = 0.01, double precTheta = 0.01);
 
 std::string computeFullStateCacheKey(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback,
