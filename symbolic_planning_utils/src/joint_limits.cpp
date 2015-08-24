@@ -3,10 +3,9 @@
 
 namespace symbolic_planning_utils
 {
-
-	std::map<std::string, limits> JointLimits::getAllJointLimits(moveit::planning_interface::MoveGroup* group)
+	std::map<std::string, JointLimits::Limits> JointLimits::getAllJointLimits(moveit::planning_interface::MoveGroup* group)
 	{
-		std::map<std::string, limits> ret;
+		std::map<std::string, Limits> ret;
 
 	    robot_state::RobotStatePtr robot_state = group->getCurrentState();
 	    const robot_state::JointModelGroup* joint_model_group = robot_state->getJointModelGroup(group->getName());
@@ -17,23 +16,23 @@ namespace symbolic_planning_utils
 	    	const moveit::core::JointModel* joint_model = joints[i];
 	    	std::string joint_name = joint_model->getName();
 	    	moveit::core::VariableBounds variable_bound = joint_model->getVariableBounds(joint_name);
-	    	limits limit;
+	    	Limits limit;
 	    	limit.min_position = variable_bound.min_position_;
 	    	limit.max_position = variable_bound.max_position_;
-	    	std::pair<std::string, limits> joint_limits = std::make_pair(joint_name, limit);
+	    	std::pair<std::string, Limits> joint_limits = std::make_pair(joint_name, limit);
 	    	ret.insert(joint_limits);
 	    }
 
 	    return ret;
 	}
 
-	limits JointLimits::getJointLimit(moveit::planning_interface::MoveGroup* group, const std::string& joint)
+	JointLimits::Limits JointLimits::getJointLimit(moveit::planning_interface::MoveGroup* group, const std::string& joint)
 	{
 	    robot_state::RobotStatePtr robot_state = group->getCurrentState();
 	    const robot_state::JointModelGroup* joint_model_group = robot_state->getJointModelGroup(group->getName());
 	    const moveit::core::JointModel* joint_model = joint_model_group->getJointModel(joint);
 	    moveit::core::VariableBounds variable_bound = joint_model->getVariableBounds(joint);
-	    limits limit;
+	    Limits limit;
 		limit.min_position = variable_bound.min_position_;
 		limit.max_position = variable_bound.max_position_;
 		return limit;
