@@ -56,6 +56,7 @@ double pickup(
 	planning_scene::PlanningScenePtr scene = updater->getEmptyScene();
 	updater->updateRobotPose2D(scene, robot_pose, torsoPosition);
 	updater->updateObjects(scene, movableObjects, graspedObjects);
+	updater->visualize(scene);
 
 	try
 	{
