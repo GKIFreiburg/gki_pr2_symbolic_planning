@@ -66,9 +66,6 @@ namespace tidyup_state_creators
         currentState.setObjectFluent("arm-state", "right_arm", "arm_unknown");
         currentState.setObjectFluent("arm-state", "left_arm", "arm_unknown");
 
-        // set sampled-torso-height (only one time needed, else set in grounding modules)
-        currentState.setNumericalFluent("sampled-torso-height", "", -1.0);
-
         return true;
     }
 

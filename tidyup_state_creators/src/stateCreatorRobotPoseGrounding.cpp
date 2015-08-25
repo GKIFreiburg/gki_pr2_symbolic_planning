@@ -4,6 +4,7 @@
 #include <angles/angles.h>
 #include <symbolic_planning_utils/extractPose.h>
 #include <symbolic_planning_utils/load_tables.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
 #include <ros/package.h>
 
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorRobotPoseGrounding,
@@ -128,12 +129,15 @@ StateCreatorRobotPoseGrounding::~StateCreatorRobotPoseGrounding()
 void StateCreatorRobotPoseGrounding::initialize(
 		const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() == 4);
+	ROS_ASSERT(arguments.size() == 5);
 
 	robot_x_ 				   = arguments[0]; 		// robot-x
 	robot_y_				   = arguments[1];   	// robot-y
 	robot_theta_ 			   = arguments[2];     	// robot-theta
-	prediate_robot_near_table_ = arguments[3];    	// robot-near-table
+	robot_torso_position_      = arguments[3];		// robot-torso-position
+	prediate_robot_near_table_ = arguments[4];    	// robot-near-table
+
+	torso_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getTorsoGroup();
 
 }
 
@@ -142,7 +146,7 @@ bool StateCreatorRobotPoseGrounding::fillState(SymbolicState & state)
 	tf::StampedTransform transform;
 	try
 	{
-		_tf.lookupTransform("/map", "/base_link", ros::Time(0), transform);
+		tf_.lookupTransform("/map", "/base_link", ros::Time(0), transform);
 	} catch (tf::TransformException& ex)
 	{
 		ROS_ERROR("%s", ex.what());
@@ -153,10 +157,23 @@ bool StateCreatorRobotPoseGrounding::fillState(SymbolicState & state)
 	state.setNumericalFluent(robot_x_, "", transform.getOrigin().x());
 	state.setNumericalFluent(robot_y_, "", transform.getOrigin().y());
 	state.setNumericalFluent(robot_theta_, "", tf::getYaw(transform.getRotation()));
+	const std::vector<double>& jointValues = torso_group_->getCurrentJointValues();
+	ROS_ASSERT(jointValues.size() == 1);
+	state.setNumericalFluent(robot_torso_position_, "", jointValues[0]);
 
 	// 2. Set robot-near-table predicate if appropriate
 	string table_name;
 	geometry_msgs::PoseStamped table_pose;
+	tf::StampedTransform transform_map_torso;
+	try
+	{
+		tf_.lookupTransform("/map", "/torso_lift_link", ros::Time(0), transform_map_torso);
+	} catch (tf::TransformException& ex)
+	{
+		ROS_ERROR("%s", ex.what());
+		return false;
+	}
+
 	pair<SymbolicState::TypedObjectConstIterator,
 			SymbolicState::TypedObjectConstIterator> targets =
 			state.getTypedObjects().equal_range("table");
@@ -180,16 +197,20 @@ bool StateCreatorRobotPoseGrounding::fillState(SymbolicState & state)
 		ROS_ASSERT(tree);
 
 		// fetch torso pose and convert into table frame
-		tf::Pose torso_table = transformTorsoInTableFrame(table_pose);
+		tf::Pose transform_map_table, transform_table_torso;
+		tf::poseMsgToTF(table_pose.pose, transform_map_table);
+
+		transform_table_torso = transform_map_table.inverseTimes(transform_map_torso);
+//		tf::Pose torso_table = transformTorsoInTableFrame(table_pose);
 
 //		geometry_msgs::Pose debug;
 //		tf::poseTFToMsg(torso_table, debug);
 //		ROS_INFO_STREAM("StateCreatorRobotPoseGrounding::" << __func__ << ": " << debug);
 
 		// look if there is a match in inv cap map
-		InverseCapability inv = tree->getNodeInverseCapability(torso_table.getOrigin().x(),
-				torso_table.getOrigin().y(),
-				torso_table.getOrigin().z());
+		InverseCapability inv = tree->getNodeInverseCapability(transform_table_torso.getOrigin().x(),
+				transform_table_torso.getOrigin().y(),
+				transform_table_torso.getOrigin().z());
 
 		const std::map<double, double>& thetas = inv.getThetasPercent();
 
@@ -260,7 +281,7 @@ tf::Pose StateCreatorRobotPoseGrounding::transformTorsoInTableFrame(const geomet
 	tf::StampedTransform transform_map_torso;
 	try
 	{
-		_tf.lookupTransform("/map", "/torso_lift_link", ros::Time(0), transform_map_torso);
+		tf_.lookupTransform("/map", "/torso_lift_link", ros::Time(0), transform_map_torso);
 	} catch (tf::TransformException& ex)
 	{
 		ROS_ERROR("%s", ex.what());

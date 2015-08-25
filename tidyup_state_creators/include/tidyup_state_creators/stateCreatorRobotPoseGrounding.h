@@ -5,11 +5,15 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <ros/ros.h>
+#include <moveit/move_group_interface/move_group.h>
 
 #include <inverse_capability_map/InverseCapabilityOcTree.h>
 
 namespace tidyup_state_creators
 {
+
+// TODO: check if everything is working, if so, remove transformTorsoInTableFrame function
+
 
     /// This state creator sets the current robot pose to the state.
     /**
@@ -36,7 +40,7 @@ namespace tidyup_state_creators
             virtual bool fillState(SymbolicState & state);
 
         protected:
-            tf::TransformListener _tf;
+            tf::TransformListener tf_;
 
             double _goalToleranceXY;
             double _goalToleranceYaw;
@@ -44,7 +48,10 @@ namespace tidyup_state_creators
             string robot_x_;
             string robot_y_;
             string robot_theta_;
+            string robot_torso_position_;
             string prediate_robot_near_table_;
+
+            moveit::planning_interface::MoveGroup* torso_group_;
 
             std::map<std::string, InverseCapabilityOcTree*> inv_cap_maps_;
 
