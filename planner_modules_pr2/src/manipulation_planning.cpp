@@ -27,46 +27,43 @@ ManipulationPlanningPtr ManipulationPlanning::instance()
 
 ManipulationPlanning::ManipulationPlanning()
 {
-	g_CollisionMode = object_surface_placements::CM_CONTOUR_CONTOUR;
+	collision_mode = object_surface_placements::CM_CONTOUR_CONTOUR;
 	z_above_table = 0.01;
 
-	ros::NodeHandle nh;
 	ros::NodeHandle nhMoveGroup("move_group");
 
-	pubPlanningScene = nh.advertise<moveit_msgs::PlanningScene>("planning_scene_reasoning", 1);
-	pubDisplayTraj = nh.advertise<moveit_msgs::DisplayTrajectory>("display_planned_path_reasoning", 1, true);
+	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
+	scene_monitor->requestPlanningSceneState();
 
-	g_psm.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
-	g_psm->requestPlanningSceneState();
-
-	g_generate_grasps.reset(new actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction>("generate_grasps", true));
+	grasp_generator.reset(new actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction>("generate_grasps", true));
 	ROS_INFO("Waiting for generate_grasps action.");
-	g_generate_grasps->waitForServer();
+	grasp_generator->waitForServer();
 
-	g_placement_gen.reset(new object_surface_placements::PlacementGeneratorSampling(20, 50));
+	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorSampling(20, 50));
 
 	planning_scene::PlanningScenePtr scene;
 	{
-		planning_scene_monitor::LockedPlanningSceneRO ps(g_psm);
+		planning_scene_monitor::LockedPlanningSceneRO ps(scene_monitor);
 		scene = ps->diff();
 		scene->decoupleParent();
 	}
 
-	g_planning.reset(new planning_pipeline::PlanningPipeline(scene->getCurrentState().getRobotModel(), nhMoveGroup, "planning_plugin", "request_adapters"));
+	planning.reset(new planning_pipeline::PlanningPipeline(scene->getCurrentState().getRobotModel(), nhMoveGroup, "planning_plugin", "request_adapters"));
 
-	g_pick_place.reset(new pick_place::PickPlace(g_planning));
+	pick_place.reset(new pick_place::PickPlace(planning));
 	// vis ends up at ~/display_planned_path
-	g_pick_place->displayComputedMotionPlans(true);
-	g_pick_place->displayProcessedGrasps(true);
+	pick_place->displayComputedMotionPlans(true);
+	pick_place->displayProcessedGrasps(true);
 
-	g_state_storage.reset(new moveit_warehouse::RobotStateStorage());
+	state_storage.reset(new moveit_warehouse::RobotStateStorage());
 }
 
 ManipulationPlanning::~ManipulationPlanning()
 {
 }
 
-double ManipulationPlanning::pickup(planning_scene::PlanningScenePtr psc,
+
+double ManipulationPlanning::pickup(planning_scene::PlanningScenePtr scene,
 			const std::string& object,
 			const std::string& arm_prefix,
 			const std::string& support_surface)
@@ -79,21 +76,44 @@ double ManipulationPlanning::pickup(planning_scene::PlanningScenePtr psc,
 	goal.allow_gripper_support_collision = false;
 	goal.end_effector = arm_prefix + "_eef";
 
-	fillGrasps(psc, goal.target_name, arm_prefix, goal.possible_grasps);
-	return planPickupAndUpdateScene(psc, goal);
-}
+	fillGrasps(scene, goal.target_name, arm_prefix, goal.possible_grasps);
 
-double ManipulationPlanning::planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal)
-{
 	pick_place::PickPlanPtr plan;
-	plan = g_pick_place->planPick(scene, goal);
-	const std::vector<pick_place::ManipulationPlanPtr> &success = plan->getSuccessfulManipulationPlans();
+	plan = pick_place->planPick(scene, goal);
+	const std::vector<pick_place::ManipulationPlanPtr>& success = plan->getSuccessfulManipulationPlans();
 	if (success.empty())
 	{
 		throw PickupPlanFailedException(plan->getErrorCode());
 	}
 	pick_place::ManipulationPlanPtr manipulation_plan = success.back();
+
 	return applyManipulationPlan(scene, manipulation_plan, manipulation_plan->approach_posture_);
+}
+
+double ManipulationPlanning::putdown(planning_scene::PlanningScenePtr scene,
+			const std::string& object,
+			const std::string& arm_prefix,
+			const std::string& support_surface)
+{
+	moveit_msgs::PlaceGoal goal;
+	goal.attached_object_name = object;
+	goal.group_name = arm_prefix + "_arm";
+	goal.allowed_planning_time = 5.0;
+	goal.support_surface_name = support_surface;
+	goal.allow_gripper_support_collision = false;
+	goal.place_eef = false;
+
+	fillPlacements(scene, object, arm_prefix, support_surface, goal.place_locations);
+
+	pick_place::PlacePlanPtr plan;
+	plan = pick_place->planPlace(scene, goal);
+	const std::vector<pick_place::ManipulationPlanPtr>& success = plan->getSuccessfulManipulationPlans();
+	if (success.empty())
+	{
+		throw PickupPlanFailedException(plan->getErrorCode());
+	}
+	pick_place::ManipulationPlanPtr manipulation_plan = success.back();
+	return applyManipulationPlan(scene, manipulation_plan, manipulation_plan->retreat_posture_);
 }
 
 double ManipulationPlanning::applyManipulationPlan(planning_scene::PlanningScenePtr scene,
@@ -125,10 +145,11 @@ double ManipulationPlanning::applyManipulationPlan(planning_scene::PlanningScene
 	return cost;
 }
 
-void ManipulationPlanning::fillGrasps(const planning_scene::PlanningScenePtr & scene,
-		const std::string & object,
-		const std::string & arm,
-		std::vector<moveit_msgs::Grasp> & grasps_to_fill)
+void ManipulationPlanning::fillGrasps(
+		const planning_scene::PlanningScenePtr scene,
+		const std::string& object,
+		const std::string& arm,
+		std::vector<moveit_msgs::Grasp>& grasps_to_fill)
 {
 	// 1. get the object to query grasps for
 	moveit_msgs::CollisionObject co = getCollisionObjectFromPlanningScene(scene, object);
@@ -138,25 +159,72 @@ void ManipulationPlanning::fillGrasps(const planning_scene::PlanningScenePtr & s
 	grasps.collision_object = co;
 	grasps.eef_group_name = arm + "_gripper";
 
-	g_generate_grasps->sendGoal(grasps);
+	grasp_generator->sendGoal(grasps);
 	ROS_INFO("Waiting for grasps");
-	if (!g_generate_grasps->waitForResult(ros::Duration(3.0)))
+	if (!grasp_generator->waitForResult(ros::Duration(3.0)))
 	{
 		throw GeneratingGraspsTimeoutException();
 	}
-	else if (g_generate_grasps->getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
+	else if (grasp_generator->getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
 	{
 		throw GeneratingGraspsFailedException();
 	}
-	if (g_generate_grasps->getResult()->grasps.empty())
+	if (grasp_generator->getResult()->grasps.empty())
 	{
 		throw ZeroGraspsGeneratedException();
 	}
-	grasps_to_fill = g_generate_grasps->getResult()->grasps;
-	ROS_INFO("fillGrasps: %zu grasps", g_generate_grasps->getResult()->grasps.size());
+	grasps_to_fill = grasp_generator->getResult()->grasps;
+	ROS_INFO("fillGrasps: %zu grasps", grasp_generator->getResult()->grasps.size());
 }
 
-moveit_msgs::CollisionObject ManipulationPlanning::getCollisionObjectFromPlanningScene(const planning_scene::PlanningScenePtr& scene, const std::string& id)
+void ManipulationPlanning::fillPlacements(
+		const planning_scene::PlanningScenePtr scene,
+		const std::string& object,
+		const std::string& arm_prefix,
+		const std::string& support_surface,
+		std::vector<moveit_msgs::PlaceLocation>& place_locations)
+{
+	moveit_msgs::PlanningScene psMsg;
+	scene->getPlanningSceneMsg(psMsg);
+
+	// get attached_object object from arm_prefix as Msg
+	moveit_msgs::CollisionObject attached_object;
+	forEach(const moveit_msgs::AttachedCollisionObject & aco, psMsg.robot_state.attached_collision_objects)
+	{
+		if(aco.object.id == object)
+		{
+			attached_object = aco.object;
+			break;
+		}
+	}
+	//attached_object = getCollisionObjectFromPlanningScene(scene, object);
+	moveit_msgs::CollisionObject surface_object = getCollisionObjectFromPlanningScene(scene, support_surface);
+
+	std::vector<moveit_msgs::CollisionObject> other_objects;
+	// get surface object from g_table as Msg
+	// get other_objects from scene - g_table as Msgs
+	forEach(const moveit_msgs::CollisionObject & co, psMsg.world.collision_objects)
+	{
+		if(co.id == support_surface)
+		{
+			surface_object = co;
+		}
+		else
+		{
+			other_objects.push_back(co);
+		}
+	}
+
+	place_locations = placement_genenerator->generatePlacements(arm_prefix + "_gripper", attached_object, surface_object, other_objects, collision_mode, z_above_table, Eigen::Affine3d::Identity(), true, NULL);
+	if (place_locations.empty())
+	{
+		throw ZeroPlacementsGeneratedException();
+	}
+}
+
+moveit_msgs::CollisionObject ManipulationPlanning::getCollisionObjectFromPlanningScene(
+		const planning_scene::PlanningScenePtr scene,
+		const std::string& id)
 {
 	const EigenSTL::vector_Affine3d* shape_transforms = NULL;
 	const std::vector<shapes::ShapeConstPtr>* shapes = NULL;
@@ -170,7 +238,7 @@ moveit_msgs::CollisionObject ManipulationPlanning::getCollisionObjectFromPlannin
 	else
 	{
 		// check if it's attached
-		const robot_state::RobotState & state = scene->getCurrentState();
+		const robot_state::RobotState& state = scene->getCurrentState();
 		std::vector<const moveit::core::AttachedBody*> attached_bodies;
 		state.getAttachedBodies(attached_bodies);
 		forEach(const moveit::core::AttachedBody* ab, attached_bodies)
@@ -184,11 +252,11 @@ moveit_msgs::CollisionObject ManipulationPlanning::getCollisionObjectFromPlannin
 			shape_transforms = &ab->getGlobalCollisionBodyTransforms();
 			break;
 		}
+	}
 
-		if (shapes == NULL || shape_transforms == NULL)
-		{
-			throw ObjectNotFoundInSceneException(id);
-		}
+	if (shapes == NULL || shape_transforms == NULL)
+	{
+		throw ObjectNotFoundInSceneException(id);
 	}
 
 	return createCollisionObject(id, scene, *shapes, *shape_transforms);
@@ -233,10 +301,11 @@ private:
 	const geometry_msgs::Pose* pose_;
 };
 
-moveit_msgs::CollisionObject ManipulationPlanning::createCollisionObject(const std::string& name,
-	const planning_scene::PlanningScenePtr& scene,
-	const std::vector<shapes::ShapeConstPtr>& shapes,
-	const EigenSTL::vector_Affine3d& shape_transforms)
+moveit_msgs::CollisionObject ManipulationPlanning::createCollisionObject(
+		const std::string& name,
+		const planning_scene::PlanningScenePtr scene,
+		const std::vector<shapes::ShapeConstPtr>& shapes,
+		const EigenSTL::vector_Affine3d& shape_transforms)
 {
 	moveit_msgs::CollisionObject co;
 	co.id = name;

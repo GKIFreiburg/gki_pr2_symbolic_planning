@@ -12,14 +12,12 @@ VERIFY_INIT_MODULE_DEF(pickup_init);
 VERIFY_CONDITIONCHECKER_DEF(can_pickup);
 VERIFY_CONDITIONCHECKER_DEF(pickup_cost);
 
-ros::NodeHandlePtr node;
-ModuleParamCache<double> costCache;
+boost::shared_ptr<ModuleParamCache<double> > pickupCostCache;
 
 void pickup_init(int argc, char** argv)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
-	node.reset(new ros::NodeHandle());
-	costCache.initialize("pickup/cost", node.get());
+	pickupCostCache.reset(new ModuleParamCache<double>("putdown/cost"));
 }
 
 double pickup(
@@ -38,7 +36,6 @@ double pickup(
 	geometry_msgs::Pose2D robot_pose;
 	double torsoPosition = 0.0;
 	updater->readRobotPose2D(robot_pose, torsoPosition, numericalFluentCallback);
-	ROS_INFO_STREAM(__func__<<": torso: "<< torsoPosition);
 	MovableObjectsMap movableObjects;
 	GraspedObjectMap graspedObjects;
 	ObjectsOnTablesMap objectsOnTables;
@@ -47,7 +44,7 @@ double pickup(
 	// cache
 	string key = compute_pickup_cache_key(object_name, arm_name, table_name, robot_pose, movableObjects, objectsOnTables);
 	double cost;
-	if (costCache.get(key, cost))
+	if (pickupCostCache->get(key, cost))
 	{
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": cache hit, cost: "<<cost);
 		return cost;
@@ -63,6 +60,7 @@ double pickup(
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": starting");
 		planner_modules_pr2::ManipulationPlanningPtr p = planner_modules_pr2::ManipulationPlanning::instance();
 		double cost = p->pickup(scene, object_name, arm_prefix, table_name);
+		pickupCostCache->set(key, cost);
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": done");
 		return cost;
 	}

@@ -37,6 +37,23 @@ struct PickupPlanFailedException : public virtual ManipulationException
 	}
 };
 
+struct PutdownPlanFailedException : public virtual ManipulationException
+{
+	moveit_msgs::MoveItErrorCodes::_val_type error_value;
+	PutdownPlanFailedException(const moveit_msgs::MoveItErrorCodes& error_code) : ManipulationException(), error_value(error_code.val)
+	{
+	}
+
+	virtual const char* what() const throw()
+	{
+		std::stringstream buffer;
+		moveit_msgs::MoveItErrorCodes error;
+		error.val = error_value;
+		buffer << "MoveIt error code: " << error;
+		return buffer.str().c_str();
+	}
+};
+
 struct ObjectNotFoundInSceneException : public virtual ManipulationException
 {
 	std::string id;
@@ -76,6 +93,14 @@ struct ZeroGraspsGeneratedException : public ManipulationException
 	virtual const char* what() const throw()
 	{
 		return "No grasps were generated.";
+	}
+};
+
+struct ZeroPlacementsGeneratedException : public ManipulationException
+{
+	virtual const char* what() const throw()
+	{
+		return "No placements were generated.";
 	}
 };
 
