@@ -3,6 +3,8 @@
 #include <tf/transform_listener.h>
 #include <tidyup_utils/stringutil.h>
 #include <planner_modules_pr2/tidyup_planning_scene_updater.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <tf_conversions/tf_eigen.h>
 
 #include <symbolic_planning_utils/load_tables.h>
 #include <inverse_capability_map/InverseCapabilitySampling.h>
@@ -27,40 +29,43 @@ boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction
  */
 //#define DEBUG_PLANNING_SCENE
 //#define DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
-ros::Publisher g_debug_ps_pub;
-std::map<std::string, geometry_msgs::PoseStamped> g_table_poses;
-std::map<std::string, InverseCapabilityOcTree*> g_inv_reach_maps;
+// publish the planning scene msgs
+ros::Publisher debug_ps_pub_;
+// storing the table names with their poses
+std::map<std::string, geometry_msgs::PoseStamped> table_poses_;
+// storing the table names with their inverse reachability map
+std::map<std::string, InverseCapabilityOcTree*> inv_reach_maps_;
 
-int g_inv_reach_sample_draws = 20;
+// Parameters specifying the sampling with negative update
+int number_draws_;
+double dev_x_, dev_y_, dev_z_, dev_theta_;
+double min_percent_of_max_;
+Eigen::Matrix4d covariance_;
 
-std::map<std::string, int> g_drive_pose_next_free_cache;
-std::map<std::string, geometry_msgs::PoseStamped> g_drive_pose_cache;
+// Cache storing the next free id of a surface
+std::map<std::string, int> drive_pose_next_free_cache_;
+// Cache storing Grounded Base Pose Name -> Pose
+std::map<std::string, geometry_msgs::PoseStamped> drive_pose_cache_;
 
-std::string grounding_namespace_;
-
-//#include <boost/foreach.hpp>
-//#define forEach BOOST_FOREACH
-
-//VERIFY_CONDITIONCHECKER_DEF(XXX);
-//VERIFY_APPLYEFFECT_DEF(XXX);
+const std::string grounding_namespace_ =  "grounding/drive_pose_module";
 
 VERIFY_GROUNDINGMODULE_DEF(determine_drive_pose);
 VERIFY_EXIT_MODULE_DEF(drive_pose_exit);
 
-// ________________________________________________________________________________________________
+// __________________________________________________________________________________________________________________________________________________
 bool lookup_pose_from_surface_id(const std::string& surface,
 		geometry_msgs::PoseStamped& pose)
 {
 	std::map<std::string, geometry_msgs::PoseStamped>::iterator it;
-	it = g_drive_pose_cache.find(surface);
-	if (it == g_drive_pose_cache.end())
+	it = drive_pose_cache_.find(surface);
+	if (it == drive_pose_cache_.end())
 		return false;
 
 	pose = it->second;
 	return true;
 }
 
-// ________________________________________________________________________________________________
+// __________________________________________________________________________________________________________________________________________________
 void set_poses_on_param(const std::string& name_space,
 		const std::map<std::string, geometry_msgs::PoseStamped>& drive_poses)
 {
@@ -81,7 +86,7 @@ void set_poses_on_param(const std::string& name_space,
     }
 }
 
-// ________________________________________________________________________________________________
+// __________________________________________________________________________________________________________________________________________________
 void fetch_poses_from_param(const std::string& name_space, const std::string& surface,
 		std::map<std::string, geometry_msgs::PoseStamped>& drive_poses)
 {
@@ -114,7 +119,7 @@ void fetch_poses_from_param(const std::string& name_space, const std::string& su
 	}
 }
 
-// ________________________________________________________________________________________________
+// __________________________________________________________________________________________________________________________________________________
 void drive_pose_init(int argc, char** argv)
 {
 	ROS_ASSERT(argc == 1);
@@ -122,7 +127,7 @@ void drive_pose_init(int argc, char** argv)
     ros::NodeHandle nhPriv("~");
     ros::NodeHandle nh;
     std::string tfPrefix = tf::getPrefixParam(nhPriv);
-    grounding_namespace_ = "grounding/drive_pose_module";
+//    grounding_namespace_ = "grounding/drive_pose_module";
 
     // first load tables from tables.dat file
 	// load table pose
@@ -138,7 +143,7 @@ void drive_pose_init(int argc, char** argv)
 	{
 		const std::string& tableName = tables[i].name;
 		std::pair<std::string, geometry_msgs::PoseStamped> tablePose = std::make_pair(tableName, tables[i].pose);
-		g_table_poses.insert(tablePose);
+		table_poses_.insert(tablePose);
 
 		// read path to inverse reachability maps from param
 		std::string package, relative_path;
@@ -159,14 +164,30 @@ void drive_pose_init(int argc, char** argv)
 		// store inverse reachability maps into global variable
 		InverseCapabilityOcTree* tree = InverseCapabilityOcTree::readFile(path);
 		std::pair<std::string, InverseCapabilityOcTree*> irm = std::make_pair(tableName, tree);
-		g_inv_reach_maps.insert(irm);
+		inv_reach_maps_.insert(irm);
 
 		// for each table check if there are already some sampled poses
-		fetch_poses_from_param(grounding_namespace_, tableName, g_drive_pose_cache);
+		fetch_poses_from_param(grounding_namespace_, tableName, drive_pose_cache_);
 	}
 
-	nhPriv.param("inv_reach_sample_draws", g_inv_reach_sample_draws, g_inv_reach_sample_draws);
+	nhPriv.param("irs/number_draws", number_draws_, 20);
+	nhPriv.param("irs/deviation_x", dev_x_, 0.5);
+	nhPriv.param("irs/deviation_y", dev_y_, 0.5);
+	nhPriv.param("irs/deviation_z", dev_z_, 0.5);
+	nhPriv.param("irs/deviation_theta", dev_theta_, M_PI / 4);
+	nhPriv.param("irs/min_percent_of_max", min_percent_of_max_, 0.0);
 
+	// declare covariances
+	double cov_x, cov_y, cov_z, cov_theta;
+	cov_x = dev_x_ * dev_x_;
+	cov_y = dev_y_ * dev_y_;
+	cov_z = dev_z_ * dev_z_;
+	cov_theta = dev_theta_ * dev_theta_;
+	// declare covariance matrix
+	covariance_ << cov_x,  0.0  ,  0.0  , 0.0,
+			       0.0 , cov_y ,  0.0  , 0.0,
+			       0.0 ,  0.0  , cov_z , 0.0,
+			       0.0 ,  0.0  ,  0.0  , cov_theta;
 
 #ifdef DEBUG_PLANNING_SCENE
 	#ifdef DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
@@ -178,16 +199,22 @@ void drive_pose_init(int argc, char** argv)
 
 	std::string ps_topic = "virtual_planning_scene";
 	ROS_INFO("drive_pose_module::%s: Debugging of PS enabled, publishing to topic: /%s", __func__, ps_topic.c_str());
-	g_debug_ps_pub = nh.advertise<moveit_msgs::PlanningScene>(ps_topic, 1, true);
+	debug_ps_pub_ = nh.advertise<moveit_msgs::PlanningScene>(ps_topic, 1, true);
 #endif
 
    	ROS_INFO_STREAM("drive_pose_module::" << __func__ << ": param namespace: " << nhPriv.getNamespace() << "\n"
-   			"inv_reach_sample_draws: " << g_inv_reach_sample_draws);
+   			"number of draws: " << number_draws_ << "\n"
+   			"deviation in x: " << dev_x_ << "\n"
+   			"deviation in y: " << dev_y_ << "\n"
+   			"deviation in z: " << dev_z_ << "\n"
+   			"deviation in theta: " << dev_theta_ << "\n"
+   			"minimum percent of max: " << min_percent_of_max_ << "\n"
+   	);
 
     ROS_INFO("drive_pose_module::%s: Initialized drive pose Module.", __func__);
 }
 
-// ________________________________________________________________________________________________
+// __________________________________________________________________________________________________________________________________________________
 void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback)
@@ -201,21 +228,20 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
     ROS_INFO("drive_pose_module::%s: Putting drive pose cache on param server", __func__);
 
     // putting drive_pose_cache to param server so actionExec can access
-	set_poses_on_param(grounding_namespace_, g_drive_pose_cache);
+	set_poses_on_param(grounding_namespace_, drive_pose_cache_);
 
 }
 
-// ________________________________________________________________________________________________
+// __________________________________________________________________________________________________________________________________________________
 std::string determine_drive_pose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr)
 {
 	ROS_ASSERT(parameterList.size() == 1);
-
-    std::string surface = parameterList[0].value;
+    std::string table = parameterList[0].value;
 
 ///////// HACK
-//	if (g_drive_pose_cache.size() > 6)
+//	if (drive_pose_cache_.size() > 6)
 //	{
 //		ROS_WARN("Gounded out");
 //		return "";
@@ -229,9 +255,18 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	GraspedObjectMap graspedObjects;
 	map<string, string> objectsOnStatic;
 	double torsoPosition = 0.0;
-	TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, torsoPosition, numericalFluentCallback);
-	ROS_INFO_STREAM(__func__<<": torso: "<< torsoPosition);
-	TidyupPlanningSceneUpdater::instance()->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic);
+	if (!TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, torsoPosition, numericalFluentCallback))
+	{
+		ROS_ERROR("drive_pose_module::%s: Could not read robot state from symbolic state!", __func__);
+		return "";
+	}
+
+	if (!TidyupPlanningSceneUpdater::instance()->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic))
+	{
+		ROS_ERROR("drive_pose_module::%s: Could not read objects from symbolic state!", __func__);
+		return "";
+	}
+
 	// set planning scene, needed by inv_reach sampling for collision checks
 	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getEmptyScene();
 	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose, torsoPosition);
@@ -240,35 +275,39 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	std::map<std::string, geometry_msgs::PoseStamped>::iterator it_pose;
 	std::map<std::string, InverseCapabilityOcTree*>::iterator it_irm;
 
-	it_pose = g_table_poses.find(surface);
-	it_irm = g_inv_reach_maps.find(surface);
+	it_pose = table_poses_.find(table);
+	it_irm = inv_reach_maps_.find(table);
 
-	if (it_pose == g_table_poses.end())
+	if (it_pose == table_poses_.end())
 	{
-		ROS_ERROR("drive_pose_module::%s: Could not find pose of table: %s", __func__, surface.c_str());
+		ROS_ERROR("drive_pose_module::%s: Could not find pose of table: %s", __func__, table.c_str());
 		return "";
 	}
 
-	if (it_irm == g_inv_reach_maps.end())
+	if (it_irm == inv_reach_maps_.end())
 	{
-		ROS_ERROR("drive_pose_module::%s: Could not find inverse reachability map for table: %s", __func__, surface.c_str());
+		ROS_ERROR("drive_pose_module::%s: Could not find inverse reachability map for table: %s", __func__, table.c_str());
 		return "";
 	}
 
-	InverseCapabilitySampling::PosePercent sampled_pose = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
-	// ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
+	InverseCapabilitySampling::PosePercent sampled_pose =
+			InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, number_draws_,
+					drive_pose_cache_,
+					covariance_,
+					min_percent_of_max_);
+	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
 
-    int next_free_id = g_drive_pose_next_free_cache[surface];   // auto inits to 0
-    // add next free id to surface name
+    int next_free_id = drive_pose_next_free_cache_[table];   // auto inits to 0
+    // add next free id to table name
     std::stringstream ss;
     ss << next_free_id;
-    std::string surface_id = surface + "_" + ss.str();
+    std::string table_id = table + "_" + ss.str();
     // ROS_INFO_STREAM("Sampled Pose Id: " << surface_id);
 
     // a new pose is created - store it in cache
     next_free_id++;
-    g_drive_pose_next_free_cache[surface] = next_free_id;
-    g_drive_pose_cache[surface_id] = sampled_pose.pose;
+    drive_pose_next_free_cache_[table] = next_free_id;
+    drive_pose_cache_[table_id] = sampled_pose.pose;
 
 
 #ifdef DEBUG_PLANNING_SCENE
@@ -287,30 +326,8 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 //	ROS_WARN_STREAM(psMsg);
 
 	scene->getPlanningSceneMsg(psMsg);
-	ROS_INFO("drive_pose_module::%s: Publishing planning scene message to topic: %s", __func__, g_debug_ps_pub.getTopic().c_str());
-	g_debug_ps_pub.publish(psMsg);
-
-////////
-//	// create a lof of samples and publish them via an PoseArray
-//	ros::NodeHandle nh;
-//	std::string poses_topic = "sampled_poses";
-//	ros::Publisher pub_poses = nh.advertise<geometry_msgs::PoseArray>(poses_topic, 1, true);
-//	geometry_msgs::PoseArray samples;
-//	samples.header = sampled_pose.pose.header;
-//	InverseCapabilitySampling::PosePercent sample;
-//	int num_samples = 1000;
-//	ROS_INFO("drive_pose_module::%s: Drawing %d samples", __func__, num_samples);
-//	for (int i = 0; i < num_samples; i++)
-//	{
-//		if (i % (num_samples/10) == 0)
-//			ROS_INFO("drive_pose_module: number of samples generated: %d", i);
-//		sample = InverseCapabilitySampling::drawBestOfXSamples(scene, it_irm->second, it_pose->second, g_inv_reach_sample_draws);
-//		samples.poses.push_back(sample.pose.pose);
-//	}
-//
-//	ROS_INFO("drive_pose_module::%s: Publish samples to: /%s", __func__, poses_topic.c_str());
-//	pub_poses.publish(samples);
-////////
+	ROS_INFO("drive_pose_module::%s: Publishing planning scene message to topic: %s", __func__, debug_ps_pub_.getTopic().c_str());
+	debug_ps_pub_.publish(psMsg);
 
 	ros::spinOnce();
 	#ifdef DEBUG_PLANNING_SCENE_INDIVIDUAL_FRAME
@@ -321,29 +338,74 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	#endif
 #endif
 
-    ROS_INFO("drive_pose_module::%s: new pose with name: %s", __func__, surface_id.c_str());
+    ROS_INFO("drive_pose_module::%s: new pose with name: %s", __func__, table_id.c_str());
 
-    return surface_id;
+    return table_id;
 }
 
-// ________________________________________________________________________________________________
-int set_sampled_torso_height(const modules::ParameterList& parameterList,
+// __________________________________________________________________________________________________________________________________________________
+double robot_near_table(const modules::ParameterList & parameterList,
 		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed, vector<double> & writtenVars)
+		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
-	// should be table grounded_place => param + 1 (due to grounding)
-	ROS_ASSERT(parameterList.size() == 2);
-	const std::string& grounded_goal = parameterList[1].value;
-	geometry_msgs::PoseStamped goalPose;
-	// get goal from grounding - if not found return 0 (state unchanged)
-	if (!lookup_pose_from_surface_id(grounded_goal, goalPose))
-		return 0;
-	ROS_ASSERT(writtenVars.size() == 1);
-	writtenVars[0] = goalPose.pose.position.z;
+	ROS_ASSERT(parameterList.size() == 1);
+	std::string table = parameterList[0].value;
+	double result = modules::INFINITE_COST;
 
-	ROS_WARN("drive_pose_module::%s: wrote value: %lf", __func__, goalPose.pose.position.z);
+	// fetch surface pose from symbolic state
+	geometry_msgs::Pose tablePose;
+	TidyupPlanningSceneUpdater::instance()->readPose(tablePose, table, numericalFluentCallback);
 
-	return 1;
+	// fetch robot pose from symbolic state
+	double torsoPosition;
+	geometry_msgs::Pose2D robotPose;
+	TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, torsoPosition, numericalFluentCallback);
+	// Update robot pose
+	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getEmptyScene();
+	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose, torsoPosition);
+
+	// get torso link pose in map frame
+	const robot_state::RobotState& robotState = scene->getCurrentState();
+	Eigen::Affine3d e = robotState.getGlobalLinkTransform("torso_lift_link");
+	tf::Transform transform_map_torso;
+	tf::transformEigenToTF(e, transform_map_torso);
+//	geometry_msgs::Transform t;
+//	tf::transformEigenToMsg(e, t);
+//	ROS_WARN_STREAM("Transform: " << t);
+
+	// fetch torso pose and convert into table frame
+	tf::Pose transform_map_table, transform_table_torso;
+	tf::poseMsgToTF(tablePose, transform_map_table);
+
+	// transform from table to torso (torso pose in table frame)
+	transform_table_torso = transform_map_table.inverseTimes(transform_map_torso);
+
+	// fetch matching inverse surface reachability map
+	std::map<std::string, InverseCapabilityOcTree*>::iterator it_irm;
+	it_irm = inv_reach_maps_.find(table);
+
+	if (it_irm == inv_reach_maps_.end())
+	{
+		ROS_ERROR("drive_pose_module::%s: Could not find inverse reachability map for table: %s", __func__, table.c_str());
+		return modules::INFINITE_COST;
+	}
+	InverseCapabilityOcTree* irm = it_irm->second;
+	// look if there is a match in inv cap map for given torso position in table frame
+	InverseCapability inv = irm->getNodeInverseCapability(transform_table_torso.getOrigin().x(),
+			transform_table_torso.getOrigin().y(),
+			transform_table_torso.getOrigin().z());
+
+	const std::map<double, double>& thetas = inv.getThetasPercent();
+
+	// if there exists a theta, means we have an inverse reachability index,
+	// indicating that a part of the table can be reached -> we are close to table and return 0.0 (= true)
+	if (thetas.size() > 0)
+	{
+		ROS_INFO("drive_pose_module::%s: Robot is near '%s' !", __func__, table.c_str());
+		result = 0.0;
+	}
+	else
+		result = modules::INFINITE_COST;
+
+	return result;
 }
-
