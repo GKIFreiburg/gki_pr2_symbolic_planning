@@ -1,26 +1,26 @@
 /*
- * PickupModules.cpp
+ * putdownModules.cpp
  *
  *  Created on: Aug 20, 2015
  *      Author: andreas
  */
 
-#include "planner_modules_pr2/pickup_modules.h"
+#include "planner_modules_pr2/putdown_modules.h"
 #include "planner_modules_pr2/manipulation_exceptions.h"
 
-VERIFY_INIT_MODULE_DEF(pickup_init);
-VERIFY_CONDITIONCHECKER_DEF(can_pickup);
-VERIFY_CONDITIONCHECKER_DEF(pickup_cost);
+VERIFY_INIT_MODULE_DEF(putdown_init);
+VERIFY_CONDITIONCHECKER_DEF(can_putdown);
+VERIFY_CONDITIONCHECKER_DEF(putdown_cost);
 
-boost::shared_ptr<ModuleParamCache<double> > pickupCostCache;
+boost::shared_ptr<ModuleParamCache<double> > putdownCostCache;
 
-void pickup_init(int argc, char** argv)
+void putdown_init(int argc, char** argv)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
-	pickupCostCache.reset(new ModuleParamCache<double>("putdown/cost"));
+	putdownCostCache.reset(new ModuleParamCache<double>("putdown/cost"));
 }
 
-double pickup(
+double putdown(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
@@ -42,9 +42,9 @@ double pickup(
 	updater->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
 
 	// cache
-	string key = compute_pickup_cache_key(object_name, arm_name, table_name, robot_pose, movableObjects, objectsOnTables);
+	string key = compute_putdown_cache_key(object_name, arm_name, table_name, robot_pose, movableObjects, objectsOnTables);
 	double cost;
-	if (pickupCostCache->get(key, cost))
+	if (putdownCostCache->get(key, cost))
 	{
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": cache hit, cost: "<<cost);
 		return cost;
@@ -59,14 +59,14 @@ double pickup(
 	{
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": starting");
 		planner_modules_pr2::ManipulationPlanningPtr p = planner_modules_pr2::ManipulationPlanning::instance();
-		double cost = p->pickup(scene, object_name, arm_prefix, table_name);
-		pickupCostCache->set(key, cost);
+		double cost = p->putdown(scene, object_name, arm_prefix, table_name);
+		putdownCostCache->set(key, cost);
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": done");
 		return cost;
 	}
 	catch (planner_modules_pr2::ManipulationException& ex)
 	{
-		ROS_ERROR("Pickup failed: %s", ex.what());
+		ROS_ERROR("putdown failed: %s", ex.what());
 	}
 	catch (std::exception& ex)
 	{
@@ -75,7 +75,7 @@ double pickup(
 	return modules::INFINITE_COST;
 }
 
-string compute_pickup_cache_key(const string& object,
+string compute_putdown_cache_key(const string& object,
 		const string& arm,
 		const string& table,
 		const geometry_msgs::Pose2D& robot_pose,
@@ -114,23 +114,23 @@ string compute_pickup_cache_key(const string& object,
 	return stream.str();
 }
 
-double pickup_cost(
+double putdown_cost(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
-	return pickup(parameterList, predicateCallback, numericalFluentCallback, relaxed);
+	return putdown(parameterList, predicateCallback, numericalFluentCallback, relaxed);
 }
 
-double can_pickup(
+double can_putdown(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
-	return pickup(parameterList, predicateCallback, numericalFluentCallback, relaxed);
+	return putdown(parameterList, predicateCallback, numericalFluentCallback, relaxed);
 }
 

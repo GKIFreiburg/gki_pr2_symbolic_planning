@@ -34,7 +34,7 @@ extern double g_RotSpeed;   // rad/s
 // Using a cache of queried path costs to prevent calling the path planning service multiple times
 // Better: Can we assume symmetric path costs?
 //extern std::map< std::pair<std::string, std::string>, double> g_PathCostCache;
-extern ModuleParamCacheDouble g_PathCostCache;
+//extern ModuleParamCacheDouble g_PathCostCache;
 string compute_path_cache_key(const string& startLocation, const string& goalLocation,
         const geometry_msgs::Pose & startPose, const geometry_msgs::Pose & goalPose);
 
