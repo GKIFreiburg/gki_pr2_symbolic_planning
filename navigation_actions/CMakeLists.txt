@@ -14,7 +14,7 @@ move_base_msgs
 tidyup_utils
 planner_modules_pr2
 tfd_modules
-inverse_capability_map
+symbolic_planning_utils
 )
 
 catkin_package(
