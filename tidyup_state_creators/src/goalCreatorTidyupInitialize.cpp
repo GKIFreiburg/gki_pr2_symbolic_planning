@@ -24,23 +24,6 @@ namespace tidyup_state_creators
 
     void GoalCreatorTidyupInitialize::initialize(const std::deque<std::string> & arguments)
     {
-    	// fetch octomap path
-    	ros::NodeHandle nhPriv("~");
-    	std::string octomap_path;
-        if(!nhPriv.getParam("octomap_path", octomap_path)) {
-            ROS_ERROR("GoalCreatorTidyupInitialize::%s: Could not get ~octomap_path parameter in namespace: %s.",
-            		__func__, nhPriv.getNamespace().c_str());
-            return;
-        }
-
-    	// send recorded octomap to move_group
-        ros::ServiceClient client = nhPriv.serviceClient<moveit_msgs::LoadMap>("/move_group/load_map");
-        moveit_msgs::LoadMap srv;
-        srv.request.filename = octomap_path;
-        if (!client.call(srv))
-        {
-        	ROS_ERROR("GoalCreatorTidyupInitialize::%s: Could not send %s to move_group", __func__, octomap_path.c_str());
-        }
     }
 
     bool GoalCreatorTidyupInitialize::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
