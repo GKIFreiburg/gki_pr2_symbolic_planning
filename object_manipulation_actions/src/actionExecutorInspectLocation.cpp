@@ -20,26 +20,32 @@ PLUGINLIB_EXPORT_CLASS(object_manipulation_actions::ActionExecutorInspectLocatio
 
 namespace object_manipulation_actions
 {
-ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
-		actionLiftTorso_("torso_controller/position_joint_action", true),
-		actionPointHead_("head_traj_controller/point_head_action", true),
-		actionOrkToPs_("ork_to_planning_scene", true)
+
+void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & arguments)
 {
+	ROS_ASSERT(arguments.size() >= 4);
+	action_name_ 				= arguments[0];
+	action_topic_ork_ps_     	= arguments[1];
+	action_topic_point_head_ 	= arguments[2];
+
+	for (int i = 2; i < arguments.size(); i++)
+	{
+		predicate_names_.push_back(arguments[i]);
+	}
+
 	actionTimeOut_ = ros::Duration(30.0);
 	joint_name_head_yaw_ = "head_pan_joint";
 	head_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getHeadGroup();
 
-	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for torso_controller/position_joint_action "
-			"action server to start.", __func__);
-	actionLiftTorso_.waitForServer();
-
-	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action "
-			"action server to start.", __func__);
-	actionPointHead_.waitForServer();
-
+	actionOrkToPs_ = new actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction>(action_topic_ork_ps_, true);
 	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for ork_to_planning_scene "
 			"action server to start.", __func__);
-	actionOrkToPs_.waitForServer();
+	actionOrkToPs_->waitForServer();
+
+	actionPointHead_ = new actionlib::SimpleActionClient<control_msgs::PointHeadAction>(action_topic_point_head_, true);
+	ROS_INFO("ActionExecutorInspectLocation::%s: Waiting for head_traj_controller/point_head_action "
+			"action server to start.", __func__);
+	actionPointHead_->waitForServer();
 
 	ROS_INFO("ActionExecutorInspectLocation::%s: Action clients are ready", __func__);
 
@@ -51,21 +57,6 @@ ActionExecutorInspectLocation::ActionExecutorInspectLocation() :
 	// which needs the initialize the robot description - takes time)
 	// psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
 	psi_.reset(new symbolic_planning_utils::PlanningSceneService());
-}
-
-ActionExecutorInspectLocation::~ActionExecutorInspectLocation()
-{
-}
-
-void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & arguments)
-{
-	ROS_ASSERT(arguments.size() >= 3);
-	action_name_ = arguments[0];
-	action_topic_ = arguments[1];
-	for (int i = 2; i < arguments.size(); i++)
-	{
-		predicate_names_.push_back(arguments[i]);
-	}
 
 }
 
@@ -183,12 +174,12 @@ bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseSt
 	pointHeadGoal.pointing_axis.z = 0;
 	pointHeadGoal.pointing_frame = "head_mount_link";
 
-	actionPointHead_.sendGoal(pointHeadGoal);
+	actionPointHead_->sendGoal(pointHeadGoal);
 
-	bool finished_before_timeout = actionPointHead_.waitForResult(actionTimeOut_);
+	bool finished_before_timeout = actionPointHead_->waitForResult(actionTimeOut_);
 	if (finished_before_timeout)
 	{
-		actionlib::SimpleClientGoalState state = actionPointHead_.getState();
+		actionlib::SimpleClientGoalState state = actionPointHead_->getState();
 		ROS_DEBUG("ActionExecutorInspectLocation::%s: Point Head Action finished: %s", __func__, state.toString().c_str());
 		if (state != actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
@@ -216,16 +207,16 @@ bool ActionExecutorInspectLocation::executeUpdatePlanningSceneFromORK(bool verif
 
 	ROS_INFO("ActionExecutorInspectLocation::%s: number of expected_objects: %lu", __func__, expected_objects.size());
 
-	actionOrkToPs_.sendGoal(updatePSGoal);
-	bool finished_before_timeout = actionOrkToPs_.waitForResult(actionTimeOut_);
+	actionOrkToPs_->sendGoal(updatePSGoal);
+	bool finished_before_timeout = actionOrkToPs_->waitForResult(actionTimeOut_);
 	if (finished_before_timeout)
 	{
-		actionlib::SimpleClientGoalState state = actionOrkToPs_.getState();
+		actionlib::SimpleClientGoalState state = actionOrkToPs_->getState();
 		ROS_DEBUG("ActionExecutorInspectLocation::%s: ORK to Planning Scene Action finished: %s", __func__, state.toString().c_str());
 		if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
 			ROS_INFO("ActionExecutorInspectLocation::%s: ORK to Planning Scene Action succeeded.", __func__);
-			ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkResultConstPtr result = actionOrkToPs_.getResult();
+			ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkResultConstPtr result = actionOrkToPs_->getResult();
 			std::vector<std::string> seen_objects = result->added_objects;
 			seen_objects.insert(seen_objects.end(), result->moved_objects.begin(), result->moved_objects.end());
 			for (size_t i = 0; i < seen_objects.size(); i++)

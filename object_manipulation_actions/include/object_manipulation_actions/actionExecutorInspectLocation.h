@@ -21,10 +21,7 @@ namespace object_manipulation_actions
     {
         public:
 
-    	ActionExecutorInspectLocation();
-		~ActionExecutorInspectLocation();
-
-		virtual void initialize(const std::deque<std::string> & arguments);
+    	virtual void initialize(const std::deque<std::string> & arguments);
 
 		virtual bool canExecute(const DurativeAction & a, const SymbolicState & currentState) const;
 
@@ -40,17 +37,17 @@ namespace object_manipulation_actions
         // MoveIt
         moveit::planning_interface::MoveGroup* head_group_;
 
-        std::string action_topic_;
         std::string action_name_;
+        std::string action_topic_point_head_;
+        std::string action_topic_ork_ps_;
         std::vector<std::string> predicate_names_;
         std::string joint_name_head_yaw_;
 
         std::set<std::string> expected_objects_;
 
         ros::Duration actionTimeOut_;
-        actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction> actionLiftTorso_;
-        actionlib::SimpleActionClient<control_msgs::PointHeadAction> actionPointHead_;
-        actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction> actionOrkToPs_;
+        actionlib::SimpleActionClient<control_msgs::PointHeadAction>* actionPointHead_;
+        actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction>* actionOrkToPs_;
         boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
 
         // Parameters
