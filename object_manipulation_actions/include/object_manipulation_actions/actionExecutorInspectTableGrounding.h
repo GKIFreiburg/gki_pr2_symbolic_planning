@@ -21,9 +21,6 @@ namespace object_manipulation_actions
     {
         public:
 
-    	ActionExecutorInspectTableGrounding();
-		~ActionExecutorInspectTableGrounding();
-
 		virtual void initialize(const std::deque<std::string> & arguments);
 
 		virtual bool canExecute(const DurativeAction & a, const SymbolicState & currentState) const;
@@ -32,7 +29,6 @@ namespace object_manipulation_actions
 
 		virtual void cancelAction();
 
-
         private:
         // ROS Interface
         tf::TransformListener tf_;
@@ -40,8 +36,10 @@ namespace object_manipulation_actions
         // MoveIt
         moveit::planning_interface::MoveGroup* head_group_;
 
-        std::string action_topic_;
         std::string action_name_;
+        std::string action_topic_ork_ps_;
+        std::string action_topic_point_head_;
+        std::string pointing_frame_;
         std::string predicate_table_inspected_;
         std::string predicate_table_inspected_recently_;
         std::string joint_name_head_yaw_;
@@ -49,9 +47,8 @@ namespace object_manipulation_actions
         std::set<std::string> expected_objects_;
 
         ros::Duration actionTimeOut_;
-        actionlib::SimpleActionClient<control_msgs::SingleJointPositionAction> actionLiftTorso_;
-        actionlib::SimpleActionClient<control_msgs::PointHeadAction> actionPointHead_;
-        actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction> actionOrkToPs_;
+        actionlib::SimpleActionClient<control_msgs::PointHeadAction>* actionPointHead_;
+        actionlib::SimpleActionClient<ork_to_planning_scene_msgs::UpdatePlanningSceneFromOrkAction>* actionOrkToPs_;
         boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
 
         // Parameters
