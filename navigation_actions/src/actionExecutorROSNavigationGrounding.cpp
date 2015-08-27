@@ -1,98 +1,177 @@
 #include "planner_navigation_actions/actionExecutorROSNavigationGrounding.h"
 #include <pluginlib/class_list_macros.h>
+#include <ros/ros.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
+#include <symbolic_planning_utils/joint_limits.h>
 
 #include <tf/transform_datatypes.h>
 
 PLUGINLIB_EXPORT_CLASS(navigation_actions::ActionExecutorROSNavigationGrounding, continual_planning_executive::ActionExecutorInterface)
 
+// Distance measured from ground when torso is at minimum (= not lifted)
+#define MIN_TORSO_POSITION 0.802
+
 namespace navigation_actions
 {
-
     void ActionExecutorROSNavigationGrounding::initialize(const std::deque<std::string> & arguments)
     {
-        ActionExecutorActionlib<move_base_msgs::MoveBaseAction, move_base_msgs::MoveBaseGoal,
-            move_base_msgs::MoveBaseResult>::initialize(arguments);
-
         // move-robot-to-table move_base table-inspected-recently sampled-torso-height
         ROS_ASSERT(arguments.size() == 4);
+        action_name_ 						= arguments[0];
+        action_topic_move_base_				= arguments[1];
         predicate_table_inspected_recently_ = arguments[2];
         sampled_torso_height_ 				= arguments[3];
+
+        action_move_base_  = new actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>(action_topic_move_base_, true);
+
+    	ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Waiting for %s"
+    			"action server to start.", __func__, action_topic_move_base_.c_str());
+    	action_move_base_->waitForServer();
+
+    	torso_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getTorsoGroup();
+
+		ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Action clients are ready", __func__);
     }
 
-    bool ActionExecutorROSNavigationGrounding::fillGoal(move_base_msgs::MoveBaseGoal & goal,
-            const DurativeAction & a, const SymbolicState & current)
-    {
-        // The frame_id should be a fixed frame anyways
-        goal.target_pose.header.stamp = ros::Time::now();
+	bool ActionExecutorROSNavigationGrounding::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
+	{
+		return a.name == action_name_;
+	}
 
-        // grounded action
-        ROS_ASSERT(a.parameters.size() == 2);
-        string surface_name 		  = a.parameters[0];
-        string grounded_surface_name  = a.parameters[1];
+	bool ActionExecutorROSNavigationGrounding::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
+	{
+		ROS_ASSERT(a.parameters.size() == 2);
+		std::string table 	 			 = a.parameters[0];
+		std::string grounded_target 	 = a.parameters[1];
 
-        ROS_INFO("ActionExecutorROSNavigationGrounding::%s: surface: %s, grounded surface name: %s",
-        		__func__, surface_name.c_str(), grounded_surface_name.c_str());
+		// fetch target pose
+		geometry_msgs::PoseStamped target_pose;
+		target_pose.header.stamp = ros::Time::now();
 
         std::string name_space = "grounding/drive_pose_module/";
-        bool ret = true;
-        if (!ros::param::get(name_space + grounded_surface_name + "/x", goal.target_pose.pose.position.x))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/y", goal.target_pose.pose.position.y))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/z", goal.target_pose.pose.position.z))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/qx", goal.target_pose.pose.orientation.x))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/qy", goal.target_pose.pose.orientation.y))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/qz", goal.target_pose.pose.orientation.z))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/qw", goal.target_pose.pose.orientation.w))
-        	ret = false;
-        if (!ros::param::get(name_space + grounded_surface_name + "/frame_id", goal.target_pose.header.frame_id))
-        	ret = false;
+        bool ok = true;
+        if (!ros::param::get(name_space + grounded_target + "/x", target_pose.pose.position.x))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/y", target_pose.pose.position.y))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/z", target_pose.pose.position.z))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/qx", target_pose.pose.orientation.x))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/qy", target_pose.pose.orientation.y))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/qz", target_pose.pose.orientation.z))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/qw", target_pose.pose.orientation.w))
+        	ok = false;
+        if (!ros::param::get(name_space + grounded_target + "/frame_id", target_pose.header.frame_id))
+        	ok = false;
 
-        if (!ret)
-        	ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: Could not load pose with name: %s",
-        			__func__, grounded_surface_name.c_str());
-        else
-        	ROS_INFO_STREAM("Created goal for ActionExecutorROSNavigationGrounding as: " << goal);
-
-        return ret;
-    }
-
-    void ActionExecutorROSNavigationGrounding::updateState(const actionlib::SimpleClientGoalState & actionReturnState,
-            const move_base_msgs::MoveBaseResult & result,
-            const DurativeAction & a, SymbolicState & current)
-    {
-        ROS_ASSERT(a.parameters.size() == 2);
-        string surface_name 		  = a.parameters[0];
-        string grounded_surface_name  = a.parameters[1];
-
-        // as soon as a drive action is executed, table-inspected-recently is set to false for all
-        // table elements
-    	string table_name;
-    	pair<SymbolicState::TypedObjectConstIterator,
-    			SymbolicState::TypedObjectConstIterator> targets =
-    			current.getTypedObjects().equal_range("table");
-    	for (SymbolicState::TypedObjectConstIterator it = targets.first;
-    			it != targets.second; it++)
-    	{
-    		table_name = it->second;
-    		current.setBooleanPredicate(predicate_table_inspected_recently_, table_name, false);
-    	}
-
-    	// set sampled torso height in symbolic state
-    	std::string name_space = "grounding/drive_pose_module/";
-    	double torso_height;
-        if (!ros::param::get(name_space + grounded_surface_name + "/z", torso_height))
+        if (!ok)
         {
-        	ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: Could not set sampled torso height!", __func__);
-        	return;
+        	ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: Could not load pose with name: %s",
+        			__func__, grounded_target.c_str());
+        	return false;
         }
-    	current.setNumericalFluent(sampled_torso_height_, "", torso_height);
+        else
+        	ROS_INFO_STREAM("Created goal for ActionExecutorROSNavigationGrounding as: " << grounded_target);
 
-    }
+		// set target pose and execute move action
+		if (!executeMoveBase(target_pose))
+			return false;
 
+		if (!executeLiftTorso(target_pose))
+			return false;
+
+		return true;
+	}
+
+	void ActionExecutorROSNavigationGrounding::cancelAction()
+	{
+
+	}
+
+	bool ActionExecutorROSNavigationGrounding::executeMoveBase(const geometry_msgs::PoseStamped& target_pose)
+	{
+		ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Sending move base request.", __func__);
+		move_base_msgs::MoveBaseGoal goal;
+		goal.target_pose = target_pose;
+
+		action_move_base_->sendGoal(goal);
+
+		action_move_base_->waitForResult();
+
+		actionlib::SimpleClientGoalState state = action_move_base_->getState();
+		if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
+		{
+			// no need to check for result, since there is no result
+			ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Move Base Action finished.", __func__);
+			return true;
+		}
+
+		ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: Move Base Action failed.", __func__);
+		return false;
+	}
+
+	bool ActionExecutorROSNavigationGrounding::executeLiftTorso(const geometry_msgs::PoseStamped& target_pose)
+	{
+		double joint_value = target_pose.pose.position.z - MIN_TORSO_POSITION;
+		ROS_INFO("ActionExecutorROSNavigationGrounding::%s: target height: %lf -> joint_value: %lf",
+				__func__, target_pose.pose.position.z, joint_value);
+
+	    // get torso joint name
+	    std::vector<std::string> joints = torso_group_->getJoints();
+	    ROS_ASSERT(joints.size() == 1);
+	    std::string joint_name = joints.at(0);
+
+	    if (!torso_group_->setJointValueTarget(joint_name, joint_value))
+		{
+			ROS_WARN("ActionExecutorROSNavigationGrounding::%s: joint %s has value %lf which is out of bound. - RETRYING",
+					__func__, joint_name.c_str(), joint_value);
+
+			// get torso joint limit
+		    symbolic_planning_utils::JointLimits::Limits joint_limits = symbolic_planning_utils::JointLimits::getJointLimit(torso_group_, joint_name);
+		    ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Joint %s has limits [%lf, %lf]",
+		    		__func__, joint_name.c_str(), joint_limits.min_position, joint_limits.max_position);
+
+			if (joint_value < joint_limits.min_position) // lower than min value
+				joint_value = joint_limits.min_position;
+			else if (joint_value > joint_limits.max_position) // higher than max value
+				joint_value = joint_limits.max_position;
+
+			if (!torso_group_->setJointValueTarget(joint_name, joint_value))
+			{
+				ROS_ERROR("ActionExecutorROSNavigationGrounding::%s: joint %s is out of bounds", __func__, joint_name.c_str());
+				return false;
+			}
+		}
+
+		moveit::planning_interface::MoveItErrorCode error_code;
+		// Call the planner to compute a plan.
+		// Note that we are just planning, not asking move_group
+		// to actually move the robot.
+		moveit::planning_interface::MoveGroup::Plan my_plan;
+		ROS_DEBUG("ActionExecutorROSNavigationGrounding::%s: planning torso motion...", __func__);
+
+        error_code = torso_group_->plan(my_plan);
+		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
+		{
+			ROS_WARN("ActionExecutorROSNavigationGrounding::%s: Ups, something with torso motion planning went wrong.", __func__);
+			return false;
+		}
+
+		// planning was successful
+		ROS_DEBUG("ActionExecutorROSNavigationGrounding::%s: executing torso motion...", __func__);
+		error_code = torso_group_->execute(my_plan);
+		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
+		{
+			ROS_WARN("ActionExecutorROSNavigationGrounding::%s: Ups, something with torso motion execution went wrong.", __func__);
+			return false;
+		}
+
+
+		ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Lift Torso Action finished.", __func__);
+		return true;
+	}
 };
 
