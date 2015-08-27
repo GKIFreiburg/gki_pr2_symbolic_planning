@@ -18,16 +18,17 @@ using std::map;
 using std::set;
 using std::string;
 
-TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance_ = NULL;
+namespace planner_modules_pr2
+{
 
-TidyupPlanningSceneUpdater* TidyupPlanningSceneUpdater::instance()
+TidyupPlanningSceneUpdaterPtr TidyupPlanningSceneUpdater::instance_;
+
+TidyupPlanningSceneUpdaterPtr TidyupPlanningSceneUpdater::instance()
 {
 	if (instance_ == NULL)
-		instance_ = new TidyupPlanningSceneUpdater();
+		instance_.reset(new TidyupPlanningSceneUpdater());
 	return instance_;
 }
-
-// TODO: provide debug visualization
 
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
@@ -128,6 +129,23 @@ bool TidyupPlanningSceneUpdater::readObjects(
 planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getEmptyScene()
 {
 	return scene_monitor->getPlanningScene();
+}
+
+planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getCurrentScene(
+		predicateCallbackType predicateCallback,
+		numericalFluentCallbackType numericalFluentCallback)
+{
+	planning_scene::PlanningScenePtr scene = getEmptyScene();
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position;
+	readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+	updateRobotPose2D(scene, robot_pose, torso_position);
+	MovableObjectsMap objects;
+	GraspedObjectMap grasped;
+	ObjectsOnTablesMap onTables;
+	readObjects(predicateCallback, numericalFluentCallback, objects, grasped, onTables);
+	updateObjects(scene, objects, grasped);
+	return scene;
 }
 
 void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
@@ -364,4 +382,6 @@ void TidyupPlanningSceneUpdater::setArmJointsToSidePosition(const std::string& a
 		// ROS_INFO_STREAM(it->first << " " << it->second);
 		robot_state.setJointPositions(it->first, &it->second);
 	}
+}
+
 }

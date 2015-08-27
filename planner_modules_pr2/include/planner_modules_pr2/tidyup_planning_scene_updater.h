@@ -14,17 +14,23 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Pose2D.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <boost/shared_ptr.hpp>
 
 using namespace modules;
+
+namespace planner_modules_pr2
+{
 
 typedef std::map<std::string, std::pair<std::string, geometry_msgs::Pose> > GraspedObjectMap;
 typedef std::map<std::string, geometry_msgs::Pose> MovableObjectsMap;
 typedef std::map<std::string, std::string> ObjectsOnTablesMap;
 
+class TidyupPlanningSceneUpdater;
+typedef boost::shared_ptr<TidyupPlanningSceneUpdater> TidyupPlanningSceneUpdaterPtr;
 class TidyupPlanningSceneUpdater
 {
 public:
-	static TidyupPlanningSceneUpdater* instance();
+	static TidyupPlanningSceneUpdaterPtr instance();
 	virtual ~TidyupPlanningSceneUpdater();
 
 	bool readObjects(
@@ -50,6 +56,10 @@ public:
 			numericalFluentCallbackType numericalFluentCallback);
 
 	planning_scene::PlanningScenePtr getEmptyScene();
+
+	planning_scene::PlanningScenePtr getCurrentScene(
+			predicateCallbackType predicateCallback,
+			numericalFluentCallbackType numericalFluentCallback);
 
 	void updateRobotPose2D(planning_scene::PlanningScenePtr scene,
 			const geometry_msgs::Pose& robot_pose,
@@ -82,10 +92,12 @@ private:
 	geometry_msgs::Pose defaultAttachPose;
 	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;
 
-	static TidyupPlanningSceneUpdater* instance_;
+	static TidyupPlanningSceneUpdaterPtr instance_;
 
 	ros::Publisher scene_publisher;
 
 };
+
+} /* planner_modules_pr2 */
 
 #endif /* TIDYUP_PLANNING_SCENE_UPDATER_H_ */

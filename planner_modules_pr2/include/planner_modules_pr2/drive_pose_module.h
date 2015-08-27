@@ -32,27 +32,10 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
         modules::predicateCallbackType predicateCallback,
         modules::numericalFluentCallbackType numericalFluentCallback);
 
-//// Cost Module, computing real costs for lifting torso
-//double liftTorsoCost(const modules::ParameterList & parameterList,
-//		modules::predicateCallbackType predicateCallback,
-//		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
-//// Effect Module, set predicate "torso-lifted" with the corresponding table
-//// If return value != 0, then writtenVars are applied to the state, otherwise state remains unchanged
-//int updateTorsoPosition(const modules::ParameterList & parameterList,
-//        modules::predicateCallbackType predicateCallback,
-//        modules::numericalFluentCallbackType numericalFluentCallback,
-//        int relaxed, vector<double> & writtenVars);
-
 /// Determine a candidate pose to drive to the static ?t - table.
 std::string determine_drive_pose(const modules::ParameterList & parameterList,
         modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
         int relaxed, const void* statePtr);
-
-// Condition checker Module, check if robot is near table
-// INFINITE_COST if false or 0 (a value smaller INFINITE_COST) if true
-double robot_near_table(const modules::ParameterList & parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed);
 
 #ifdef __cplusplus
 }
