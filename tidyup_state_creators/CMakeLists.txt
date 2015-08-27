@@ -45,7 +45,7 @@ add_library(tidyup_state_creators
     src/stateCreatorRobotPoseGrounding.cpp
     src/stateCreatorLiftTorsoGrounding.cpp
     src/goalCreatorTidyupInitializeGrounding.cpp
-    src/goalCreatorMoveObjectsToTableGrounding.cpp
+    src/goalCreatorInspectObjects.cpp
 )
     
 target_link_libraries(tidyup_state_creators

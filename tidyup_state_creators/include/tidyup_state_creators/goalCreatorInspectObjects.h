@@ -6,12 +6,12 @@
 namespace tidyup_state_creators
 {
 
-    class GoalCreatorMoveObjectsToTableGrounding : public continual_planning_executive::GoalCreator
+    class GoalCreatorInspectObjects : public continual_planning_executive::GoalCreator
     {
     private:
         public:
-            GoalCreatorMoveObjectsToTableGrounding();
-            ~GoalCreatorMoveObjectsToTableGrounding();
+            GoalCreatorInspectObjects();
+            ~GoalCreatorInspectObjects();
 
             virtual void initialize(const std::deque<std::string> & arguments);
             virtual bool fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal);
