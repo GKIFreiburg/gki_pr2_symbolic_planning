@@ -43,9 +43,8 @@ double g_TransSpeed = 0.3;
 double g_RotSpeed = angles::from_degrees(30);
 
 // Using a cache of queried path costs to prevent calling the path planning service multiple times
-// Better: Can we assume symmetric path costs?
-//map< pair<string,string>, double> g_PathCostCache;
-ModuleParamCacheDouble g_PathCostCache;
+boost::shared_ptr<ModuleParamCache<double> > g_PathCostCache;
+
 string compute_path_cache_key(const string& startLocation, const string& goalLocation,
         const geometry_msgs::Pose & startPose, const geometry_msgs::Pose & goalPose)
 {
@@ -147,7 +146,7 @@ void navstack_init(int argc, char** argv)
     }
     ROS_INFO("Service connection to %s established.", g_GetPlan.getService().c_str());
 
-    g_PathCostCache.initialize("move_base", g_NodeHandle);
+    g_PathCostCache.reset(new ModuleParamCache<double>("move_base"));
 
     ROS_INFO("Initialized Navstack Module.");
 }
@@ -312,7 +311,7 @@ double path_cost(const ParameterList & parameterList,
     // first lookup in the cache if we answered the query already
     double cost = INFINITE_COST;
     string cacheKey = compute_path_cache_key(parameterList[0].value, parameterList[1].value, srv.request.start.pose, srv.request.goal.pose);
-    if (g_PathCostCache.get(cacheKey, cost))
+    if (g_PathCostCache->get(cacheKey, cost))
     {
         return cost;
     }
@@ -326,7 +325,7 @@ double path_cost(const ParameterList & parameterList,
         //    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");
         //g_PathCostCache.set(cacheKey, cost, !isRobotLocation);  // do no param cache robot_location calls
         ros::WallTime endCallTime = ros::WallTime::now();
-        g_PathCostCache.set(cacheKey, cost, true, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
+        g_PathCostCache->set(cacheKey, cost, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
     }
     return cost;
 }
@@ -364,7 +363,7 @@ double path_cost_grounding(const ParameterList & parameterList,
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
 	string cacheKey = compute_path_cache_key("robot_location", parameterList[0].value, srv.request.start.pose, srv.request.goal.pose);
-	if (g_PathCostCache.get(cacheKey, cost))
+	if (g_PathCostCache->get(cacheKey, cost))
 	{
 		return cost;
 	}
@@ -378,7 +377,7 @@ double path_cost_grounding(const ParameterList & parameterList,
 		//    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");
 		//g_PathCostCache.set(cacheKey, cost, !isRobotLocation);  // do no param cache robot_location calls
 		ros::WallTime endCallTime = ros::WallTime::now();
-		g_PathCostCache.set(cacheKey, cost, true, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
+		g_PathCostCache->set(cacheKey, cost, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
 	}
 	return cost;
 }
@@ -429,7 +428,7 @@ double path_condition_grounding(const ParameterList & parameterList,
 	// first lookup in the cache if we answered the query already
 	double cost = INFINITE_COST;
 	string cacheKey = compute_path_cache_key("robot_location", grounded_goal, srv.request.start.pose, srv.request.goal.pose);
-	if (g_PathCostCache.get(cacheKey, cost))
+	if (g_PathCostCache->get(cacheKey, cost))
 	{
 		return cost;
 	}
@@ -443,7 +442,7 @@ double path_condition_grounding(const ParameterList & parameterList,
 		//    (parameterList[0].value == "robot_location" || parameterList[1].value == "robot_location");
 		//g_PathCostCache.set(cacheKey, cost, !isRobotLocation);  // do no param cache robot_location calls
 		ros::WallTime endCallTime = ros::WallTime::now();
-		g_PathCostCache.set(cacheKey, cost, true, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
+		g_PathCostCache->set(cacheKey, cost, (endCallTime - startCallTime).toSec());  // do param cache robot_location calls - they contain the location pose now (safe)
 	}
 	return cost;
 }

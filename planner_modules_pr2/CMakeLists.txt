@@ -125,6 +125,7 @@ add_library(planner_modules_pr2
 	#src/lift_torso_module.cpp
 	src/drive_pose_module.cpp
 	src/pickup_modules.cpp
+	src/putdown_modules.cpp
 )
 
 add_dependencies(planner_modules_pr2 planner_modules_pr2_generate_messages_cpp)

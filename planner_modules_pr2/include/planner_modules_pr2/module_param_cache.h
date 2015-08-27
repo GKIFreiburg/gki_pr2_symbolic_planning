@@ -22,61 +22,66 @@
  * It is assumed that during a planner run only this class accesses the
  * module cache stored on the param server, i.e. nobody interferes.
  */
-template <class ValueType>
+template<class ValueType>
 class ModuleParamCache
 {
 public:
-    ModuleParamCache();
-    ~ModuleParamCache();
+	/// Initialize the module param cache for param lookup.
+	/**
+	 * \param [in] moduleNamespace the namespace for this cache
+	 * \param [in] allowCachingToParamServer if true, cache entries are entered on the parameter server
+	 * \param [in] storeParamHitsLocally if true, hits from parameter server are stored in local cache
+	 */
+	ModuleParamCache(
+			const std::string& moduleNamespace,
+			bool allowCachingToParamServer = true,
+			bool storeParamHitsLocally = true);
+	~ModuleParamCache();
 
-    /// Clear all cache entries for this modules namespace (especially on the param server)
-    void clearAll();
+	/// Clear all cache entries for this modules namespace (especially on the param server)
+	void clearAll();
 
-    /// Initialize the module param cache for param lookup.
-    void initialize(const std::string& moduleNamespace, ros::NodeHandle* node);
+	/// Add a new cache entry.
+	/**
+	 * \param [in] key the key for the entry
+	 * \param [in] value the value to cache for key
+	 * \param [in] time time in seconds to calculate this value, unknown values (< 0) are not cached
+	 * param server and thus are available between multiple planner calls.
+	 * Therefore their value should obviously not change in the world
+	 * throughout multiple calls.
+	 */
+	void set(const std::string& key, ValueType value, double time = -1);
 
-    /// Add a new cache entry.
-    /**
-     * \param [in] key the key for the entry
-     * \param [in] value the value to cache for key
-     * \param [in] allowCacheAsParam if true, cache entries are entered on the
-     * \param [in] time time in seconds to calculate this value, unknown values (< 0) are not cached
-     * param server and thus are available between multiple planner calls.
-     * Therefore their value should obviously not change in the world
-     * throughout multiple calls.
-     */
-    void set(const std::string& key, ValueType value, bool allowCacheAsParam, double time = -1);
+	/// Retrieve a cached value for key.
+	/**
+	 * \param [in] key the key for the entry
+	 * \param [out] value the retrieved value, if found.
+	 * \returns true, if the value was found in the cache.
+	 */
+	bool get(const std::string& key, ValueType& value);
 
-    /// Retrieve a cached value for key.
-    /**
-     * \param [in] key the key for the entry
-     * \param [out] value the retrieved value, if found.
-     * \param [out] wasLocal if not NULL, set to true, if the value was already in the local cache
-     * \param [in] storeGlobalLocally for hits from param server, store them in local cache
-     * \returns true, if the value was found in the cache.
-     */
-    bool get(const std::string& key, ValueType& value, bool* wasLocal = NULL, bool storeGlobalLocally = true);
+	/// Retrieve a cached value for key.
+	/**
+	 * \param [in] key the key for the entry
+	 * \param [out] time the time in seconds to originally calculate the value
+	 * \returns true, if the value was found in the cache.
+	 */
+	bool getTime(const std::string& key, double& time);
 
-    /// Retrieve a cached value for key.
-    /**
-     * \param [in] key the key for the entry
-     * \param [out] time the time in seconds to originally calculate the value
-     * \returns true, if the value was found in the cache.
-     */
-    bool getTime(const std::string& key, double& time);
-
-    void dump() const;
+	void dump() const;
 private:
-    static std::string baseNamespace;
+	static std::string baseNamespace;
 
-    /// Param cache across multiple runs.
-    ros::NodeHandle* node;
-    std::string keyPrefix;
+	/// Param cache across multiple runs.
+	std::string keyPrefix;
 
-    std::map<std::string, ValueType> _localCache;  ///< local cache only for this planner run
-    std::map<std::string, double> _localTimeCache; ///< local cache for the time it took for computing this keys value.
+	std::map<std::string, ValueType> _localCache;  ///< local cache only for this planner run
+	std::map<std::string, double> _localTimeCache; ///< local cache for the time it took for computing this keys value.
 
-    bool s_Debug;
+	bool allowCachingToParamServer;
+	bool storeParamHitsLocally;
+	ros::NodeHandlePtr node;
+	bool s_Debug;
 };
 
 /// Create a string from a Pose that is unique and can be stored in the param daemon.
@@ -84,9 +89,7 @@ std::string createPoseParamString(const geometry_msgs::Pose & pose, double precP
 /// Create a string from a Pose that is unique and can be stored in the param daemon.
 std::string createPoseParamString(const geometry_msgs::Pose2D & pose, double precPose = 0.01, double precTheta = 0.01);
 
-std::string computeFullStateCacheKey(const modules::ParameterList & parameterList,
-        modules::predicateCallbackType predicateCallback,
-        modules::numericalFluentCallbackType numericalFluentCallback);
+std::string computeFullStateCacheKey(const modules::ParameterList & parameterList, modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback);
 
 /// Split a named id (e.g. robot0) in name and id (robot, 0).
 bool splitNamedId(const string & namedId, string & name, int & id);

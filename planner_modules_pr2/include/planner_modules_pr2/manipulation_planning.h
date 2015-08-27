@@ -44,48 +44,51 @@ public:
 			const std::string& arm_prefix,
 			const std::string& support_surface);
 
-	void putdown();
-
-	void move_torso();
+	double putdown(planning_scene::PlanningScenePtr scene,
+			const std::string& object,
+			const std::string& arm_prefix,
+			const std::string& support_surface);
 
 private:
 	static ManipulationPlanningPtr instance_;
 	ManipulationPlanning();
 
-	boost::shared_ptr<object_surface_placements::PlacementGenerator> g_placement_gen;
-
-	boost::shared_ptr<planning_scene_monitor::PlanningSceneMonitor> g_psm;
-	planning_pipeline::PlanningPipelinePtr g_planning;
-	boost::shared_ptr<moveit_warehouse::RobotStateStorage> g_state_storage;
-	boost::shared_ptr<
-		actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction>
-		> g_generate_grasps;
-	pick_place::PickPlacePtr g_pick_place;
-
-	ros::Publisher pubPlanningScene;
-	ros::Publisher pubDisplayTraj;
-
-	object_surface_placements::CollisionMethod g_CollisionMode;
-	double z_above_table;
-
-	double planPickupAndUpdateScene(planning_scene::PlanningScenePtr scene, const moveit_msgs::PickupGoal& goal);
 	double applyManipulationPlan(planning_scene::PlanningScenePtr scene,
 			const pick_place::ManipulationPlanPtr manipulation_plan,
 			const trajectory_msgs::JointTrajectory detach_posture);
 
-	void fillGrasps(const planning_scene::PlanningScenePtr & scene,
-			const std::string & object,
-			const std::string & arm_prefix,
-			std::vector<moveit_msgs::Grasp> & grasps_to_fill);
+	void fillGrasps(const planning_scene::PlanningScenePtr scene,
+			const std::string& object,
+			const std::string& arm_prefix,
+			std::vector<moveit_msgs::Grasp>& grasps_to_fill);
+
+	void fillPlacements(
+			const planning_scene::PlanningScenePtr scene,
+			const std::string& object,
+			const std::string& arm_prefix,
+			const std::string& support_surface,
+			std::vector<moveit_msgs::PlaceLocation>& place_locations);
 
 	moveit_msgs::CollisionObject getCollisionObjectFromPlanningScene(
-			const planning_scene::PlanningScenePtr& scene,
+			const planning_scene::PlanningScenePtr scene,
 			const std::string& id);
 	moveit_msgs::CollisionObject createCollisionObject(
-			const std::string & name,
-			const planning_scene::PlanningScenePtr & scene,
-			const std::vector<shapes::ShapeConstPtr> & shapes,
-			const EigenSTL::vector_Affine3d & shape_transforms);
+			const std::string& name,
+			const planning_scene::PlanningScenePtr scene,
+			const std::vector<shapes::ShapeConstPtr>& shapes,
+			const EigenSTL::vector_Affine3d& shape_transforms);
+
+	boost::shared_ptr<object_surface_placements::PlacementGenerator> placement_genenerator;
+	boost::shared_ptr<actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction> > grasp_generator;
+
+	boost::shared_ptr<planning_scene_monitor::PlanningSceneMonitor> scene_monitor;
+	planning_pipeline::PlanningPipelinePtr planning;
+	boost::shared_ptr<moveit_warehouse::RobotStateStorage> state_storage;
+	pick_place::PickPlacePtr pick_place;
+
+	object_surface_placements::CollisionMethod collision_mode;
+	double z_above_table;
+
 };
 
 
