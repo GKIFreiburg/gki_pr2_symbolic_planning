@@ -7,14 +7,12 @@
 
 using namespace planner_modules_pr2;
 
-ros::Publisher error_scene_publisher;
-
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "robot_near_test");
 
 	ros::NodeHandle nh;
-	error_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("/modules_test/failed_scene", 1, true);
+	ros::Publisher error_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("/modules_test/failed_scene", 1, true);
 
 //	std::string object_name = "coke_1";
 //	geometry_msgs::Pose object_pose;

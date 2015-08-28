@@ -118,22 +118,22 @@ include_directories(
 
 ## Declare a cpp library
 add_library(planner_modules_pr2
-#	src/manipulation_planning.cpp
+	src/manipulation_planning.cpp
 	src/inverse_reachability_maps.cpp
 	src/tidyup_planning_scene_updater.cpp
 	src/module_param_cache.cpp
 #	src/navstack_module.cpp	
 #	src/drive_pose_module.cpp
 	src/robot_near_modules.cpp
-#	src/pickup_modules.cpp
-#	src/putdown_modules.cpp
+	src/pickup_modules.cpp
+	src/putdown_modules.cpp
 )
 
 #add_dependencies(planner_modules_pr2 planner_modules_pr2_generate_messages_cpp)
 #target_link_libraries(planner_modules_pr2 ${catkin_LIBRARIES})
 
-#add_executable(test_pickup src/test_pickup.cpp)
-#target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
+add_executable(test_pickup src/test_pickup.cpp)
+target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
 
 add_executable(test_near_table src/test_near_table.cpp)
 target_link_libraries(test_near_table planner_modules_pr2 ${catkin_LIBRARIES})

@@ -16,13 +16,18 @@
 #include <string>
 #include <ros/ros.h>
 
-double putdown(
-		const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed);
+namespace planner_modules_pr2
+{
+namespace putdown
+{
 
-std::string compute_putdown_cache_key(
+double compute_value(
+		planning_scene::PlanningScenePtr scene,
+		const string& object_name,
+		const string& arm_prefix,
+		const string& table);
+
+std::string create_cache_key(
 		const string& object_name,
 		const string& arm_name,
 		const string& table_name,
@@ -30,17 +35,14 @@ std::string compute_putdown_cache_key(
 		const map<string, geometry_msgs::Pose>& movableObjects,
 		const ObjectsOnTablesMap& objectsOnTables);
 
+}/* putdown */
+} /* namespace planner_modules_pr2 */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void putdown_init(int argc, char** argv);
-
-double putdown_cost(
-		const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed);
 
 double can_putdown(
 		const modules::ParameterList& parameterList,

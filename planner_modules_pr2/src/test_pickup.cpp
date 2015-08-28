@@ -12,73 +12,63 @@
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
 #include <ros/ros.h>
-#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
-#include <geometric_shapes/shapes.h>
-#include <tf_conversions/tf_eigen.h>
+#include "planner_modules_pr2/tidyup_planning_scene_updater.h"
 #include "planner_modules_pr2/manipulation_exceptions.h"
 
+using namespace planner_modules_pr2;
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "manipualion_pickup_test");
-
-	planning_scene_monitor::PlanningSceneMonitorPtr monitor(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
-	ROS_INFO_STREAM("requesting planning scene");
-	monitor->requestPlanningSceneState("/get_planning_scene");
-	ROS_INFO_STREAM("creating diff");
-	planning_scene::PlanningScenePtr scene = monitor->getPlanningScene()->diff();
-	ROS_INFO_STREAM("decouple scene");
-	scene->decoupleParent();
+	ros::init(argc, argv, "pickup_test");
 
 	ros::NodeHandle nh;
-	ros::Publisher initial_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("pickup_initial_scene", 1, true);
-	ros::Publisher final_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("pickup_final_scene", 1, true);
+	ros::Publisher error_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("/modules_test/failed_scene", 1, true);
+
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
 
 	std::string object_name = "coke_1";
-	ROS_INFO_STREAM("adding object: "<<object_name);
-	collision_detection::WorldPtr world = scene->getWorldNonConst();
-	Eigen::Affine3d pose_eigen;
-	geometry_msgs::Pose pose_msg;
-	pose_msg.position.x = 4.45;
-	pose_msg.position.y = 5.26;
-	pose_msg.position.z = 1.0;
-	pose_msg.orientation.w = 1;
-	tf::poseMsgToEigen(pose_msg, pose_eigen);
-	shapes::ShapePtr shape (new shapes::Cylinder(0.025, 0.1));
-	world->addToObject(object_name, shape, pose_eigen);
-	ROS_INFO_STREAM("TODO: setting arm joints");
-	robot_state::RobotState& state = scene->getCurrentStateNonConst();
-	state.setToRandomPositions();
+	geometry_msgs::Pose object_pose;
+	object_pose.position.x = 4.45;
+	object_pose.position.y = 5.26;
+	object_pose.position.z = 1.0;
+	object_pose.orientation.w = 1;
 
-	ROS_INFO_STREAM("TODO: setting spine joint");
-	state.setVariablePosition("torso_lift_joint", 0.25);
+	//psu->addObject(scene, object_name, object_pose);
 
-	ROS_INFO_STREAM("moving robot to table");
-	state.setVariablePosition("world_joint/x", 4.7);
-	state.setVariablePosition("world_joint/y", 5.85);
-	state.setVariablePosition("world_joint/theta", -M_PI_2);
-
-	ROS_INFO_STREAM("scene initialized.");
-	moveit_msgs::PlanningScene msg;
-	scene->getPlanningSceneMsg(msg);
-	initial_scene_publisher.publish(msg);
-
-	try
+	vector<geometry_msgs::Pose2D> robot_poses;
 	{
-		planner_modules_pr2::ManipulationPlanningPtr p = planner_modules_pr2::ManipulationPlanning::instance();
-		ROS_INFO_STREAM("trying pickup");
-		p->pickup(scene, object_name, "right", "table1");
-		moveit_msgs::PlanningScene msg;
-		scene->getPlanningSceneMsg(msg);
-		final_scene_publisher.publish(msg);
+		robot_poses.push_back(geometry_msgs::Pose2D());
+		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+		robot_pose.x = 4.7;
+		robot_pose.y = 5.85;
+		robot_pose.theta = -M_PI_2;
 	}
-	catch (planner_modules_pr2::ManipulationException& ex)
 	{
-		ROS_ERROR("Pickup failed: %s", ex.what());
+		robot_poses.push_back(geometry_msgs::Pose2D());
+		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+		robot_pose.x = 1.3;
+		robot_pose.y = 6.35;
+		robot_pose.theta = -M_PI;
 	}
-	catch (std::exception& ex)
 	{
-		ROS_ERROR("Error: %s", ex.what());
+		robot_poses.push_back(geometry_msgs::Pose2D());
+		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+		robot_pose.x = 4.7;
+		robot_pose.y = 7.85;
+		robot_pose.theta = M_PI_2;
 	}
+	vector<double> torso_heights;
+	for (double z = 0; z < 0.305; z += 0.1)
+	{
+		torso_heights.push_back(z);
+	}
+	vector<string> table_names;
+	table_names.push_back("table1");
+	table_names.push_back("table2");
+
+	// TODO: write module tests
+	vector<geometry_msgs::Pose> object_poses;
+	ros::spinOnce();
+
 
 	ros::spin();
 	return 0;

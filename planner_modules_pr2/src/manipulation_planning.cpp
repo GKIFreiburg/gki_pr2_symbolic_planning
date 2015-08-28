@@ -8,7 +8,8 @@
 #include "planner_modules_pr2/manipulation_exceptions.h"
 #include "planner_modules_pr2/manipulation_planning.h"
 #include <boost/variant.hpp>
-#include "planner_modules_pr2/boost_foreach.h"
+#include <boost/foreach.hpp>
+#define forEach BOOST_FOREACH
 
 namespace planner_modules_pr2
 {

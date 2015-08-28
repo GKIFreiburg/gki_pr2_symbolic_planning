@@ -16,31 +16,33 @@
 #include <string>
 #include <ros/ros.h>
 
-double pickup(
-		const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed);
+namespace planner_modules_pr2
+{
+namespace pickup
+{
 
-std::string compute_pickup_cache_key(
+double compute_value(
+		planning_scene::PlanningScenePtr scene,
 		const string& object_name,
-		const string& arm_name,
-		const string& table_name,
+		const string& arm_prefix,
+		const string& table_name);
+
+string create_cache_key(const string& object,
+		const string& arm,
+		const string& table,
 		const geometry_msgs::Pose2D& robot_pose,
+		double torso_position,
 		const map<string, geometry_msgs::Pose>& movableObjects,
-		const ObjectsOnTablesMap& objectsOnTables);
+		const map<string, string>& objectsOnStatic);
+
+}/* pickup */
+} /* namespace planner_modules_pr2 */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void pickup_init(int argc, char** argv);
-
-double pickup_cost(
-		const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed);
 
 double can_pickup(
 		const modules::ParameterList& parameterList,
