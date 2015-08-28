@@ -69,10 +69,19 @@ public:
 			const geometry_msgs::Pose2D& robot_pose,
 			const double torso_position);
 
+	void updateArmToSidePosition(
+			planning_scene::PlanningScenePtr scene,
+			const std::string& arm);
+
 	void updateObjects(
 			planning_scene::PlanningScenePtr scene,
 			const MovableObjectsMap& movableObjects,
 			const GraspedObjectMap& graspedObjects);
+
+	void addObject(
+			planning_scene::PlanningScenePtr scene,
+			const string& object_name,
+			const geometry_msgs::Pose& object_pose);
 
 	void visualize(planning_scene::PlanningScenePtr scene);
 
@@ -86,7 +95,6 @@ private:
 			const geometry_msgs::Pose& grasp,
 			robot_state::RobotState& robot_state);
 
-	void setArmJointsToSidePosition(const std::string& arm, planning_scene::PlanningScenePtr scene);
 
 	std::string logName;
 	geometry_msgs::Pose defaultAttachPose;

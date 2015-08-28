@@ -8,8 +8,7 @@
 #include "planner_modules_pr2/manipulation_exceptions.h"
 #include "planner_modules_pr2/manipulation_planning.h"
 #include <boost/variant.hpp>
-#include <boost/foreach.hpp>
-#define forEach BOOST_FOREACH
+#include "planner_modules_pr2/boost_foreach.h"
 
 namespace planner_modules_pr2
 {
@@ -121,7 +120,7 @@ double ManipulationPlanning::applyManipulationPlan(planning_scene::PlanningScene
 		const trajectory_msgs::JointTrajectory detach_posture)
 {
 	double cost = 0;
-	forEach(const plan_execution::ExecutableTrajectory & traj, manipulation_plan->trajectories_)
+	forEach(const plan_execution::ExecutableTrajectory& traj, manipulation_plan->trajectories_)
 	{
 		cost += traj.trajectory_->getWaypointDurationFromStart(traj.trajectory_->getWayPointCount());
 		ROS_DEBUG("At Stage: %s", traj.description_.c_str());

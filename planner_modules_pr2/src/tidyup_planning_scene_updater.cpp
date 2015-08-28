@@ -11,6 +11,7 @@
 #include "tidyup_utils/stringutil.h"
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/Pose2D.h>
 
 using std::vector;
@@ -33,14 +34,6 @@ TidyupPlanningSceneUpdaterPtr TidyupPlanningSceneUpdater::instance()
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
 {
-//    defaultAttachPose.position.x = 0.032;
-//    defaultAttachPose.position.y = 0.015;
-//    defaultAttachPose.position.z = 0.0;
-//    defaultAttachPose.orientation.x = 0.707;
-//    defaultAttachPose.orientation.y = -0.106;
-//    defaultAttachPose.orientation.z = -0.690;
-//    defaultAttachPose.orientation.w = 0.105;
-
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	scene_monitor->requestPlanningSceneState("/get_planning_scene");
 
@@ -140,6 +133,8 @@ planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getCurrentScene(
 	double torso_position;
 	readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
 	updateRobotPose2D(scene, robot_pose, torso_position);
+	updateArmToSidePosition(scene, "right_arm");
+	updateArmToSidePosition(scene, "left_arm");
 	MovableObjectsMap objects;
 	GraspedObjectMap grasped;
 	ObjectsOnTablesMap onTables;
@@ -173,16 +168,30 @@ void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScene
 	robot_state.update();
 }
 
+void TidyupPlanningSceneUpdater::updateArmToSidePosition(planning_scene::PlanningScenePtr scene, const std::string& arm)
+{
+	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
+	const moveit::core::JointModelGroup* model_group = robot_state.getJointModelGroup(arm);
+	std::map< std::string, double > values;
+	// right_arm_to_side is a group defined in pr2.srdf (tidyup_pr2_moveit_config)
+	if (!model_group->getVariableDefaultPositions(arm+"_to_side", values))
+	{
+		ROS_WARN("%s: Could not set positions for %s to side!", __func__, arm.c_str());
+	}
+	std::map< std::string, double >::iterator it;
+	for (it = values.begin(); it != values.end(); it++)
+	{
+		// ROS_INFO_STREAM(it->first << " " << it->second);
+		robot_state.setJointPositions(it->first, &it->second);
+	}
+}
+
 void TidyupPlanningSceneUpdater::updateObjects(
 		planning_scene::PlanningScenePtr scene,
 		const MovableObjectsMap& movableObjects,
 		const GraspedObjectMap& graspedObjects)
 {
 	collision_detection::WorldPtr world = scene->getWorldNonConst();
-
-	// set default arm state
-	setArmJointsToSidePosition("right_arm", scene);
-	setArmJointsToSidePosition("left_arm", scene);
 
 	// update pose of movalbe object in the planning scene
 	for (map<string, geometry_msgs::Pose>::const_iterator movabelObjectIt = movableObjects.begin(); movabelObjectIt != movableObjects.end(); movabelObjectIt++)
@@ -339,6 +348,19 @@ bool TidyupPlanningSceneUpdater::readPose(
 	return true;
 }
 
+void TidyupPlanningSceneUpdater::addObject(
+		planning_scene::PlanningScenePtr scene,
+		const string& object_name,
+		const geometry_msgs::Pose& object_pose)
+{
+	ROS_INFO_STREAM("adding object: "<<object_name);
+	collision_detection::WorldPtr world = scene->getWorldNonConst();
+	Eigen::Affine3d pose_eigen;
+	tf::poseMsgToEigen(object_pose, pose_eigen);
+	shapes::ShapePtr shape (new shapes::Cylinder(0.025, 0.1));
+	world->addToObject(object_name, shape, pose_eigen);
+}
+
 void TidyupPlanningSceneUpdater::visualize(planning_scene::PlanningScenePtr scene)
 {
 	moveit_msgs::PlanningScene msg;
@@ -364,24 +386,6 @@ void TidyupPlanningSceneUpdater::attachObject(
 	touch_links.insert(names.begin(), names.end());
 	std::string link_name = arm_prefix[0]+"_wrist_roll_link";
 	robot_state.attachBody(object, shapes, attach_trans, touch_links, link_name);
-}
-
-void TidyupPlanningSceneUpdater::setArmJointsToSidePosition(const std::string& arm, planning_scene::PlanningScenePtr scene)
-{
-	robot_state::RobotState& robot_state = scene->getCurrentStateNonConst();
-	const moveit::core::JointModelGroup* model_group = robot_state.getJointModelGroup(arm);
-	std::map< std::string, double > values;
-	// right_arm_to_side is a group defined in pr2.srdf (tidyup_pr2_moveit_config)
-	if (!model_group->getVariableDefaultPositions(arm+"_to_side", values))
-	{
-		ROS_WARN("%s: Could not set positions for %s to side!", __func__, arm.c_str());
-	}
-	std::map< std::string, double >::iterator it;
-	for (it = values.begin(); it != values.end(); it++)
-	{
-		// ROS_INFO_STREAM(it->first << " " << it->second);
-		robot_state.setJointPositions(it->first, &it->second);
-	}
 }
 
 }

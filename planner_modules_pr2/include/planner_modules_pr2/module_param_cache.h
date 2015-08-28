@@ -15,6 +15,8 @@
 #include <geometry_msgs/Pose2D.h>
 #include "tfd_modules/module_api/pddlModuleTypes.h"
 
+namespace planner_modules_pr2
+{
 /// Module cache that allows to cache entries locally (for one run) or additionally
 /// on the param server between multiple runs. ValueType needs to be able to be written
 /// as a ROS param.
@@ -87,9 +89,7 @@ private:
 /// Create a string from a Pose that is unique and can be stored in the param daemon.
 std::string createPoseParamString(const geometry_msgs::Pose & pose, double precPose = 0.01, double precQuat = 0.01);
 /// Create a string from a Pose that is unique and can be stored in the param daemon.
-std::string createPoseParamString(const geometry_msgs::Pose2D & pose, double precPose = 0.01, double precTheta = 0.01);
-
-std::string computeFullStateCacheKey(const modules::ParameterList & parameterList, modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback);
+std::string createPoseParamString(const geometry_msgs::Pose2D& pose, double torso_position, double precPose = 0.01, double precTheta = 0.01);
 
 /// Split a named id (e.g. robot0) in name and id (robot, 0).
 bool splitNamedId(const string & namedId, string & name, int & id);
@@ -98,6 +98,8 @@ bool splitNamedId(const string & namedId, string & name, int & id);
 
 typedef ModuleParamCache<double> ModuleParamCacheDouble;
 typedef ModuleParamCache<std::string> ModuleParamCacheString;
+
+} /* namespace planner_modules_pr2 */
 
 #endif /* MODULE_PARAM_CACHE_H_ */
 

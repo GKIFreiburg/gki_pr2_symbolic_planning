@@ -9,8 +9,8 @@
 
 
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include <boost/foreach.hpp>
+#define forEach BOOST_FOREACH
 #include <ros/ros.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <geometric_shapes/shapes.h>

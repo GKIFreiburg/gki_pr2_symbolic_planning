@@ -18,7 +18,11 @@
 
 namespace planner_modules_pr2
 {
-	double compute_robot_near_table(planning_scene::PlanningScenePtr scene, const string& table);
+namespace robot_near_table
+{
+double compute_value(planning_scene::PlanningScenePtr scene, const string& table);
+string create_cache_key(const string& table, const geometry_msgs::Pose2D& robot_pose, double torso_position);
+} /* namespace robot_near_table */
 
 } /* namespace planner_modules_pr2 */
 

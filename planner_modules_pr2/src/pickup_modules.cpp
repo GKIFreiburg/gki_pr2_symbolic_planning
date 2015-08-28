@@ -17,7 +17,7 @@ boost::shared_ptr<ModuleParamCache<double> > pickupCostCache;
 void pickup_init(int argc, char** argv)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
-	pickupCostCache.reset(new ModuleParamCache<double>("putdown/cost"));
+	pickupCostCache.reset(new ModuleParamCache<double>("pickup/cost"));
 }
 
 double pickup(
