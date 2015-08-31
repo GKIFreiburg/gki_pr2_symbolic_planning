@@ -15,19 +15,11 @@
 #include <actionlib/client/simple_action_client.h>
 #include <geometry_msgs/PoseArray.h>
 
-// debug tools, g_actionDebug enable the triggering of the published msgs
-boost::shared_ptr<actionlib::SimpleActionClient<planner_modules_pr2::EmptyAction> > g_action_debug;
-/* The DEBUG_PLANNING_SCENE can be used to trigger if the generated planning scene from
- * the symbolic state should be published or not - useful for debugging to see what's
- * going on.
- * To do so, you need to start a action server, using the following command:
- * 		rosrun actionlib axserver.py /empty_action planner_modules_pr2/EmptyAction
- * Each time a new planning scene is generated, it is directly publish to topic: /virtual_planning_scene
- * to see the next ps, just give any feedback using the action server back to the client - not import if
- * a goal is set or a result or feedback (the return value is not checked).
- * If no feedback is provided the timeout is set to 5 minutes, then the next planning scene is published -
- * how this should be enough time to check in rviz.
- */
+namespace planner_modules_pr2
+{
+
+namespace drive_pose
+{
 
 // Parameters specifying the sampling with negative update
 int number_draws_;
@@ -112,6 +104,12 @@ void fetch_poses_from_param(const std::string& name_space, const std::string& su
 	}
 }
 
+} /* namespace drive_pose */
+
+} /* namespace planner_modules_pr2 */
+
+using namespace planner_modules_pr2;
+using namespace planner_modules_pr2::drive_pose;
 // __________________________________________________________________________________________________________________________________________________
 void drive_pose_init(int argc, char** argv)
 {
@@ -161,12 +159,6 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback)
 {
-	// empty plan (dummy-plan) is returned by time out
-	//    if(plan.empty()) {
-	//        ROS_ERROR("drivePoseExit::%s: failed: No plan produced.", __func__);
-	//        return;
-	//    }
-
 	ROS_INFO("drive_pose_module::%s: Putting drive pose cache on param server", __func__);
 
 	// putting drive_pose_cache to param server so actionExec can access
@@ -174,36 +166,15 @@ void drive_pose_exit(const modules::RawPlan & plan, int argc, char** argv,
 }
 
 // __________________________________________________________________________________________________________________________________________________
-std::string determine_drive_pose(const modules::ParameterList & parameterList,
-		modules::predicateCallbackType predicateCallback, modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed, const void* statePtr)
+std::string determine_drive_pose(
+		const modules::ParameterList & parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		const void* statePtr)
 {
 	ROS_ASSERT(parameterList.size() == 1);
 	std::string table = parameterList[0].value;
-
-	// output of readState function
-	geometry_msgs::Pose2D robotPose;
-	map<string, geometry_msgs::Pose> movableObjects;
-	GraspedObjectMap graspedObjects;
-	map<string, string> objectsOnStatic;
-	double torsoPosition = 0.0;
-	if (!TidyupPlanningSceneUpdater::instance()->readRobotPose2D(robotPose, torsoPosition, numericalFluentCallback))
-	{
-		ROS_ERROR("drive_pose_module::%s: Could not read robot state from symbolic state!", __func__);
-		return "";
-	}
-
-	if (!TidyupPlanningSceneUpdater::instance()->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnStatic))
-	{
-		ROS_ERROR("drive_pose_module::%s: Could not read objects from symbolic state!", __func__);
-		return "";
-	}
-
-	// set planning scene, needed by inv_reach sampling for collision checks
-	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getEmptyScene();
-	TidyupPlanningSceneUpdater::instance()->updateRobotPose2D(scene, robotPose, torsoPosition);
-	TidyupPlanningSceneUpdater::instance()->updateObjects(scene, movableObjects, graspedObjects);
-
 
 	planner_modules_pr2::InverseReachabilityMapsPtr irm = planner_modules_pr2::InverseReachabilityMaps::instance();
 	planner_modules_pr2::InverseReachabilityMap::const_iterator it = irm->find(table);
@@ -213,6 +184,7 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 		return "";
 	}
 
+	planning_scene::PlanningScenePtr scene = TidyupPlanningSceneUpdater::instance()->getCurrentScene(predicateCallback, numericalFluentCallback);
 	InverseCapabilitySampling::PosePercent sampled_pose =
 			InverseCapabilitySampling::drawBestOfXSamples(scene, it->second->inverse_reachability.get(), it->second->pose, number_draws_,
 					drive_pose_cache_,
@@ -232,7 +204,7 @@ std::string determine_drive_pose(const modules::ParameterList & parameterList,
 	drive_pose_next_free_cache_[table] = next_free_id;
 	drive_pose_cache_[table_id] = sampled_pose.pose;
 
-	ROS_INFO_STREAM(__func__<<": new pose with name: "<<table_id);
+	ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": new pose with name: "<<table_id);
 
 	return table_id;
 }

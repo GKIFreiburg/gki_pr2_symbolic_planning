@@ -26,7 +26,7 @@ double compute_value(
 	try
 	{
 		ROS_DEBUG_STREAM(__PRETTY_FUNCTION__<<": starting");
-		planner_modules_pr2::ManipulationPlanningPtr p = planner_modules_pr2::ManipulationPlanning::instance();
+		planner_modules_pr2::ManipulationPlanningPtr p = ManipulationPlanning::instance();
 		double cost = p->pickup(scene, object_name, arm_prefix, table_name);
 		ROS_DEBUG_STREAM(__PRETTY_FUNCTION__<<": done");
 		return cost;

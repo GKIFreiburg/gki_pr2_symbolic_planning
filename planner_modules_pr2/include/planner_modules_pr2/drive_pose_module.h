@@ -10,6 +10,12 @@
 #include <actionlib/client/simple_action_client.h>
 #include <planner_modules_pr2/EmptyAction.h>
 
+namespace planner_modules_pr2
+{
+
+namespace drive_pose
+{
+
 // Look up surface id in cache and return corresponding pose
 bool lookup_pose_from_surface_id(const std::string& surface,
 		geometry_msgs::PoseStamped& pose);
@@ -21,6 +27,10 @@ void set_poses_on_param(const std::string& name_space,
 // Fetch drive poses from param and store in cache again
 void fetch_poses_from_param(const std::string& name_space, const std::string& surface,
 		std::map<std::string, geometry_msgs::PoseStamped>& drive_poses);
+
+} /* namespace drive_pose */
+
+} /* namespace planner_modules_pr2 */
 
 #ifdef __cplusplus
 extern "C" {

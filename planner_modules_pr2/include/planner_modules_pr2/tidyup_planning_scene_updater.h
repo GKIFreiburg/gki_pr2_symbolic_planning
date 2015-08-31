@@ -55,6 +55,8 @@ public:
 			const string& poseName,
 			numericalFluentCallbackType numericalFluentCallback);
 
+	const string& getPlanningFrame();
+
 	planning_scene::PlanningScenePtr getEmptyScene();
 
 	planning_scene::PlanningScenePtr getCurrentScene(

@@ -34,13 +34,21 @@ TidyupPlanningSceneUpdaterPtr TidyupPlanningSceneUpdater::instance()
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
 {
+	defaultAttachPose.position.x = 0.032;
+	defaultAttachPose.position.y = 0.015;
+	defaultAttachPose.position.z = 0.0;
+	defaultAttachPose.orientation.x = 0.707;
+	defaultAttachPose.orientation.y = -0.106;
+	defaultAttachPose.orientation.z = -0.690;
+	defaultAttachPose.orientation.w = 0.105;
+
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	scene_monitor->requestPlanningSceneState("/get_planning_scene");
 
 	ros::NodeHandle nh("~");
 	scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("tfd_planning/planning_scene", 1, true);
 
-	ROS_INFO("%s initialized.\n", logName.c_str());
+	ROS_INFO_STREAM(logName<<": initialized.");
 }
 
 TidyupPlanningSceneUpdater::~TidyupPlanningSceneUpdater()
@@ -117,6 +125,11 @@ bool TidyupPlanningSceneUpdater::readObjects(
 		}
 	}
 	return true;
+}
+
+const string& TidyupPlanningSceneUpdater::getPlanningFrame()
+{
+	return scene_monitor->getPlanningScene()->getPlanningFrame();
 }
 
 planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getEmptyScene()
