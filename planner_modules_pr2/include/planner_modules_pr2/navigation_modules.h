@@ -77,7 +77,7 @@ int navigation_effect(
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed,
-        vector<double> & writtenVars);
+		vector<double> & writtenVars);
 
 #ifdef __cplusplus
 }
