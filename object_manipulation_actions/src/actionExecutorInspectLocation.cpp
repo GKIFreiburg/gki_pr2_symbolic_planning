@@ -23,12 +23,13 @@ namespace object_manipulation_actions
 
 void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() >= 4);
+	ROS_ASSERT(arguments.size() >= 5);
 	action_name_ 				= arguments[0];
 	action_topic_ork_ps_     	= arguments[1];
 	action_topic_point_head_ 	= arguments[2];
+	pointing_frame_						 = arguments[3];
 
-	for (int i = 2; i < arguments.size(); i++)
+	for (int i = 4; i < arguments.size(); i++)
 	{
 		predicate_names_.push_back(arguments[i]);
 	}
@@ -57,7 +58,6 @@ void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & a
 	// which needs the initialize the robot description - takes time)
 	// psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
 	psi_.reset(new symbolic_planning_utils::PlanningSceneService());
-
 }
 
 bool ActionExecutorInspectLocation::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -172,7 +172,7 @@ bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseSt
 	pointHeadGoal.pointing_axis.x = 1;
 	pointHeadGoal.pointing_axis.y = 0;
 	pointHeadGoal.pointing_axis.z = 0;
-	pointHeadGoal.pointing_frame = "head_mount_link";
+	pointHeadGoal.pointing_frame = pointing_frame_;
 
 	actionPointHead_->sendGoal(pointHeadGoal);
 
