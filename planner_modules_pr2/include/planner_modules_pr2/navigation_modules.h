@@ -66,24 +66,6 @@ extern "C" {
 
 void navigation_init(int argc, char** argv);
 
-//double path_cost(
-//		const modules::ParameterList& parameterList,
-//		modules::predicateCallbackType predicateCallback,
-//		modules::numericalFluentCallbackType numericalFluentCallback,
-//		int relaxed);
-//
-//double path_cost_grounding(
-//		const modules::ParameterList& parameterList,
-//		modules::predicateCallbackType predicateCallback,
-//		modules::numericalFluentCallbackType numericalFluentCallback,
-//		int relaxed);
-//
-//double path_condition_grounding(
-//		const modules::ParameterList& parameterList,
-//		modules::predicateCallbackType predicateCallback,
-//		modules::numericalFluentCallbackType numericalFluentCallback,
-//		int relaxed);
-
 double navigation_cost(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,

@@ -60,28 +60,6 @@ string create_cache_key(
 	}
 }
 
-void navstack_init(int argc, char** argv)
-{
-	ros::NodeHandle nhPriv("~");
-	nhPriv.param("trans_speed", linear_velocity, linear_velocity);
-	nhPriv.param("rot_speed", angular_velocity, angular_velocity);
-
-	// init service query for make plan
-	string service_name = "move_base_node/make_plan";
-	ros::NodeHandle nh;
-
-	make_plan_service = nh.serviceClient<nav_msgs::GetPlan>(service_name, true);
-	if(!make_plan_service)
-	{
-		ROS_FATAL("Could not initialize get plan service from %s (client name: %s)", service_name.c_str(), make_plan_service.getService().c_str());
-	}
-	ROS_INFO("Service connection to %s established.", make_plan_service.getService().c_str());
-
-	cost_cache.reset(new ModuleParamCache<double>("navigation/cost"));
-
-	ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": initialized.");
-}
-
 double get_plan_cost(const std::vector<geometry_msgs::PoseStamped>& plan)
 {
 	if(plan.empty())
@@ -120,6 +98,29 @@ double compute_value(planning_scene::PlanningScenePtr scene, nav_msgs::GetPlan& 
 
 using namespace planner_modules_pr2;
 using namespace planner_modules_pr2::navigation;
+
+void navigation_init(int argc, char** argv)
+{
+	ros::NodeHandle nhPriv("~");
+	nhPriv.param("trans_speed", linear_velocity, linear_velocity);
+	nhPriv.param("rot_speed", angular_velocity, angular_velocity);
+
+	// init service query for make plan
+	string service_name = "move_base_node/make_plan";
+	ros::NodeHandle nh;
+
+	make_plan_service = nh.serviceClient<nav_msgs::GetPlan>(service_name, true);
+	if(!make_plan_service)
+	{
+		ROS_FATAL("Could not initialize get plan service from %s (client name: %s)", service_name.c_str(), make_plan_service.getService().c_str());
+	}
+	ROS_INFO("Service connection to %s established.", make_plan_service.getService().c_str());
+
+	cost_cache.reset(new ModuleParamCache<double>("navigation/cost"));
+
+	ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": initialized.");
+}
+
 double navigation_cost(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
