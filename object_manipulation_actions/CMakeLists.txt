@@ -52,6 +52,8 @@ add_library(object_manipulation_actions
     # Grounding Stuff
     src/actionExecutorInspectTableGrounding.cpp
     src/actionExecutorLiftTorsoGrounding.cpp
+    src/actionExecutorPickupObjectGrounding.cpp
+    src/actionExecutorPutdownObjectGrounding.cpp
 )
 
 ## Add cmake target dependencies of the executable/library

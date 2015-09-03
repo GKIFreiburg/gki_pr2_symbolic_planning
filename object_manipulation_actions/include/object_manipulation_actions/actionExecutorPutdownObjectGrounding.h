@@ -1,5 +1,5 @@
-#ifndef ACTION_EXECUTOR_PUTDOWN_OBJECT_H
-#define ACTION_EXECUTOR_PUTDOWN_OBJECT_H
+#ifndef ACTION_EXECUTOR_PUTDOWN_OBJECT_GROUNDING_H
+#define ACTION_EXECUTOR_PUTDOWN_OBJECT_GROUNDING_H
 
 #include "continual_planning_executive/actionExecutorInterface.h"
 #include "continual_planning_executive/symbolicState.h"
@@ -12,12 +12,12 @@
 namespace object_manipulation_actions
 {
 
-	class ActionExecutorPutdownObject: public continual_planning_executive::ActionExecutorInterface
+	class ActionExecutorPutdownObjectGrounding: public continual_planning_executive::ActionExecutorInterface
 	{
     	public:
 
-		ActionExecutorPutdownObject();
-		~ActionExecutorPutdownObject();
+		ActionExecutorPutdownObjectGrounding();
+		~ActionExecutorPutdownObjectGrounding();
 
 		virtual void initialize(const std::deque<std::string> & arguments);
 

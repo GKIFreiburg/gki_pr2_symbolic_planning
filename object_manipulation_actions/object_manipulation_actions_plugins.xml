@@ -37,4 +37,10 @@
   <class name="object_manipulation_actions/action_executor_lift_torso_grounding" type="object_manipulation_actions::ActionExecutorLiftTorsoGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>Action executor for lifting torso when in front of table.</description>
   </class>
+  <class name="object_manipulation_actions/action_executor_pickup_object_grounding" type="object_manipulation_actions::ActionExecutorPickupObjectGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for picking up objects</description>
+  </class>
+  <class name="object_manipulation_actions/action_executor_putdown_object_grounding" type="object_manipulation_actions::ActionExecutorPutdownObjectGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
+    <description>Action executor for putting down objects</description>
+  </class>
 </library>
