@@ -41,72 +41,6 @@ namespace tidyup_state_creators
         return true;
     }
 
-    bool StateCreatorArmsStatus::checkIfArmInTargetPosition(
-    		moveit::planning_interface::MoveGroup* group, const std::string& target)
-    {
-    	// set current_joint_values
-		std::vector<double> current_joint_values = group->getCurrentJointValues();
-		std::vector<std::string> joint_names = group->getJoints();
-
-		// set target_joint_values
-		std::vector<double> target_joint_values;
-		ROS_ASSERT(target_joint_values.size() == 0);
-		geometry_msgs::PoseStamped pose;
-
-		if (group->setNamedTarget(target)) // arms_at_side
-		{
-			const robot_state::RobotState& rs = group->getJointValueTarget();
-			const robot_state::JointModelGroup* joint_model_group = rs.getJointModelGroup(group->getName());
-			rs.copyJointGroupPositions(joint_model_group, target_joint_values);
-		}
-		else if (tidyup_utils::getPoseStampedFromParam(target, pose)) // arms_at_front
-		{
-			robot_state::RobotStatePtr rs = group->getCurrentState();
-			rs->update(true);
-			const robot_state::JointModelGroup* joint_model_group = rs->getJointModelGroup(group->getName());
-			geometry_msgs::PoseStamped pose_transformed;
-
-			try {
-				tf_.waitForTransform("/map", pose.header.frame_id, pose.header.stamp,
-						ros::Duration(0.5));
-				tf_.transformPose("/map", pose, pose_transformed);
-			} catch (tf::TransformException& ex) {
-				ROS_ERROR("%s", ex.what());
-				return false;
-			}
-
-			if (!rs->setFromIK(joint_model_group, pose_transformed.pose, 10, 0.5))
-			{
-				ROS_ERROR("StateCreatorArmsStatus::%s: Could not compute IK", __func__);
-				return false;
-			}
-				rs->copyJointGroupPositions(joint_model_group, target_joint_values);
-		}
-		else
-		{
-			ROS_ERROR("StateCreatorArmsStatus::%s: Could not determine target joint values", __func__);
-			return false;
-		}
-
-  		// Error needed since joints never reach exactly the given values.
-  		double error = 0.02;
-  		ROS_ASSERT(current_joint_values.size() == target_joint_values.size());
-
-  		for (int i = 0; i < current_joint_values.size(); i++)
-  		{
-  			// normalize values
-  			normalizeJointValue(current_joint_values[i]);
-  			normalizeJointValue(target_joint_values[i]);
-
-//  			ROS_INFO("StateCreatorArmsStatus::%s: Target: %s || %s [current] - [target] : %lf - %lf",__func__, target.c_str(),
-//  					 joint_names[i].c_str(),
-//  					 current_joint_values[i], target_joint_values[i]);
-  			if (std::fabs((double)current_joint_values[i] - (double)target_joint_values[i]) > error)
-  				return false;
-  		}
-    	return true;
-    }
-
     void StateCreatorArmsStatus::setArmStatusInSymbolicState(
     		SymbolicState& state, moveit::planning_interface::MoveGroup* group)
     {
@@ -143,6 +77,60 @@ namespace tidyup_state_creators
     	state.setObjectFluent(predicate_name_, group->getName(), predicate_unkown_);
     }
 
+    bool StateCreatorArmsStatus::checkIfArmInTargetPosition(
+    		moveit::planning_interface::MoveGroup* group, const std::string& target)
+    {
+    	// set current_joint_values
+		std::vector<double> current_joint_values = group->getCurrentJointValues();
+		std::vector<std::string> joint_names = group->getJoints();
+
+		// set target_joint_values
+		std::vector<double> target_joint_values;
+		ROS_ASSERT(target_joint_values.size() == 0);
+		geometry_msgs::PoseStamped pose;
+
+		// arms_at_side is a named target in the srdf file (since it is defined using joint values)
+		if (group->setNamedTarget(target)) // arms_at_side
+		{
+			const robot_state::RobotState& rs = group->getJointValueTarget();
+			const robot_state::JointModelGroup* joint_model_group = rs.getJointModelGroup(group->getName());
+			rs.copyJointGroupPositions(joint_model_group, target_joint_values);
+		}
+
+		// only valid for arms_at_front
+		else if (tidyup_utils::getPoseStampedFromParam(target, pose))
+		{
+			group->setPoseTarget(pose);
+			robot_state::RobotStatePtr rs = group->getCurrentState();
+			rs->update(true);
+			const robot_state::JointModelGroup* joint_model_group = rs->getJointModelGroup(group->getName());
+			rs->copyJointGroupPositions(joint_model_group, target_joint_values);
+		}
+		else
+		{
+			ROS_ERROR("StateCreatorArmsStatus::%s: Could not determine target joint values", __func__);
+			return false;
+		}
+
+  		// Error needed since joints never reach exactly the given values.
+  		double error = 0.02;
+  		ROS_ASSERT(current_joint_values.size() == target_joint_values.size());
+
+  		for (int i = 0; i < current_joint_values.size(); i++)
+  		{
+  			// normalize values
+  			normalizeJointValue(current_joint_values[i]);
+  			normalizeJointValue(target_joint_values[i]);
+
+//  			ROS_INFO("StateCreatorArmsStatus::%s: Target: %s || %s [current] - [target] : %lf - %lf",__func__, target.c_str(),
+//  					 joint_names[i].c_str(),
+//  					 current_joint_values[i], target_joint_values[i]);
+  			if (std::fabs((double)current_joint_values[i] - (double)target_joint_values[i]) > error)
+  				return false;
+  		}
+    	return true;
+    }
+
     void StateCreatorArmsStatus::normalizeJointValue(double& jointValue)
     {
 		// taking care of joints that can rotate 360 degrees (continuous type)
@@ -150,12 +138,12 @@ namespace tidyup_state_creators
 		// joint values should be in the range of [-PI, +PI]
 		while (fabs(jointValue) > M_PI)
 		{
-			ROS_INFO("StateCreatorArmsStatus::%s: joint Value: %lf", __func__, jointValue);
+//			ROS_INFO("StateCreatorArmsStatus::%s: joint Value: %lf", __func__, jointValue);
 			if (jointValue > 0) // positive
 				jointValue = jointValue - 2*M_PI;
 			else // negative
 				jointValue = jointValue + 2*M_PI;
-			ROS_INFO("StateCreatorArmsStatus::%s: normalized joint Value: %lf", __func__, jointValue);
+//			ROS_INFO("StateCreatorArmsStatus::%s: normalized joint Value: %lf", __func__, jointValue);
 		}
     }
 };

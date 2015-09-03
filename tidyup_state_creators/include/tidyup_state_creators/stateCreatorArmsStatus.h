@@ -41,11 +41,11 @@ namespace tidyup_state_creators
 
     	    tf::TransformListener tf_;
 
-            // Check if arm group satisfies a named target position which is defined in the pr2.srdf
-            bool checkIfArmInTargetPosition(moveit::planning_interface::MoveGroup* group, const std::string& target);
-
             // Check all named target position for arm group and update arm-state in symbolic state
             void setArmStatusInSymbolicState(SymbolicState& state, moveit::planning_interface::MoveGroup* group);
+
+            // Check if arm group satisfies a named target position which is defined in the pr2.srdf
+            bool checkIfArmInTargetPosition(moveit::planning_interface::MoveGroup* group, const std::string& target);
 
             void normalizeJointValue(double& jointValue);
 
