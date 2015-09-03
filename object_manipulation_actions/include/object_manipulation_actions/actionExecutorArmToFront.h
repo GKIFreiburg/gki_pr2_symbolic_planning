@@ -28,8 +28,7 @@ namespace object_manipulation_actions
 
     		moveit::planning_interface::MoveItErrorCode executeArmToFront(
     				moveit::planning_interface::MoveGroup* group,
-    				const geometry_msgs::PoseStamped& pose,
-    				const std::string target);
+    				const geometry_msgs::PoseStamped& pose);
 
     };
 
