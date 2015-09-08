@@ -51,7 +51,6 @@ add_library(object_manipulation_actions
     src/actionExecutorLiftTorso.cpp
     # Grounding Stuff
     src/actionExecutorInspectTableGrounding.cpp
-    src/actionExecutorLiftTorsoGrounding.cpp
     src/actionExecutorPickupObjectGrounding.cpp
     src/actionExecutorPutdownObjectGrounding.cpp
 )
