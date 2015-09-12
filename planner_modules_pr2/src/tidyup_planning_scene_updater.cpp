@@ -221,8 +221,9 @@ void TidyupPlanningSceneUpdater::updateObjects(
 		{
 			// if this object is attached somewhere we need to detach it
 			const moveit::core::AttachedBody* attachedObject = scene->getCurrentStateNonConst().getAttachedBody(object_name);
-			scene->getCurrentStateNonConst().clearAttachedBody(movabelObjectIt->first);
+			ROS_ASSERT(attachedObject->getShapes().size() > 0);
 			world->addToObject(object_name, attachedObject->getShapes().front(), object_pose_eigen);
+			scene->getCurrentStateNonConst().clearAttachedBody(movabelObjectIt->first);
 		}
 		else if (exist_in_world)
 		{

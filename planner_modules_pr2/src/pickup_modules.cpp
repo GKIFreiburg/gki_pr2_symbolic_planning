@@ -125,6 +125,7 @@ double can_pickup(
 	// compute value
 	ros::WallTime compute_start_time = ros::WallTime::now();
 	planning_scene::PlanningScenePtr scene = psu->getCurrentScene(predicateCallback, numericalFluentCallback);
+	psu->visualize(scene);
 	value = compute_value(scene, object_name, arm_prefix, table_name);
 	ros::WallTime compute_end_time = ros::WallTime::now();
 
