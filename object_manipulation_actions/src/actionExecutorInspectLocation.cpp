@@ -115,29 +115,29 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 			add_tables, table_prefix, merge_tables))
 		return false;
 
-//	// turn head by given degrees - return value is ignored, since action is executed but reports error
-//	if (!executeTurnHead(degrees_))
-//		return false;
-//
-//	// execute visual detection to merge table
-//	merge_tables = true;
-//	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
-//	ros::Duration(1.0).sleep();
-//	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
-//			add_tables, table_prefix, merge_tables))
-//		return false;
-//
-//	// turn head by given degrees, this time in opposite direction
-//	if (!executeTurnHead(degrees_ * -1))
-//		return false;
-//
-//	// execute visual detection to merge table
-//	merge_tables = true;
-//	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
-//	ros::Duration(1.0).sleep();
-//	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
-//			add_tables, table_prefix, merge_tables))
-//		return false;
+	// turn head by given degrees - return value is ignored, since action is executed but reports error
+	if (!executeTurnHead(degrees_))
+		return false;
+
+	// execute visual detection to merge table
+	merge_tables = true;
+	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
+	ros::Duration(1.0).sleep();
+	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+			add_tables, table_prefix, merge_tables))
+		return false;
+
+	// turn head by given degrees, this time in opposite direction
+	if (!executeTurnHead(degrees_ * -1))
+		return false;
+
+	// execute visual detection to merge table
+	merge_tables = true;
+	expected_objects.assign(expected_objects_.begin(), expected_objects_.end());
+	ros::Duration(1.0).sleep();
+	if (!executeUpdatePlanningSceneFromORK(verify_planning_scene_update, expected_objects,
+			add_tables, table_prefix, merge_tables))
+		return false;
 
 	// After operation is done, point head again to table
 	if (!executePointHead(tablePose))
@@ -187,6 +187,18 @@ bool ActionExecutorInspectLocation::executePointHead(const geometry_msgs::PoseSt
 			//return false;
 		}
 	}
+
+	// store the joint value for the pointed head position, needed by turning head
+	std::vector<double> current_joint_values = head_group_->getCurrentJointValues();
+	std::vector<std::string> joint_names = head_group_->getJoints();
+
+	ROS_ASSERT(current_joint_values.size() == joint_names.size());
+	for (size_t i = 0; i < current_joint_values.size(); i++)
+	{
+		if (joint_names[i] == joint_name_head_yaw_)
+			pointed_head_joint_value_ = current_joint_values[i];
+	}
+
 	return true;
 }
 
@@ -254,7 +266,7 @@ bool ActionExecutorInspectLocation::executeTurnHead(const int degrees)
 	{
 		std::pair<std::string, double> jointValue;
 		if (joint_names[i] == joint_name_head_yaw_)
-			jointValue = std::make_pair(joint_names[i], radians);
+			jointValue = std::make_pair(joint_names[i], pointed_head_joint_value_ + radians);
 		else
 			jointValue = std::make_pair(joint_names[i], current_joint_values[i]);
 

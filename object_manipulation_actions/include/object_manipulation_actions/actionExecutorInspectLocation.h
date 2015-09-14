@@ -54,6 +54,7 @@ namespace object_manipulation_actions
         // Parameters
         // TurnHead-Parameters
         int degrees_;
+        double pointed_head_joint_value_;
 
         // Action for pointing head
         bool executePointHead(const geometry_msgs::PoseStamped tablePose);

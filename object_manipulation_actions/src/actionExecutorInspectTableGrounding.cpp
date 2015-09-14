@@ -180,6 +180,19 @@ bool ActionExecutorInspectTableGrounding::executePointHead(const geometry_msgs::
 			//return false;
 		}
 	}
+
+	// store the joint value for the pointed head position, needed by turning head
+	std::vector<double> current_joint_values = head_group_->getCurrentJointValues();
+	std::vector<std::string> joint_names = head_group_->getJoints();
+
+	ROS_ASSERT(current_joint_values.size() == joint_names.size());
+	for (size_t i = 0; i < current_joint_values.size(); i++)
+	{
+		if (joint_names[i] == joint_name_head_yaw_)
+			pointed_head_joint_value_ = current_joint_values[i];
+	}
+
+
 	return true;
 }
 
@@ -247,8 +260,9 @@ bool ActionExecutorInspectTableGrounding::executeTurnHead(const int degrees)
 	{
 		std::pair<std::string, double> jointValue;
 		if (joint_names[i] == joint_name_head_yaw_)
-			jointValue = std::make_pair(joint_names[i], radians);
+			jointValue = std::make_pair(joint_names[i], pointed_head_joint_value_ + radians);
 		else
+			// for pitch, leave unchanged
 			jointValue = std::make_pair(joint_names[i], current_joint_values[i]);
 
 		ROS_DEBUG("ActionExecutorInspectTableGrounding::%s: %s - %lf - old value: %lf", __func__, jointValue.first.c_str(),
