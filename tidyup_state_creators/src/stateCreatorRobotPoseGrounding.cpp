@@ -29,15 +29,11 @@ StateCreatorRobotPoseGrounding::StateCreatorRobotPoseGrounding()
 		if (!nhPriv.getParam("nav_base_local_planner_ns",
 				base_local_planner_ns))
 		{
-			ROS_WARN(
-					"nav_target_tolerance_relative_to_move_base set, but nav_base_local_planner_ns not set - trying to estimate");
+			ROS_WARN("nav_target_tolerance_relative_to_move_base set, but nav_base_local_planner_ns not set - trying to estimate");
 			std::string local_planner;
-			if (!nh.getParam("move_base_node/base_local_planner", local_planner)
-					&& !nh.getParam("move_base/base_local_planner",
-							local_planner))
+			if (!nh.getParam("move_base_node/base_local_planner", local_planner) && !nh.getParam("move_base/base_local_planner", local_planner))
 			{
-				ROS_ERROR(
-						"move_base(_node)/base_local_planner not set - falling back to absolute mode.");
+				ROS_ERROR("move_base(_node)/base_local_planner not set - falling back to absolute mode.");
 			}
 			else
 			{
@@ -47,8 +43,7 @@ StateCreatorRobotPoseGrounding::StateCreatorRobotPoseGrounding()
 					base_local_planner_ns = local_planner;
 				else
 					base_local_planner_ns = local_planner.substr(x + 1);
-				ROS_INFO("Estimated base_local_planner_ns to %s.",
-						base_local_planner_ns.c_str());
+				ROS_INFO("Estimated base_local_planner_ns to %s.", base_local_planner_ns.c_str());
 			}
 		}
 
@@ -161,76 +156,18 @@ bool StateCreatorRobotPoseGrounding::fillState(SymbolicState & state)
 	ROS_ASSERT(jointValues.size() == 1);
 	state.setNumericalFluent(robot_torso_position_, "", jointValues[0]);
 
-	// 2. Set robot-near-table predicate if appropriate
-	string table_name;
-	geometry_msgs::PoseStamped table_pose;
-	tf::StampedTransform transform_map_torso;
-	try
-	{
-		tf_.lookupTransform("/map", "/torso_lift_link", ros::Time(0), transform_map_torso);
-	} catch (tf::TransformException& ex)
-	{
-		ROS_ERROR("%s", ex.what());
-		return false;
-	}
-
-	pair<SymbolicState::TypedObjectConstIterator,
-			SymbolicState::TypedObjectConstIterator> targets =
-			state.getTypedObjects().equal_range("table");
-	for (SymbolicState::TypedObjectConstIterator it = targets.first;
-			it != targets.second; it++)
-	{
-		// it->first = objectType, it->second = ObjectName
-		table_name = it->second;
-
-		// fetch table pose from symbolic state
-		if (!symbolic_planning_utils::extractPoseStampedFromSymbolicState(state,
-				table_name, table_pose))
-		{
-			ROS_ERROR("StateCreatorRobotPoseGrounding::%s: could not extract pose for target object: %s.",
-					__func__, table_name.c_str());
-			continue;
-		}
-
-		ROS_ASSERT(table_pose.header.frame_id == "/map");
-		InverseCapabilityOcTree* tree = inv_cap_maps_[table_name];
-		ROS_ASSERT(tree);
-
-		// fetch torso pose and convert into table frame
-		tf::Pose transform_map_table, transform_table_torso;
-		tf::poseMsgToTF(table_pose.pose, transform_map_table);
-
-		transform_table_torso = transform_map_table.inverseTimes(transform_map_torso);
-//		tf::Pose torso_table = transformTorsoInTableFrame(table_pose);
-
-//		geometry_msgs::Pose debug;
-//		tf::poseTFToMsg(torso_table, debug);
-//		ROS_INFO_STREAM("StateCreatorRobotPoseGrounding::" << __func__ << ": " << debug);
-
-		// look if there is a match in inv cap map
-		InverseCapability inv = tree->getNodeInverseCapability(transform_table_torso.getOrigin().x(),
-				transform_table_torso.getOrigin().y(),
-				transform_table_torso.getOrigin().z());
-
-		const std::map<double, double>& thetas = inv.getThetasPercent();
-
-		// if there exists a theta, means we have an inverse reachability index,
-		// indicating that a part of the table can be reached -> we are close to table
-		if (thetas.size() > 0)
-		{
-			ROS_INFO("StateCreatorRobotPoseGrounding::%s: Robot is near '%s' !", __func__, table_name.c_str());
-			state.setBooleanPredicate(prediate_robot_near_table_, table_name, true);
-		}
-		else
-			state.setBooleanPredicate(prediate_robot_near_table_, table_name, false);
-	}
-
 //	// 2. Set robot-near-table predicate if appropriate
-//	// if robot is closer than 1m from table, than set predicate
-//	// TODO: use inv reach maps!
 //	string table_name;
 //	geometry_msgs::PoseStamped table_pose;
-//	double table_radius = 1.0;
+//	tf::StampedTransform transform_map_torso;
+//	try
+//	{
+//		tf_.lookupTransform("/map", "/torso_lift_link", ros::Time(0), transform_map_torso);
+//	} catch (tf::TransformException& ex)
+//	{
+//		ROS_ERROR("%s", ex.what());
+//		return false;
+//	}
 //
 //	pair<SymbolicState::TypedObjectConstIterator,
 //			SymbolicState::TypedObjectConstIterator> targets =
@@ -245,32 +182,47 @@ bool StateCreatorRobotPoseGrounding::fillState(SymbolicState & state)
 //		if (!symbolic_planning_utils::extractPoseStampedFromSymbolicState(state,
 //				table_name, table_pose))
 //		{
-//			ROS_ERROR("%s: could not extract pose for target object: %s.",
+//			ROS_ERROR("StateCreatorRobotPoseGrounding::%s: could not extract pose for target object: %s.",
 //					__func__, table_name.c_str());
 //			continue;
 //		}
 //
-//		// FIXME: replace with ros_assertion?
-//		if (table_pose.header.frame_id != "/map")
+//		ROS_ASSERT(table_pose.header.frame_id == "/map");
+//		if (inv_cap_maps_.find(table_name) == inv_cap_maps_.end())
 //		{
-//			ROS_ERROR("Target pose %s had frame-id: %s - should be /map.",
-//					table_name.c_str(), table_pose.header.frame_id.c_str());
+//			ROS_ERROR_STREAM("StateCreatorRobotPoseGrounding::"<<__func__<<": could not load inverse reachability map for "<<table_name);
 //			continue;
 //		}
+//		InverseCapabilityOcTree* tree = inv_cap_maps_[table_name];
+//		ROS_ASSERT(tree);
 //
-//		// compute dXY between current pose and table
-//		tf::Transform targetTransform; //(btQuaternion(qx, qy, qz, qw), btVector3(posX, posY, 0.0));
-//		tf::poseMsgToTF(table_pose.pose, targetTransform);
-//		tf::Transform deltaTransform = targetTransform.inverseTimes(transform);
+//		// fetch torso pose and convert into table frame
+//		tf::Pose transform_map_table, transform_table_torso;
+//		tf::poseMsgToTF(table_pose.pose, transform_map_table);
 //
-//		double dDist = hypot(deltaTransform.getOrigin().x(),
-//				deltaTransform.getOrigin().y());
+//		transform_table_torso = transform_map_table.inverseTimes(transform_map_torso);
+////		tf::Pose torso_table = transformTorsoInTableFrame(table_pose);
 //
-//		if (dDist < table_radius)
+////		geometry_msgs::Pose debug;
+////		tf::poseTFToMsg(torso_table, debug);
+////		ROS_INFO_STREAM("StateCreatorRobotPoseGrounding::" << __func__ << ": " << debug);
+//
+//		// look if there is a match in inv cap map
+//		InverseCapability inv = tree->getNodeInverseCapability(transform_table_torso.getOrigin().x(),
+//				transform_table_torso.getOrigin().y(),
+//				transform_table_torso.getOrigin().z());
+//
+//		const std::map<double, double>& thetas = inv.getThetasPercent();
+//
+//		// if there exists a theta, means we have an inverse reachability index,
+//		// indicating that a part of the table can be reached -> we are close to table
+//		if (thetas.size() > 0)
 //		{
-//			ROS_INFO("Robot is near table: %s !", table_name.c_str());
+//			ROS_INFO("StateCreatorRobotPoseGrounding::%s: Robot is near '%s' !", __func__, table_name.c_str());
 //			state.setBooleanPredicate(prediate_robot_near_table_, table_name, true);
 //		}
+//		else
+//			state.setBooleanPredicate(prediate_robot_near_table_, table_name, false);
 //	}
 
 	return true;
