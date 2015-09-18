@@ -36,6 +36,8 @@ namespace tidyup_state_creators
             string named_target_right_arm_to_front_;
             string named_target_left_arm_to_front_;
 
+            double tolerance_;
+
             moveit::planning_interface::MoveGroup* right_arm_;
             moveit::planning_interface::MoveGroup* left_arm_;
 

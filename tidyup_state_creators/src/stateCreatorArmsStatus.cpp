@@ -4,6 +4,7 @@
 #include <tidyup_utils/stringutil.h>
 #include <tidyup_utils/get_pose_stamped_from_param.h>
 #include <cmath>
+#include <angles/angles.h>
 
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorArmsStatus, continual_planning_executive::StateCreator)
 
@@ -32,6 +33,8 @@ namespace tidyup_state_creators
 
         right_arm_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
         left_arm_  = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+
+        tolerance_ = 0.02;
     }
 
     bool StateCreatorArmsStatus::fillState(SymbolicState & state)
@@ -95,40 +98,76 @@ namespace tidyup_state_creators
 			const robot_state::RobotState& rs = group->getJointValueTarget();
 			const robot_state::JointModelGroup* joint_model_group = rs.getJointModelGroup(group->getName());
 			rs.copyJointGroupPositions(joint_model_group, target_joint_values);
+
+	  		ROS_ASSERT(current_joint_values.size() == target_joint_values.size());
+
+	  		// check the current joint positions against the predefined positions in the srdf file
+	  		for (int i = 0; i < current_joint_values.size(); i++)
+	  		{
+	  			// normalize values
+	  			normalizeJointValue(current_joint_values[i]);
+	  			normalizeJointValue(target_joint_values[i]);
+
+//	  			ROS_INFO("StateCreatorArmsStatus::%s: Target: %s || %s [current] - [target] : %lf - %lf",__func__, target.c_str(),
+//	  					 joint_names[i].c_str(),
+//	  					 current_joint_values[i], target_joint_values[i]);
+				// tolerance needed since joints never reach exactly the given values.
+	  			if (std::fabs((double)current_joint_values[i] - (double)target_joint_values[i]) > tolerance_)
+	  				return false;
+	  		}
+	    	return true;
 		}
 
 		// only valid for arms_at_front
+		// fetch desired at_to_front pose from param server
 		else if (tidyup_utils::getPoseStampedFromParam(target, pose))
 		{
-			group->setPoseTarget(pose);
-			robot_state::RobotStatePtr rs = group->getCurrentState();
-			rs->update(true);
-			const robot_state::JointModelGroup* joint_model_group = rs->getJointModelGroup(group->getName());
-			rs->copyJointGroupPositions(joint_model_group, target_joint_values);
+			geometry_msgs::PoseStamped current_pose = group->getCurrentPose();
+
+			// transform pose from param to the same frame as the current pose
+			geometry_msgs::PoseStamped pose_transformed;
+			try {
+				tf_.waitForTransform(current_pose.header.frame_id, pose.header.frame_id, pose.header.stamp,
+						ros::Duration(0.5));
+				tf_.transformPose(current_pose.header.frame_id, pose, pose_transformed);
+			} catch (tf::TransformException& ex) {
+				ROS_ERROR("%s", ex.what());
+				return false;
+			}
+
+			// compute the difference between both poses, by computing the inverse transform
+			tf::Transform current, target, result;
+			tf::poseMsgToTF(pose_transformed.pose, target);
+			tf::poseMsgToTF(current_pose.pose, current);
+
+			result = current.inverseTimes(target);
+			geometry_msgs::Pose res;
+			tf::poseTFToMsg(result, res);
+
+			bool ret = true;
+
+			// check if difference is smaller than tolerance value
+			if (res.position.x > tolerance_)
+				ret = false;
+			if (res.position.y > tolerance_)
+				ret = false;
+			if (res.position.z > tolerance_)
+				ret = false;
+			if (res.orientation.x > tolerance_)
+				ret = false;
+			if (res.orientation.y > tolerance_)
+				ret = false;
+			if (res.orientation.z > tolerance_)
+				ret = false;
+			// w is always 1, do not need to verify
+//			if (res.orientation.w > tolerance_)
+//				ret = false;
+
+			return ret;
 		}
-		else
-		{
-			ROS_ERROR("StateCreatorArmsStatus::%s: Could not determine target joint values", __func__);
-			return false;
-		}
 
-  		// Error needed since joints never reach exactly the given values.
-  		double error = 0.02;
-  		ROS_ASSERT(current_joint_values.size() == target_joint_values.size());
-
-  		for (int i = 0; i < current_joint_values.size(); i++)
-  		{
-  			// normalize values
-  			normalizeJointValue(current_joint_values[i]);
-  			normalizeJointValue(target_joint_values[i]);
-
-//  			ROS_INFO("StateCreatorArmsStatus::%s: Target: %s || %s [current] - [target] : %lf - %lf",__func__, target.c_str(),
-//  					 joint_names[i].c_str(),
-//  					 current_joint_values[i], target_joint_values[i]);
-  			if (std::fabs((double)current_joint_values[i] - (double)target_joint_values[i]) > error)
-  				return false;
-  		}
-    	return true;
+		ROS_ERROR("StateCreatorArmsStatus::%s: Could not determine target joint values", __func__);
+		return false;
     }
 
     void StateCreatorArmsStatus::normalizeJointValue(double& jointValue)
