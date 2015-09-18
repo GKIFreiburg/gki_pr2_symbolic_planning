@@ -6,9 +6,9 @@
 #include <utility>
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
-//#include <sys/times.h>
-//#include <tf/tf.h>
-//#include <tf/transform_listener.h>
+
+#include <pluginlib/class_loader.h>
+#include <nav_core/base_global_planner.h>
 
 #include "planner_modules_pr2/module_param_cache.h"
 #include "planner_modules_pr2/drive_pose_module.h"
@@ -42,6 +42,10 @@ double angular_velocity = angles::from_degrees(30);
 
 // Using a cache of queried path costs to prevent calling the path planning service multiple times
 boost::shared_ptr<ModuleParamCache<double> > cost_cache;
+
+boost::shared_ptr<tf::TransformListener> tf_listener;
+boost::shared_ptr<costmap_2d::Costmap2DROS> costmap;
+boost::shared_ptr<nav_core::BaseGlobalPlanner> path_planner;
 
 string create_cache_key(
 		const geometry_msgs::Pose & startPose,
@@ -101,14 +105,54 @@ using namespace planner_modules_pr2::navigation;
 
 void navigation_init(int argc, char** argv)
 {
+	string planner_name = "NavfnRos";
+	ros::NodeHandle move_base_nh("move_base_node");
+	ros::NodeHandle private_nh("~");
+	pluginlib::ClassLoader<nav_core::BaseGlobalPlanner> bgp_loader_("nav_core", "nav_core::BaseGlobalPlanner");
+
+	XmlRpc::XmlRpcValue all_params;
+	ros::param::get("move_base_node", all_params);
+	private_nh.setParam("move_base_node", all_params);
+	private_nh.getParam("base_global_planner", planner_name);
+
+	tf_listener.reset(new tf::TransformListener());
+	costmap.reset(new costmap_2d::Costmap2DROS("global_costmap", *(tf_listener.get())));
+	costmap->pause();
+
+	//initialize the global planner
+	try {
+		//check if a non fully qualified name has potentially been passed in
+		if(!bgp_loader_.isClassAvailable(planner_name))
+		{
+			std::vector<std::string> classes = bgp_loader_.getDeclaredClasses();
+			for(unsigned int i = 0; i < classes.size(); ++i)
+			{
+				if(planner_name == bgp_loader_.getName(classes[i]))
+				{
+					//if we've found a match... we'll get the fully qualified name and break out of the loop
+					ROS_WARN("Planner specifications should now include the package name. You are using a deprecated API. Please switch from %s to %s in your yaml file.", planner_name.c_str(), classes[i].c_str());
+					planner_name = classes[i];
+					break;
+				}
+			}
+		}
+
+		path_planner = bgp_loader_.createInstance(planner_name);
+		path_planner->initialize(bgp_loader_.getName(planner_name), costmap.get());
+	} catch (const pluginlib::PluginlibException& ex)
+	{
+		ROS_FATAL("Failed to create the %s planner, are you sure it is properly registered and that the containing library is built? Exception: %s", planner_name.c_str(), ex.what());
+		exit(1);
+	}
+
 	ros::NodeHandle nhPriv("~");
 	nhPriv.param("trans_speed", linear_velocity, linear_velocity);
 	nhPriv.param("rot_speed", angular_velocity, angular_velocity);
 
+
 	// init service query for make plan
 	string service_name = "move_base_node/make_plan";
 	ros::NodeHandle nh;
-
 	make_plan_service = nh.serviceClient<nav_msgs::GetPlan>(service_name, true);
 	if(!make_plan_service)
 	{
