@@ -39,13 +39,13 @@ add_library(tidyup_state_creators
     src/goalCreatorTidyupInitialize.cpp
     src/goalCreatorLoadTablesIntoPlanningScene.cpp
     src/goalCreatorFromPlanningScene.cpp
-    src/goalCreatorMoveObjectsToTable.cpp
+    src/goalCreatorDefineGoal.cpp
     src/StateAccessException.cpp
     ### Grounding stuff ###
     src/stateCreatorRobotPoseGrounding.cpp
     src/stateCreatorLiftTorsoGrounding.cpp
     src/goalCreatorTidyupInitializeGrounding.cpp
-    src/goalCreatorInspectObjects.cpp
+    src/goalCreatorDefineGoalGrounding.cpp
 )
     
 target_link_libraries(tidyup_state_creators
