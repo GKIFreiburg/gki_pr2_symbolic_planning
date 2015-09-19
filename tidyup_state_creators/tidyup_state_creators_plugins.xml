@@ -12,8 +12,8 @@
   <class name="tidyup_state_creators/goal_creator_from_planning_scene" type="tidyup_state_creators::GoalCreatorFromPlanningScene" base_class_type="continual_planning_executive::GoalCreator">
     <description>Asks the environment server for known collision objects and adds them to the initial state.</description>
   </class>
-    <class name="tidyup_state_creators/goal_creator_move_objects_to_table" type="tidyup_state_creators::GoalCreatorMoveObjectsToTable" base_class_type="continual_planning_executive::GoalCreator">
-    <description>Sets goal condition to move all objects to a certain table.</description>
+    <class name="tidyup_state_creators/goal_creator_define_goal" type="tidyup_state_creators::GoalCreatorDefineGoal" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Sets goal condition.</description>
   </class>
   <class name="tidyup_state_creators/state_creator_robot_pose" type="tidyup_state_creators::StateCreatorRobotPose" base_class_type="continual_planning_executive::StateCreator">
     <description>Sets the current robot pose in the state and possible at-style predicates.</description>
@@ -34,8 +34,8 @@
   <class name="tidyup_state_creators/goal_creator_tidyup_initialize_grounding" type="tidyup_state_creators::GoalCreatorTidyupInitializeGrounding" base_class_type="continual_planning_executive::GoalCreator">
     <description>Loads the types from the domain file.</description>
   </class>  
-  <class name="tidyup_state_creators/goal_creator_inspect_objects" type="tidyup_state_creators::GoalCreatorInspectObjects" base_class_type="continual_planning_executive::GoalCreator">
-    <description>Sets goal condition to inspect all objects by picking them up and holding them in front of the camera.</description>
+  <class name="tidyup_state_creators/goal_creator_define_goal_grounding" type="tidyup_state_creators::GoalCreatorDefineGoalGrounding" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Sets goal condition for grounding modules.</description>
   </class>
   <class name="tidyup_state_creators/state_creator_robot_pose_grounding" type="tidyup_state_creators::StateCreatorRobotPoseGrounding" base_class_type="continual_planning_executive::StateCreator">
     <description>Sets the current robot pose in the state and possible robot-near-table predicates.</description>
