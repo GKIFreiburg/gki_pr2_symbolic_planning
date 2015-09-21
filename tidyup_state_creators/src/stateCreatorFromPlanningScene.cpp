@@ -23,8 +23,6 @@ namespace tidyup_state_creators
 
     void StateCreatorFromPlanningScene::initialize(const std::deque<std::string>& arguments)
     {
-    	ROS_ASSERT(arguments.size() == 1);
-		environment_inspected_ = arguments[0];
     }
 
     bool StateCreatorFromPlanningScene::fillState(SymbolicState& state)
@@ -100,9 +98,6 @@ namespace tidyup_state_creators
             	ROS_WARN("StateCreatorFromPlanningScene::%s: setting predicate %s %s %s to false", __func__,
             			p_grasped.name.c_str(), p_grasped.parameters[0].c_str(), p_grasped.parameters[1].c_str());
             	state.setBooleanPredicate(p_grasped.name, p_grasped.parameters, false);
-
-            	// set *-inspected-recently to false - since object is grasped
-                state.setAllBooleanPredicates(environment_inspected_recently_, false);
             }
             p_grasped.parameters[1] = "right_arm";
             if (state.hasBooleanPredicate(p_grasped, &value))
@@ -110,9 +105,6 @@ namespace tidyup_state_creators
             	ROS_WARN("StateCreatorFromPlanningScene::%s: setting predicate %s %s %s to false", __func__,
 						p_grasped.name.c_str(), p_grasped.parameters[0].c_str(), p_grasped.parameters[1].c_str());
 				state.setBooleanPredicate(p_grasped.name, p_grasped.parameters, false);
-
-	        	// set *-inspected-recently to false - since object is grasped
-	            state.setAllBooleanPredicates(environment_inspected_recently_, false);
 			}
 
 
@@ -158,11 +150,7 @@ namespace tidyup_state_creators
                 pOn.parameters.push_back(closest_table);
                 state.setBooleanPredicate(pOn.name, pOn.parameters, false);
             }
-
-        	// set *-inspected-recently to false - since object is grasped
-            state.setAllBooleanPredicates(environment_inspected_recently_, false);
     	}
-
 
     	// remove all objects not present in planning scene from symbolic state and also the predicates are removed
     	for (std::set<std::string>::iterator it = objects_to_remove.begin(); it != objects_to_remove.end(); it++)

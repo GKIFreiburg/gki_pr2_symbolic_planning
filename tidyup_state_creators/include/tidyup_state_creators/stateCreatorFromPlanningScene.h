@@ -29,9 +29,6 @@ namespace tidyup_state_creators
 
 		private:
 
-            // corresponds to location-inspected-recently or table-inspected-recently, depending on domain file
-            std::string environment_inspected_recently_;
-
             moveit_msgs::PlanningScene planningScene_;
             ros::ServiceClient srvPlanningScene_;
             std::set<string> tables_;
