@@ -50,6 +50,18 @@ double can_putdown(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
+double can_putdown_grounding(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed);
+
+int putdown_effect(const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars);
+
 #ifdef __cplusplus
 }
 #endif

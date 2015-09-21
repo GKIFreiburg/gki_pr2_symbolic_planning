@@ -83,6 +83,7 @@ bool TidyupPlanningSceneUpdater::readObjects(
 	}
 	vector<const moveit::core::AttachedBody*> attachedObjects;
 	scene->getCurrentState().getAttachedBodies(attachedObjects);
+
 	for (vector<const moveit::core::AttachedBody*>::iterator it = attachedObjects.begin(); it != attachedObjects.end(); it++)
 	{
 		const string& objectName = (*it)->getName();
@@ -109,13 +110,13 @@ bool TidyupPlanningSceneUpdater::readObjects(
 		Predicate p = *it;
 		if (!p.value)
 			continue;
-		if (p.name == "on")
+		if (p.name == "object-on")
 		{
 			ROS_ASSERT(p.parameters.size() == 2);
 			// (on movable static)
 			objectsOnStatic.insert(make_pair(p.parameters.front().value, p.parameters.back().value));
 		}
-		else if (p.name == "grasped")
+		else if (p.name == "object-grasped")
 		{
 			ROS_ASSERT(p.parameters.size() == 2);
 			// (grasped object arm)
@@ -124,6 +125,7 @@ bool TidyupPlanningSceneUpdater::readObjects(
 			graspedObjects.insert(make_pair(objectName, make_pair(p.parameters.back().value, pose)));
 		}
 	}
+
 	return true;
 }
 
@@ -146,6 +148,25 @@ planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getCurrentScene(
 	double torso_position;
 	readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
 	updateRobotPose2D(scene, robot_pose, torso_position);
+	updateArmToSidePosition(scene, "right_arm");
+	updateArmToSidePosition(scene, "left_arm");
+	MovableObjectsMap objects;
+	GraspedObjectMap grasped;
+	ObjectsOnTablesMap onTables;
+	readObjects(predicateCallback, numericalFluentCallback, objects, grasped, onTables);
+	updateObjects(scene, objects, grasped);
+	return scene;
+}
+
+planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getCurrentScene(
+		const std::string& robot_location,
+		predicateCallbackType predicateCallback,
+		numericalFluentCallbackType numericalFluentCallback)
+{
+	planning_scene::PlanningScenePtr scene = getEmptyScene();
+	geometry_msgs::Pose robot_pose;
+	readPose(robot_pose, robot_location, numericalFluentCallback);
+	updateRobotPose2D(scene, robot_pose, 0.0);
 	updateArmToSidePosition(scene, "right_arm");
 	updateArmToSidePosition(scene, "left_arm");
 	MovableObjectsMap objects;
@@ -385,8 +406,8 @@ void TidyupPlanningSceneUpdater::visualize(planning_scene::PlanningScenePtr scen
 void TidyupPlanningSceneUpdater::attachObject(
 		const string& arm_prefix,
 		const string& object,
-		const std::vector<shapes::ShapeConstPtr>&
-		shapes, const geometry_msgs::Pose& grasp,
+		const std::vector<shapes::ShapeConstPtr>&shapes,
+		const geometry_msgs::Pose& grasp,
 		robot_state::RobotState& robot_state)
 {
 	tf::Pose attach_pose_tf;
@@ -398,7 +419,11 @@ void TidyupPlanningSceneUpdater::attachObject(
 	const std::vector<std::string>& names = robot_state.getRobotModel()->getEndEffector(arm_prefix+"_eef")->getLinkModelNamesWithCollisionGeometry();
 	std::set<std::string> touch_links;
 	touch_links.insert(names.begin(), names.end());
-	std::string link_name = arm_prefix[0]+"_wrist_roll_link";
+	std::stringstream ss;
+	ss << arm_prefix[0];
+	std::string link_name = ss.str() + "_wrist_roll_link";
+	// std::string link_name = arm_prefix[0]+"_wrist_roll_link";
+	// output of link_name: lPoseFromState failed for object: %s
 	robot_state.attachBody(object, shapes, attach_trans, touch_links, link_name);
 }
 

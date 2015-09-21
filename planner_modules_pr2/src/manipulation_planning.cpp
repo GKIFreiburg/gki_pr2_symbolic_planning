@@ -11,6 +11,8 @@
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
 
+#include <geometry_msgs/PoseArray.h>
+
 namespace planner_modules_pr2
 {
 
@@ -105,6 +107,24 @@ double ManipulationPlanning::putdown(planning_scene::PlanningScenePtr scene,
 
 	fillPlacements(scene, object, arm_prefix, support_surface, goal.place_locations);
 
+
+
+
+	geometry_msgs::PoseArray arr;
+	arr.header = goal.place_locations[0].place_pose.header;
+	for (int i = 0; i < goal.place_locations.size(); i++)
+		arr.poses.push_back(goal.place_locations[i].place_pose.pose);
+	ros::NodeHandle nh;
+	ros::Publisher pub = nh.advertise<geometry_msgs::PoseArray>("PlaceTest", 1, true);
+	pub.publish(arr);
+	ROS_INFO("PUBLISHING POSE ARRAY - sleep 30 seconds");
+	ros::Duration(30.0);
+
+
+
+
+
+
 	pick_place::PlacePlanPtr plan;
 	plan = pick_place->planPlace(scene, goal);
 	const std::vector<pick_place::ManipulationPlanPtr>& success = plan->getSuccessfulManipulationPlans();
@@ -189,6 +209,7 @@ void ManipulationPlanning::fillPlacements(
 
 	// get attached_object object from arm_prefix as Msg
 	moveit_msgs::CollisionObject attached_object;
+	ROS_ASSERT(psMsg.robot_state.attached_collision_objects.size() > 0);
 	forEach(const moveit_msgs::AttachedCollisionObject & aco, psMsg.robot_state.attached_collision_objects)
 	{
 		if(aco.object.id == object)
@@ -215,6 +236,8 @@ void ManipulationPlanning::fillPlacements(
 		}
 	}
 
+	ROS_WARN("OBJECT TO BE PLACED DOWN: %s", object.c_str());
+	ROS_WARN("NAME OF ATTACHED OBJECT: %s", attached_object.id.c_str());
 	place_locations = placement_genenerator->generatePlacements(arm_prefix + "_gripper", attached_object, surface_object, other_objects, collision_mode, z_above_table, Eigen::Affine3d::Identity(), true, NULL);
 	if (place_locations.empty())
 	{
