@@ -99,11 +99,12 @@ double can_pickup(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
-	ROS_ASSERT(parameterList.size() == 3);
+	ROS_ASSERT(parameterList.size() == 4);
 	const string& object_name = parameterList[0].value;
 	const string& arm_name = parameterList[1].value;
 	const string arm_prefix = arm_name.substr(0, arm_name.rfind("_arm"));
 	const string& table_name = parameterList[2].value;
+	const string& manipulation_location = parameterList[3].value;
 
 	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
 	geometry_msgs::Pose robot_pose;
@@ -183,79 +184,96 @@ double can_pickup_grounding(
 	return value;
 }
 
-int pickup_effect(const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed,
-		vector<double> & writtenVars)
-{
-	// pickup-object ?o - movable_object ?a - arm ?t - table ?l - manipulation_location
-	ROS_ASSERT(parameterList.size() == 3);
-	const std::string& movable_object        = parameterList[0].value;
-	const std::string& arm                   = parameterList[1].value;
-	const std::string& table                 = parameterList[2].value;
-//	const std::string& manipulation_location = parameterList[3].value;
-
-	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
-
-	MovableObjectsMap movableObjects;
-	GraspedObjectMap graspedObjects;
-	ObjectsOnTablesMap objectsOnTables;
-	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
-
-	// set object as grasped
-	// check if object is in planning scene
-	if (movableObjects.find(movable_object) == movableObjects.end() )
-	{
-		ROS_ERROR("pickup_modules::%s: Could not find movable object: %s in planning scene.", __func__, movable_object.c_str());
-		return 1;
-	}
-	graspedObjects[movable_object] = std::make_pair(arm, movableObjects[movable_object]);
-
-	psu->updateObjects(scene, movableObjects, graspedObjects);
-	psu->visualize(scene);
-	ROS_WARN("pickup_modules::%s: Visualized Planning scene, wait 10 seconds.", __func__);
-	ros::Duration(10.0).sleep();
-
-	moveit_msgs::PlanningScene  ps_msg;
-	scene->getPlanningSceneMsg(ps_msg);
-
-	geometry_msgs::Pose object_pose;
-	const std::vector<moveit_msgs::AttachedCollisionObject>& attached_objects = ps_msg.robot_state.attached_collision_objects;
-
-	for (std::vector<moveit_msgs::AttachedCollisionObject>::const_iterator it = attached_objects.begin();
-			it != attached_objects.end(); it++)
-	{
-		if (it->object.id == movable_object)
-		{
-			if (it->object.mesh_poses.size() > 0)
-			{
-				object_pose = it->object.mesh_poses[0];
-				break;
-			}
-			else if (it->object.primitive_poses.size() > 0)
-			{
-				object_pose = it->object.primitive_poses[0];
-				break;
-			}
-			else
-			{
-				ROS_ERROR("Could not find a pose for object %s", movable_object.c_str());
-			}
-		}
-	}
-
-	ROS_ASSERT(writtenVars.size() == 7);
-	writtenVars[0] = object_pose.position.x;
-	writtenVars[1] = object_pose.position.y;
-	writtenVars[2] = object_pose.position.z;
-	writtenVars[3] = object_pose.orientation.x;
-	writtenVars[4] = object_pose.orientation.y;
-	writtenVars[5] = object_pose.orientation.z;
-	writtenVars[6] = object_pose.orientation.w;
-
-	return 1;
-}
+//int pickup_effect(const modules::ParameterList& parameterList,
+//		modules::predicateCallbackType predicateCallback,
+//		modules::numericalFluentCallbackType numericalFluentCallback,
+//		int relaxed,
+//		vector<double> & writtenVars)
+//{
+//	// pickup-object ?o - movable_object ?a - arm ?t - table ?l - manipulation_location
+//	ROS_ASSERT(parameterList.size() == 3);
+//	const std::string& movable_object        = parameterList[0].value;
+//	const std::string& arm                   = parameterList[1].value;
+//	const std::string& table                 = parameterList[2].value;
+////	const std::string& manipulation_location = parameterList[3].value;
+//
+//	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+//	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
+//
+//	MovableObjectsMap movableObjects;
+//	GraspedObjectMap graspedObjects;
+//	ObjectsOnTablesMap objectsOnTables;
+//	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
+//
+//	// set object as grasped
+//	// check if object is in planning scene
+//	if (movableObjects.find(movable_object) == movableObjects.end() )
+//	{
+//		ROS_ERROR("pickup_modules::%s: Could not find movable object: %s in planning scene.", __func__, movable_object.c_str());
+//		return 0;
+//	}
+//	graspedObjects[movable_object] = std::make_pair(arm, movableObjects[movable_object]);
+//
+//	psu->updateObjects(scene, movableObjects, graspedObjects);
+////	psu->visualize(scene);
+////	ROS_WARN("pickup_modules::%s: Visualized Planning scene, wait 10 seconds.", __func__);
+////	ros::Duration(10.0).sleep();
+//
+//	EigenSTL::vector_Affine3d transforms = scene->getCurrentState().getAttachedBody(movable_object)->getFixedTransforms();
+//	// TODO: TEST THIS POSITION!!! scene->getCurrentState().getAttachedBody(movable_object)->getGlobalCollisionBodyTransforms()
+//	ROS_ASSERT(transforms.size() == 1);
+//	geometry_msgs::Pose object_pose;
+//	tf::poseEigenToMsg(transforms[0], object_pose);
+//	ros::Duration(10).sleep();
+//
+//
+//	moveit_msgs::PlanningScene  ps_msg;
+//	scene->getPlanningSceneMsg(ps_msg);
+//
+////	geometry_msgs::Pose object_pose;
+//	const std::vector<moveit_msgs::AttachedCollisionObject>& attached_objects = ps_msg.robot_state.attached_collision_objects;
+//
+//	for (std::vector<moveit_msgs::AttachedCollisionObject>::const_iterator it = attached_objects.begin();
+//			it != attached_objects.end(); it++)
+//	{
+//		if (it->object.id == movable_object)
+//		{
+//			if (it->object.mesh_poses.size() > 0)
+//			{
+//				object_pose = it->object.mesh_poses[0];
+//				break;
+//			}
+//			else if (it->object.primitive_poses.size() > 0)
+//			{
+//				object_pose = it->object.primitive_poses[0];
+//				break;
+//			}
+//			else
+//			{
+//				ROS_ERROR("Could not find a pose for object %s", movable_object.c_str());
+//			}
+//		}
+//	}
+//
+//	ROS_ASSERT(writtenVars.size() == 7);
+//	writtenVars[0] = object_pose.position.x;
+//	writtenVars[1] = object_pose.position.y;
+//	writtenVars[2] = object_pose.position.z;
+//	writtenVars[3] = object_pose.orientation.x;
+//	writtenVars[4] = object_pose.orientation.y;
+//	writtenVars[5] = object_pose.orientation.z;
+//	writtenVars[6] = object_pose.orientation.w;
+//
+//	return 1;
+//}
+//
+//int pickup_effect_grounding(const modules::ParameterList& parameterList,
+//		modules::predicateCallbackType predicateCallback,
+//		modules::numericalFluentCallbackType numericalFluentCallback,
+//		int relaxed,
+//		vector<double> & writtenVars)
+//{
+//
+//}
 
 

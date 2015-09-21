@@ -13,6 +13,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
 
 using std::vector;
 using std::map;
@@ -34,13 +35,18 @@ TidyupPlanningSceneUpdaterPtr TidyupPlanningSceneUpdater::instance()
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
 {
-	defaultAttachPose.position.x = 0.032;
-	defaultAttachPose.position.y = 0.015;
-	defaultAttachPose.position.z = 0.0;
-	defaultAttachPose.orientation.x = 0.707;
-	defaultAttachPose.orientation.y = -0.106;
-	defaultAttachPose.orientation.z = -0.690;
-	defaultAttachPose.orientation.w = 0.105;
+//	defaultAttachPose.position.x = 0.032;
+//	defaultAttachPose.position.y = 0.015;
+//	defaultAttachPose.position.z = 0.0;
+//	defaultAttachPose.orientation.x = 0.707;
+//	defaultAttachPose.orientation.y = -0.106;
+//	defaultAttachPose.orientation.z = -0.690;
+//	defaultAttachPose.orientation.w = 0.105;
+
+	// in frame: *_wrist_roll_link
+	defaultAttachPose.position.x = 0.18;
+	defaultAttachPose.position.z = -0.05;
+	defaultAttachPose.orientation.w = 1.0;
 
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	scene_monitor->requestPlanningSceneState("/get_planning_scene");
@@ -227,7 +233,7 @@ void TidyupPlanningSceneUpdater::updateObjects(
 {
 	collision_detection::WorldPtr world = scene->getWorldNonConst();
 
-	// update pose of movalbe object in the planning scene
+	// update pose of movable object in the planning scene
 	for (map<string, geometry_msgs::Pose>::const_iterator movabelObjectIt = movableObjects.begin(); movabelObjectIt != movableObjects.end(); movabelObjectIt++)
 	{
 		string object_name = movabelObjectIt->first;
@@ -272,6 +278,24 @@ void TidyupPlanningSceneUpdater::updateObjects(
 		{
 			// attach
 			collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
+
+
+/* DEBUG OUTPUT
+			geometry_msgs::PoseStamped attached_pose;
+			attached_pose.header.frame_id = "r_wrist_roll_link";
+			attached_pose.pose.orientation.w = 1.0;
+			attached_pose.pose.position.x = 0.18;
+			attached_pose.pose.position.z = -0.05;
+
+			ros::NodeHandle nh;
+			ros::Publisher pub = nh.advertise<geometry_msgs::PoseStamped>("attached_pose",1, true);
+//			attached_pose.pose = defaultAttachPose;
+			pub.publish(attached_pose);
+			ROS_WARN("Publishing attachedPose to %s and wait 2 seconds", pub.getTopic().c_str());
+			ROS_WARN_STREAM(a);
+			ros::spinOnce();
+			ros::Duration(2.0).sleep();
+*/
 			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
 			world->removeObject(object_name);
 		}
@@ -279,7 +303,9 @@ void TidyupPlanningSceneUpdater::updateObjects(
 		{
 			// if incorrect arm update arm
 			const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
-			string attach_link_name = arm_prefix[0]+"_wrist_roll_link";
+			std::stringstream ss;
+			ss << arm_prefix[0];
+			std::string attach_link_name = ss.str() + "_wrist_roll_link";
 			if (attachedObject->getAttachedLinkName() != attach_link_name)
 			{
 				std::vector<shapes::ShapeConstPtr> shapes = attachedObject->getShapes();

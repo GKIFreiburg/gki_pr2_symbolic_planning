@@ -41,7 +41,8 @@ ManipulationPlanning::ManipulationPlanning()
 	ROS_INFO("Waiting for generate_grasps action.");
 	grasp_generator->waitForServer();
 
-	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorSampling(20, 50));
+	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorSampling(200, 500));
+//	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorDiscretization());
 
 	planning_scene::PlanningScenePtr scene;
 	{
@@ -236,8 +237,6 @@ void ManipulationPlanning::fillPlacements(
 		}
 	}
 
-	ROS_WARN("OBJECT TO BE PLACED DOWN: %s", object.c_str());
-	ROS_WARN("NAME OF ATTACHED OBJECT: %s", attached_object.id.c_str());
 	place_locations = placement_genenerator->generatePlacements(arm_prefix + "_gripper", attached_object, surface_object, other_objects, collision_mode, z_above_table, Eigen::Affine3d::Identity(), true, NULL);
 	if (place_locations.empty())
 	{

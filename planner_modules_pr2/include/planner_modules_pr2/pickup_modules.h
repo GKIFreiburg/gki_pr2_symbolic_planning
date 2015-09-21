@@ -62,6 +62,12 @@ int pickup_effect(const modules::ParameterList& parameterList,
 		int relaxed,
 		vector<double> & writtenVars);
 
+int pickup_effect_grounding(const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars);
+
 #ifdef __cplusplus
 }
 #endif

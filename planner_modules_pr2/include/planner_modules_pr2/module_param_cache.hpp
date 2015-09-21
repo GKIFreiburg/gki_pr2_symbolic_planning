@@ -48,13 +48,14 @@ void ModuleParamCache<ValueType>::set(const std::string& key, ValueType value, d
 {
 //    ROS_INFO("[cache]: writing to cache: %s -> %f", key.c_str(), value);
 	if (s_Debug)
-		std::cout << "ModuleParamCache: adding " << key << " -> " << value << std::endl;
+//		std::cout << "ModuleParamCache: adding " << key << " -> " << value << std::endl;
 	if (allowCachingToParamServer)
 	{
 		typename std::map<std::string, ValueType>::iterator it = _localCache.find(key);
 		// if we found the same key,value in the local cache, it was inserted by this function and thus
 		// is already on the param server, no need to make an extra setParam call here.
-		if (it == _localCache.end() || it->second != value)
+//		if (it == _localCache.end() || it->second != value)
+		if (it == _localCache.end())
 		{
 			if (s_Debug)
 			{
