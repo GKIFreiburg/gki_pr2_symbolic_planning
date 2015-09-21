@@ -34,6 +34,7 @@ namespace object_manipulation_actions
         private:
 
 		std::string action_name_;
+		std::string predicate_inspected_recently_;
 		ros::ServiceClient getPlanningSceneClient_;
 		actionlib::SimpleActionClient<grasp_provider_msgs::GenerateGraspsAction> actionGenerateGrasps_;
 
