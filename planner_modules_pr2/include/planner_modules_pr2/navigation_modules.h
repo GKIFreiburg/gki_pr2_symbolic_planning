@@ -72,7 +72,20 @@ double navigation_cost(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
+double navigation_cost_grounding(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed);
+
 int navigation_effect(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars);
+
+int navigation_effect_grounding(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,

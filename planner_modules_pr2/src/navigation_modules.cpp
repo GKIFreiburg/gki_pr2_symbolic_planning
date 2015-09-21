@@ -133,6 +133,55 @@ double navigation_cost(
 		ROS_INFO_STREAM(parameterList[i].value);
 	}
 
+	// move-robot ?s ?g
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& start_location = parameterList[0].value;
+	const std::string& goal_location  = parameterList[1].value;
+
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose robot_pose;
+	psu->readPose(robot_pose, "robot_location", numericalFluentCallback);
+
+	nav_msgs::GetPlan srv;
+	srv.request.start.header.frame_id = world_frame;
+	srv.request.start.pose = robot_pose;
+
+	// fetch goal location
+	geometry_msgs::Pose goal;
+	psu->readPose(goal, goal_location, numericalFluentCallback);
+	srv.request.goal.header.frame_id = world_frame;
+	srv.request.goal.pose = goal;
+
+	// cache lookup
+	string cache_key = create_cache_key(srv.request.start.pose, srv.request.goal.pose);
+	double value;
+	if (cost_cache->get(cache_key, value))
+	{
+		return value;
+	}
+	// compute value
+	ros::WallTime compute_start_time = ros::WallTime::now();
+	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
+	value = compute_value(scene, srv);
+	ros::WallTime compute_end_time = ros::WallTime::now();
+	// store in cache
+	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+
+	return value;
+}
+
+double navigation_cost_grounding(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed)
+{
+	ROS_INFO_STREAM(__PRETTY_FUNCTION__ << ": parameter count: "<<parameterList.size());
+	for (size_t i = 0; i < parameterList.size(); i++)
+	{
+		ROS_INFO_STREAM(parameterList[i].value);
+	}
+
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);
@@ -178,6 +227,35 @@ double navigation_cost(
 }
 
 int navigation_effect(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars)
+{
+	// move-robot ?s ?g
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& start_location = parameterList[0].value;
+	const std::string& goal_location  = parameterList[1].value;
+
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose goalPose;
+	// get goal pose from symbolic state
+	psu->readPose(goalPose, goal_location, numericalFluentCallback);
+
+	ROS_ASSERT(writtenVars.size() == 7);
+	writtenVars[0] = goalPose.position.x;
+	writtenVars[1] = goalPose.position.y;
+	writtenVars[2] = goalPose.position.z;
+	writtenVars[3] = goalPose.orientation.x;
+	writtenVars[4] = goalPose.orientation.y;
+	writtenVars[5] = goalPose.orientation.z;
+	writtenVars[6] = goalPose.orientation.w;
+
+	return 1;
+}
+
+int navigation_effect_grounding(
 		const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
