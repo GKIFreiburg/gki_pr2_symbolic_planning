@@ -141,7 +141,7 @@ double can_putdown(
 	value = compute_value(scene, object_name, arm_prefix, table_name);
 	ros::WallTime compute_end_time = ros::WallTime::now();
 
-//	psu->visualize(scene);
+	psu->visualize(scene);
 //	ROS_WARN("1 SHOWING PUTDOWN PLANNING SCENE - WAIT 30 SECONDS");
 //	ros::Duration(30.0).sleep();
 
@@ -164,7 +164,6 @@ double can_putdown(
 	pose[6] = object_pose.orientation.w;
 
 	putdown_poses_cache->set(cache_key, pose, (compute_end_time - compute_start_time).toSec());
-
 	return value;
 }
 
@@ -206,6 +205,10 @@ double can_putdown_grounding(
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	// if value is infinite, meaning putdown failed -> no object in world, therefore return
+	if (value == modules::INFINITE_COST)
+		return value;
+
 	// store putdown pose of object in cache for effect module
 	EigenSTL::vector_Affine3d poses = scene->getWorld()->getObject(object_name)->shape_poses_;
 	ROS_ASSERT(poses.size() == 1);
@@ -232,7 +235,6 @@ int putdown_effect(const modules::ParameterList& parameterList,
 		int relaxed,
 		vector<double> & writtenVars)
 {
-
 	ROS_ASSERT(parameterList.size() == 4);
 	const string& object_name = parameterList[0].value;
 	const string& arm_name = parameterList[1].value;
@@ -277,7 +279,6 @@ int putdown_effect(const modules::ParameterList& parameterList,
 	writtenVars[4] = object_pose[4];
 	writtenVars[5] = object_pose[5];
 	writtenVars[6] = object_pose[6];
-
 	return 1;
 }
 

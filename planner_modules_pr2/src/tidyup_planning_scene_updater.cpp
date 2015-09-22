@@ -296,7 +296,9 @@ void TidyupPlanningSceneUpdater::updateObjects(
 			ros::spinOnce();
 			ros::Duration(2.0).sleep();
 */
-			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
+
+//			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
+			attachObject(arm_prefix, object_name, object->shapes_, graspedIt->second.second, robot_state);
 			world->removeObject(object_name);
 		}
 		else if (is_attached)
@@ -310,7 +312,7 @@ void TidyupPlanningSceneUpdater::updateObjects(
 			{
 				std::vector<shapes::ShapeConstPtr> shapes = attachedObject->getShapes();
 				robot_state.clearAttachedBody(object_name);
-				attachObject(arm_prefix, object_name, shapes, defaultAttachPose, robot_state);
+				attachObject(arm_prefix, object_name, shapes, graspedIt->second.second, robot_state);
 			}
 		}
 	}

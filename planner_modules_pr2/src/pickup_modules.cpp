@@ -16,6 +16,7 @@ namespace planner_modules_pr2
 namespace pickup
 {
 boost::shared_ptr<ModuleParamCache<double> > cost_cache;
+boost::shared_ptr<ModuleParamCache<std::vector<double> > > pickup_grasps_cache;
 
 double compute_value(
 		planning_scene::PlanningScenePtr scene,
@@ -91,6 +92,7 @@ void pickup_init(int argc, char** argv)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
 	cost_cache.reset(new ModuleParamCache<double>("pickup/cost"));
+	pickup_grasps_cache.reset(new ModuleParamCache<std::vector<double> >("pickup/grasps"));
 }
 
 double can_pickup(
@@ -133,12 +135,33 @@ double can_pickup(
 	ros::WallTime compute_start_time = ros::WallTime::now();
 	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
 	value = compute_value(scene, object_name, arm_prefix, table_name);
-//	psu->visualize(scene);
+	psu->visualize(scene);
 	ros::WallTime compute_end_time = ros::WallTime::now();
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	// if value is infinite, meaning pick up failed -> no attached object, therefore return
+	if (value == modules::INFINITE_COST)
+		return value;
 
+	// store pickup grasp of object in cache for effect module
+	EigenSTL::vector_Affine3d attach_poses = scene->getCurrentState().getAttachedBody(object_name)->getFixedTransforms();
+	scene->getCurrentState().getAttachedBody(object_name)->getAttachedLinkName();
+	ROS_ASSERT(attach_poses.size() == 1);
+	geometry_msgs::Pose attach_pose;
+	tf::poseEigenToMsg(attach_poses[0], attach_pose);
+//	ROS_WARN_STREAM("ATTACH POSE" << attach_pose);
+	std::vector<double> pose;
+	pose.resize(7);
+	pose[0] = attach_pose.position.x;
+	pose[1] = attach_pose.position.y;
+	pose[2] = attach_pose.position.z;
+	pose[3] = attach_pose.orientation.x;
+	pose[4] = attach_pose.orientation.y;
+	pose[5] = attach_pose.orientation.z;
+	pose[6] = attach_pose.orientation.w;
+
+	pickup_grasps_cache->set(cache_key, pose, (compute_end_time - compute_start_time).toSec());
 	return value;
 }
 
@@ -184,88 +207,57 @@ double can_pickup_grounding(
 	return value;
 }
 
-//int pickup_effect(const modules::ParameterList& parameterList,
-//		modules::predicateCallbackType predicateCallback,
-//		modules::numericalFluentCallbackType numericalFluentCallback,
-//		int relaxed,
-//		vector<double> & writtenVars)
-//{
-//	// pickup-object ?o - movable_object ?a - arm ?t - table ?l - manipulation_location
-//	ROS_ASSERT(parameterList.size() == 3);
-//	const std::string& movable_object        = parameterList[0].value;
-//	const std::string& arm                   = parameterList[1].value;
-//	const std::string& table                 = parameterList[2].value;
-////	const std::string& manipulation_location = parameterList[3].value;
-//
-//	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-//	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
-//
-//	MovableObjectsMap movableObjects;
-//	GraspedObjectMap graspedObjects;
-//	ObjectsOnTablesMap objectsOnTables;
-//	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
-//
-//	// set object as grasped
-//	// check if object is in planning scene
-//	if (movableObjects.find(movable_object) == movableObjects.end() )
-//	{
-//		ROS_ERROR("pickup_modules::%s: Could not find movable object: %s in planning scene.", __func__, movable_object.c_str());
-//		return 0;
-//	}
-//	graspedObjects[movable_object] = std::make_pair(arm, movableObjects[movable_object]);
-//
-//	psu->updateObjects(scene, movableObjects, graspedObjects);
-////	psu->visualize(scene);
-////	ROS_WARN("pickup_modules::%s: Visualized Planning scene, wait 10 seconds.", __func__);
-////	ros::Duration(10.0).sleep();
-//
-//	EigenSTL::vector_Affine3d transforms = scene->getCurrentState().getAttachedBody(movable_object)->getFixedTransforms();
-//	// TODO: TEST THIS POSITION!!! scene->getCurrentState().getAttachedBody(movable_object)->getGlobalCollisionBodyTransforms()
-//	ROS_ASSERT(transforms.size() == 1);
-//	geometry_msgs::Pose object_pose;
-//	tf::poseEigenToMsg(transforms[0], object_pose);
-//	ros::Duration(10).sleep();
-//
-//
-//	moveit_msgs::PlanningScene  ps_msg;
-//	scene->getPlanningSceneMsg(ps_msg);
-//
-////	geometry_msgs::Pose object_pose;
-//	const std::vector<moveit_msgs::AttachedCollisionObject>& attached_objects = ps_msg.robot_state.attached_collision_objects;
-//
-//	for (std::vector<moveit_msgs::AttachedCollisionObject>::const_iterator it = attached_objects.begin();
-//			it != attached_objects.end(); it++)
-//	{
-//		if (it->object.id == movable_object)
-//		{
-//			if (it->object.mesh_poses.size() > 0)
-//			{
-//				object_pose = it->object.mesh_poses[0];
-//				break;
-//			}
-//			else if (it->object.primitive_poses.size() > 0)
-//			{
-//				object_pose = it->object.primitive_poses[0];
-//				break;
-//			}
-//			else
-//			{
-//				ROS_ERROR("Could not find a pose for object %s", movable_object.c_str());
-//			}
-//		}
-//	}
-//
-//	ROS_ASSERT(writtenVars.size() == 7);
-//	writtenVars[0] = object_pose.position.x;
-//	writtenVars[1] = object_pose.position.y;
-//	writtenVars[2] = object_pose.position.z;
-//	writtenVars[3] = object_pose.orientation.x;
-//	writtenVars[4] = object_pose.orientation.y;
-//	writtenVars[5] = object_pose.orientation.z;
-//	writtenVars[6] = object_pose.orientation.w;
-//
-//	return 1;
-//}
+int pickup_effect(const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars)
+{
+	ROS_ASSERT(parameterList.size() == 4);
+	const string& object_name = parameterList[0].value;
+	const string& arm_name = parameterList[1].value;
+	const string arm_prefix = arm_name.substr(0, arm_name.rfind("_arm"));
+	const string& table_name = parameterList[2].value;
+	const string& manipulation_location = parameterList[3].value;
+
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose robot_pose;
+	double torso_position = 0.0;
+	psu->readPose(robot_pose, "robot_location", numericalFluentCallback);
+	MovableObjectsMap movableObjects;
+	GraspedObjectMap graspedObjects;
+	ObjectsOnTablesMap objectsOnTables;
+	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
+
+	// convert 6D robot pose to 2D
+	geometry_msgs::Pose2D robot_pose_2d;
+	robot_pose_2d.x = robot_pose.position.x;
+	robot_pose_2d.y = robot_pose.position.y;
+	robot_pose_2d.theta = tf::getYaw(robot_pose.orientation);
+
+	// cache lookup
+	string cache_key = create_cache_key(object_name, arm_name, table_name, robot_pose_2d, torso_position, movableObjects, objectsOnTables);
+
+	// loop in cache
+	std::vector<double> attach_pose;
+	if (!pickup_grasps_cache->get(cache_key, attach_pose))
+	{
+		ROS_ERROR("pickup_modules::%s: Could not find previously generated pick up grasp!", __func__);
+		return 0;
+	}
+
+	ROS_ASSERT(writtenVars.size() == attach_pose.size());
+	ROS_ASSERT(writtenVars.size() == 7);
+	writtenVars[0] = attach_pose[0];
+	writtenVars[1] = attach_pose[1];
+	writtenVars[2] = attach_pose[2];
+	writtenVars[3] = attach_pose[3];
+	writtenVars[4] = attach_pose[4];
+	writtenVars[5] = attach_pose[5];
+	writtenVars[6] = attach_pose[6];
+	return 1;
+}
+
 //
 //int pickup_effect_grounding(const modules::ParameterList& parameterList,
 //		modules::predicateCallbackType predicateCallback,
