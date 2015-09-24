@@ -148,6 +148,10 @@ double can_putdown(
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	// if value is infinite, meaning putdown failed -> no object in world, therefore return
+	if (value == modules::INFINITE_COST)
+		return value;
+
 	// store putdown pose of object in cache for effect module
 	EigenSTL::vector_Affine3d poses = scene->getWorld()->getObject(object_name)->shape_poses_;
 	ROS_ASSERT(poses.size() == 1);

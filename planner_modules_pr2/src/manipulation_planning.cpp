@@ -41,7 +41,7 @@ ManipulationPlanning::ManipulationPlanning()
 	ROS_INFO("Waiting for generate_grasps action.");
 	grasp_generator->waitForServer();
 
-	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorSampling(200, 500));
+	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorSampling(500, 1000));
 //	placement_genenerator.reset(new object_surface_placements::PlacementGeneratorDiscretization());
 
 	planning_scene::PlanningScenePtr scene;
@@ -108,22 +108,15 @@ double ManipulationPlanning::putdown(planning_scene::PlanningScenePtr scene,
 
 	fillPlacements(scene, object, arm_prefix, support_surface, goal.place_locations);
 
-
-
-
-	geometry_msgs::PoseArray arr;
-	arr.header = goal.place_locations[0].place_pose.header;
-	for (int i = 0; i < goal.place_locations.size(); i++)
-		arr.poses.push_back(goal.place_locations[i].place_pose.pose);
-	ros::NodeHandle nh;
-	ros::Publisher pub = nh.advertise<geometry_msgs::PoseArray>("PlaceTest", 1, true);
-	pub.publish(arr);
-	ROS_INFO("PUBLISHING POSE ARRAY - sleep 30 seconds");
-	ros::Duration(30.0);
-
-
-
-
+//	geometry_msgs::PoseArray arr;
+//	arr.header = goal.place_locations[0].place_pose.header;
+//	for (int i = 0; i < goal.place_locations.size(); i++)
+//		arr.poses.push_back(goal.place_locations[i].place_pose.pose);
+//	ros::NodeHandle nh;
+//	ros::Publisher pub = nh.advertise<geometry_msgs::PoseArray>("PlaceTest", 1, true);
+//	pub.publish(arr);
+////	ROS_INFO("PUBLISHING POSE ARRAY - sleep 30 seconds");
+////	ros::Duration(30.0);
 
 
 	pick_place::PlacePlanPtr plan;
