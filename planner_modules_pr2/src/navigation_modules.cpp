@@ -29,6 +29,8 @@ namespace navigation
 // Distance measured from ground when torso is at minimum (= not lifted)
 const double MIN_TORSO_POSITION = 0.802;
 
+double cost_factor = 10;
+
 //ros::NodeHandle* g_NodeHandle = NULL;
 ros::ServiceClient make_plan_service;
 
@@ -76,7 +78,7 @@ double get_plan_cost(const std::vector<geometry_msgs::PoseStamped>& plan)
 
 		lastPose = p;
 	}
-	return time;
+	return cost_factor * time;
 }
 
 double compute_value(planning_scene::PlanningScenePtr scene, nav_msgs::GetPlan& srv)
@@ -127,10 +129,22 @@ double navigation_cost(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
-	ROS_INFO_STREAM(__PRETTY_FUNCTION__ << ": parameter count: "<<parameterList.size());
-	for (size_t i = 0; i < parameterList.size(); i++)
+	//ROS_INFO_STREAM(__FUNCTION__ << ": parameter count: "<<parameterList.size()<< " relaxed: "<<relaxed);
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position = 0.0;
+	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+
+	if (relaxed != 0)
 	{
-		ROS_INFO_STREAM(parameterList[i].value);
+		// cost querried by heuristic function. simplified computation: Euclidean distance
+		ROS_ASSERT(parameterList.size() == 1);
+		const string& table = parameterList[0].value;
+		geometry_msgs::Pose table_pose;
+		psu->readPose(table_pose, table, numericalFluentCallback);
+		double cost_estimate = cost_factor * hypot(table_pose.position.x-robot_pose.x, table_pose.position.y-robot_pose.y) / linear_velocity;
+		ROS_INFO_STREAM(__FUNCTION__ << ": estimated cost: "<<cost_estimate);
+		return cost_estimate;
 	}
 
 	// move-robot ?s ?g
@@ -186,12 +200,6 @@ double navigation_cost_grounding(
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
-
-	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-	geometry_msgs::Pose2D robot_pose;
-	double torso_position = 0.0;
-	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
-
 	nav_msgs::GetPlan srv;
 	srv.request.start.header.frame_id = world_frame;
 	srv.request.start.pose.position.x = robot_pose.x;
@@ -211,6 +219,7 @@ double navigation_cost_grounding(
 	double value;
 	if (cost_cache->get(cache_key, value))
 	{
+		ROS_INFO_STREAM(__FUNCTION__ << ": cached cost: "<<value);
 		return value;
 	}
 
@@ -222,6 +231,7 @@ double navigation_cost_grounding(
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	ROS_INFO_STREAM(__FUNCTION__ << ": computed cost: "<<value);
 
 	return value;
 }
