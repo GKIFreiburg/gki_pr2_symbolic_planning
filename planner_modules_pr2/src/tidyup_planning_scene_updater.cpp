@@ -164,25 +164,6 @@ planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getCurrentScene(
 	return scene;
 }
 
-planning_scene::PlanningScenePtr TidyupPlanningSceneUpdater::getCurrentScene(
-		const std::string& robot_location,
-		predicateCallbackType predicateCallback,
-		numericalFluentCallbackType numericalFluentCallback)
-{
-	planning_scene::PlanningScenePtr scene = getEmptyScene();
-	geometry_msgs::Pose robot_pose;
-	readPose(robot_pose, robot_location, numericalFluentCallback);
-	updateRobotPose2D(scene, robot_pose, 0.0);
-	updateArmToSidePosition(scene, "right_arm");
-	updateArmToSidePosition(scene, "left_arm");
-	MovableObjectsMap objects;
-	GraspedObjectMap grasped;
-	ObjectsOnTablesMap onTables;
-	readObjects(predicateCallback, numericalFluentCallback, objects, grasped, onTables);
-	updateObjects(scene, objects, grasped);
-	return scene;
-}
-
 void TidyupPlanningSceneUpdater::updateRobotPose2D(planning_scene::PlanningScenePtr scene,
 		const geometry_msgs::Pose& robot_pose,
 		const double torso_position)

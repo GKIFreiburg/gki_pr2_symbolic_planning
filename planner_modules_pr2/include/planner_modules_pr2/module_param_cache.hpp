@@ -76,7 +76,7 @@ void ModuleParamCache<ValueType>::set(const std::string& key, ValueType value, d
 template<class ValueType>
 bool ModuleParamCache<ValueType>::get(const std::string& key, ValueType& value)
 {
-	//ROS_INFO("[cache]: lookup in cache: %s", key.c_str());
+//	ROS_INFO("[cache]: lookup in cache: %s", key.c_str());
 	typename std::map<std::string, ValueType>::iterator it = _localCache.find(key);
 	if (it != _localCache.end())
 	{

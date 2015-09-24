@@ -63,11 +63,6 @@ public:
 			predicateCallbackType predicateCallback,
 			numericalFluentCallbackType numericalFluentCallback);
 
-	planning_scene::PlanningScenePtr getCurrentScene(
-			const std::string& robot_location,
-			predicateCallbackType predicateCallback,
-			numericalFluentCallbackType numericalFluentCallback);
-
 	void updateRobotPose2D(planning_scene::PlanningScenePtr scene,
 			const geometry_msgs::Pose& robot_pose,
 			const double torso_position);
@@ -101,7 +96,6 @@ private:
 			const std::vector<shapes::ShapeConstPtr>& shapes,
 			const geometry_msgs::Pose& grasp,
 			robot_state::RobotState& robot_state);
-
 
 	std::string logName;
 	geometry_msgs::Pose defaultAttachPose;

@@ -129,6 +129,70 @@ double navigation_cost(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
+	ROS_INFO_STREAM(__FUNCTION__ << ": parameter count: "<<parameterList.size()<< " relaxed: "<<relaxed);
+	// move-robot-to-table ?t - table ?l - manipulation_location
+	ROS_ASSERT(parameterList.size() == 2);
+	const std::string& table 					= parameterList[0].value;
+	const std::string& manipulation_location 	= parameterList[1].value;
+
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position = 0.0;
+	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+
+	if (relaxed != 0)
+	{
+		// cost querried by heuristic function. simplified computation: Euclidean distance
+		ROS_ASSERT(parameterList.size() == 1);
+		geometry_msgs::Pose table_pose;
+		psu->readPose(table_pose, table, numericalFluentCallback);
+		double cost_estimate = cost_factor * hypot(table_pose.position.x-robot_pose.x, table_pose.position.y-robot_pose.y) / linear_velocity;
+		ROS_INFO_STREAM(__FUNCTION__ << ": estimated cost: "<<cost_estimate);
+		return cost_estimate;
+	}
+
+	nav_msgs::GetPlan srv;
+	srv.request.start.header.frame_id = world_frame;
+	srv.request.start.pose.position.x = robot_pose.x;
+	srv.request.start.pose.position.y = robot_pose.y;
+	srv.request.start.pose.position.z = 0.0;
+	srv.request.start.pose.orientation = tf::createQuaternionMsgFromYaw(robot_pose.theta);
+
+	// fetch goal location
+	geometry_msgs::Pose goal;
+	psu->readPose(goal, manipulation_location, numericalFluentCallback);
+	srv.request.goal.header.frame_id = world_frame;
+	srv.request.goal.pose = goal;
+
+	// cache lookup
+	string cache_key = create_cache_key(srv.request.start.pose, srv.request.goal.pose);
+	double value;
+	if (cost_cache->get(cache_key, value))
+	{
+		ROS_INFO_STREAM(__FUNCTION__ << ": cached cost: "<<value);
+		return value;
+	}
+
+	// compute value
+	ros::WallTime compute_start_time = ros::WallTime::now();
+	planning_scene::PlanningScenePtr scene = psu->getCurrentScene(predicateCallback, numericalFluentCallback);
+
+	value = compute_value(scene, srv);
+	ros::WallTime compute_end_time = ros::WallTime::now();
+
+	// store in cache
+	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	ROS_INFO_STREAM(__FUNCTION__ << ": computed cost: "<<value);
+
+	return value;
+}
+
+double navigation_cost_grounding(
+		const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed)
+{
 	//ROS_INFO_STREAM(__FUNCTION__ << ": parameter count: "<<parameterList.size()<< " relaxed: "<<relaxed);
 	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
 	geometry_msgs::Pose2D robot_pose;
@@ -145,55 +209,6 @@ double navigation_cost(
 		double cost_estimate = cost_factor * hypot(table_pose.position.x-robot_pose.x, table_pose.position.y-robot_pose.y) / linear_velocity;
 		ROS_INFO_STREAM(__FUNCTION__ << ": estimated cost: "<<cost_estimate);
 		return cost_estimate;
-	}
-
-	// move-robot ?s ?g
-	ROS_ASSERT(parameterList.size() == 2);
-	const std::string& start_location = parameterList[0].value;
-	const std::string& goal_location  = parameterList[1].value;
-
-	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-	geometry_msgs::Pose robot_pose;
-	psu->readPose(robot_pose, "robot_location", numericalFluentCallback);
-
-	nav_msgs::GetPlan srv;
-	srv.request.start.header.frame_id = world_frame;
-	srv.request.start.pose = robot_pose;
-
-	// fetch goal location
-	geometry_msgs::Pose goal;
-	psu->readPose(goal, goal_location, numericalFluentCallback);
-	srv.request.goal.header.frame_id = world_frame;
-	srv.request.goal.pose = goal;
-
-	// cache lookup
-	string cache_key = create_cache_key(srv.request.start.pose, srv.request.goal.pose);
-	double value;
-	if (cost_cache->get(cache_key, value))
-	{
-		return value;
-	}
-	// compute value
-	ros::WallTime compute_start_time = ros::WallTime::now();
-	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
-	value = compute_value(scene, srv);
-	ros::WallTime compute_end_time = ros::WallTime::now();
-	// store in cache
-	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
-
-	return value;
-}
-
-double navigation_cost_grounding(
-		const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed)
-{
-	ROS_INFO_STREAM(__PRETTY_FUNCTION__ << ": parameter count: "<<parameterList.size());
-	for (size_t i = 0; i < parameterList.size(); i++)
-	{
-		ROS_INFO_STREAM(parameterList[i].value);
 	}
 
 	// ([path-condition ?t])
@@ -243,24 +258,28 @@ int navigation_effect(
 		int relaxed,
 		vector<double> & writtenVars)
 {
-	// move-robot ?s ?g
+	// move-robot-to-table ?t - table ?l - manipulation_location
 	ROS_ASSERT(parameterList.size() == 2);
-	const std::string& start_location = parameterList[0].value;
-	const std::string& goal_location  = parameterList[1].value;
+	const std::string& table 					= parameterList[0].value;
+	const std::string& manipulation_location 	= parameterList[1].value;
 
 	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
 	geometry_msgs::Pose goalPose;
 	// get goal pose from symbolic state
-	psu->readPose(goalPose, goal_location, numericalFluentCallback);
+	psu->readPose(goalPose, manipulation_location, numericalFluentCallback);
 
-	ROS_ASSERT(writtenVars.size() == 7);
+	// fetch torso position
+	geometry_msgs::Pose2D actual_robot_pose;
+	double torso_position;
+	psu->readRobotPose2D(actual_robot_pose, torso_position, numericalFluentCallback);
+
+	ROS_ASSERT(writtenVars.size() == 4);
 	writtenVars[0] = goalPose.position.x;
 	writtenVars[1] = goalPose.position.y;
-	writtenVars[2] = goalPose.position.z;
-	writtenVars[3] = goalPose.orientation.x;
-	writtenVars[4] = goalPose.orientation.y;
-	writtenVars[5] = goalPose.orientation.z;
-	writtenVars[6] = goalPose.orientation.w;
+	tf::Quaternion q;
+	tf::quaternionMsgToTF(goalPose.orientation, q);
+	writtenVars[2] = tf::getYaw(q);
+	writtenVars[3] = torso_position;
 
 	return 1;
 }

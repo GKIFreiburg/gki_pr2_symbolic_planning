@@ -50,19 +50,7 @@ double can_pickup(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed);
 
-double can_pickup_grounding(
-		const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed);
-
 int pickup_effect(const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed,
-		vector<double> & writtenVars);
-
-int pickup_effect_grounding(const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed,

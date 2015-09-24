@@ -101,30 +101,22 @@ double can_pickup(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
-	ROS_ASSERT(parameterList.size() == 4);
+	ROS_ASSERT(parameterList.size() == 3);
 	const string& object_name = parameterList[0].value;
 	const string& arm_name = parameterList[1].value;
 	const string arm_prefix = arm_name.substr(0, arm_name.rfind("_arm"));
 	const string& table_name = parameterList[2].value;
-	const string& manipulation_location = parameterList[3].value;
 
 	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-	geometry_msgs::Pose robot_pose;
+	geometry_msgs::Pose2D robot_pose;
 	double torso_position = 0.0;
-	psu->readPose(robot_pose, "robot_location", numericalFluentCallback);
+	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
 	MovableObjectsMap movableObjects;
 	GraspedObjectMap graspedObjects;
 	ObjectsOnTablesMap objectsOnTables;
 	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
-
-	// convert 6D robot pose to 2D
-	geometry_msgs::Pose2D robot_pose_2d;
-	robot_pose_2d.x = robot_pose.position.x;
-	robot_pose_2d.y = robot_pose.position.y;
-	robot_pose_2d.theta = tf::getYaw(robot_pose.orientation);
-
 	// cache lookup
-	string cache_key = create_cache_key(object_name, arm_name, table_name, robot_pose_2d, torso_position, movableObjects, objectsOnTables);
+	string cache_key = create_cache_key(object_name, arm_name, table_name, robot_pose, torso_position, movableObjects, objectsOnTables);
 	double value;
 	if (cost_cache->get(cache_key, value))
 	{
@@ -133,7 +125,7 @@ double can_pickup(
 
 	// compute value
 	ros::WallTime compute_start_time = ros::WallTime::now();
-	planning_scene::PlanningScenePtr scene = psu->getCurrentScene("robot_location", predicateCallback, numericalFluentCallback);
+	planning_scene::PlanningScenePtr scene = psu->getCurrentScene(predicateCallback, numericalFluentCallback);
 	value = compute_value(scene, object_name, arm_prefix, table_name);
 	psu->visualize(scene);
 	ros::WallTime compute_end_time = ros::WallTime::now();
@@ -165,11 +157,11 @@ double can_pickup(
 	return value;
 }
 
-double can_pickup_grounding(
-		const modules::ParameterList& parameterList,
+int pickup_effect(const modules::ParameterList& parameterList,
 		modules::predicateCallbackType predicateCallback,
 		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed)
+		int relaxed,
+		vector<double> & writtenVars)
 {
 	ROS_ASSERT(parameterList.size() == 3);
 	const string& object_name = parameterList[0].value;
@@ -188,55 +180,6 @@ double can_pickup_grounding(
 
 	// cache lookup
 	string cache_key = create_cache_key(object_name, arm_name, table_name, robot_pose, torso_position, movableObjects, objectsOnTables);
-	double value;
-	if (cost_cache->get(cache_key, value))
-	{
-		return value;
-	}
-
-	// compute value
-	ros::WallTime compute_start_time = ros::WallTime::now();
-	planning_scene::PlanningScenePtr scene = psu->getCurrentScene(predicateCallback, numericalFluentCallback);
-	psu->visualize(scene);
-	value = compute_value(scene, object_name, arm_prefix, table_name);
-	ros::WallTime compute_end_time = ros::WallTime::now();
-
-	// store in cache
-	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
-
-	return value;
-}
-
-int pickup_effect(const modules::ParameterList& parameterList,
-		modules::predicateCallbackType predicateCallback,
-		modules::numericalFluentCallbackType numericalFluentCallback,
-		int relaxed,
-		vector<double> & writtenVars)
-{
-	ROS_ASSERT(parameterList.size() == 4);
-	const string& object_name = parameterList[0].value;
-	const string& arm_name = parameterList[1].value;
-	const string arm_prefix = arm_name.substr(0, arm_name.rfind("_arm"));
-	const string& table_name = parameterList[2].value;
-	const string& manipulation_location = parameterList[3].value;
-
-	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-	geometry_msgs::Pose robot_pose;
-	double torso_position = 0.0;
-	psu->readPose(robot_pose, "robot_location", numericalFluentCallback);
-	MovableObjectsMap movableObjects;
-	GraspedObjectMap graspedObjects;
-	ObjectsOnTablesMap objectsOnTables;
-	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
-
-	// convert 6D robot pose to 2D
-	geometry_msgs::Pose2D robot_pose_2d;
-	robot_pose_2d.x = robot_pose.position.x;
-	robot_pose_2d.y = robot_pose.position.y;
-	robot_pose_2d.theta = tf::getYaw(robot_pose.orientation);
-
-	// cache lookup
-	string cache_key = create_cache_key(object_name, arm_name, table_name, robot_pose_2d, torso_position, movableObjects, objectsOnTables);
 
 	// loop in cache
 	std::vector<double> attach_pose;
@@ -257,15 +200,3 @@ int pickup_effect(const modules::ParameterList& parameterList,
 	writtenVars[6] = attach_pose[6];
 	return 1;
 }
-
-//
-//int pickup_effect_grounding(const modules::ParameterList& parameterList,
-//		modules::predicateCallbackType predicateCallback,
-//		modules::numericalFluentCallbackType numericalFluentCallback,
-//		int relaxed,
-//		vector<double> & writtenVars)
-//{
-//
-//}
-
-
