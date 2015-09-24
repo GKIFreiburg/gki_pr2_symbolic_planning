@@ -6,9 +6,8 @@
 #include <utility>
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
-//#include <sys/times.h>
-//#include <tf/tf.h>
-//#include <tf/transform_listener.h>
+
+#include <gki_3dnav_planner/3dnav_planner.h>
 
 #include "planner_modules_pr2/module_param_cache.h"
 #include "planner_modules_pr2/drive_pose_module.h"
@@ -31,19 +30,18 @@ const double MIN_TORSO_POSITION = 0.802;
 
 double cost_factor = 10;
 
-//ros::NodeHandle* g_NodeHandle = NULL;
-ros::ServiceClient make_plan_service;
-
 /// Plan requests are issued using this frame - so the poses from the planner are given in this frame (e.g. map)
 std::string world_frame;
-
-//double g_GoalTolerance = 0.5;
 
 double linear_velocity = 0.3;
 double angular_velocity = angles::from_degrees(30);
 
 // Using a cache of queried path costs to prevent calling the path planning service multiple times
 boost::shared_ptr<ModuleParamCache<double> > cost_cache;
+
+boost::shared_ptr<tf::TransformListener> tf_listener;
+boost::shared_ptr<costmap_2d::Costmap2DROS> costmap;
+boost::shared_ptr<gki_3dnav_planner::GKI3dNavPlanner> path_planner;
 
 string create_cache_key(
 		const geometry_msgs::Pose & startPose,
@@ -83,13 +81,11 @@ double get_plan_cost(const std::vector<geometry_msgs::PoseStamped>& plan)
 
 double compute_value(planning_scene::PlanningScenePtr scene, nav_msgs::GetPlan& srv)
 {
-	if(make_plan_service.call(srv))
+	path_planner->makePlan(scene, srv.request.goal, srv.response.plan.poses);
+	if (!srv.response.plan.poses.empty())
 	{
-		if (!srv.response.plan.poses.empty())
-		{
-			// get plan cost
-			return get_plan_cost(srv.response.plan.poses);
-		}
+		// get plan cost
+		return get_plan_cost(srv.response.plan.poses);
 	}
 	return INFINITE_COST;
 }
@@ -103,20 +99,14 @@ using namespace planner_modules_pr2::navigation;
 
 void navigation_init(int argc, char** argv)
 {
+	tf_listener.reset(new tf::TransformListener());
+	costmap.reset(new costmap_2d::Costmap2DROS("global_costmap", *(tf_listener.get())));
+	world_frame = costmap->getGlobalFrameID();
+	path_planner.reset(new gki_3dnav_planner::GKI3dNavPlanner("GKI3dNavPlanner", costmap.get()));
+
 	ros::NodeHandle nhPriv("~");
 	nhPriv.param("trans_speed", linear_velocity, linear_velocity);
 	nhPriv.param("rot_speed", angular_velocity, angular_velocity);
-
-	// init service query for make plan
-	string service_name = "move_base_node/make_plan";
-	ros::NodeHandle nh;
-
-	make_plan_service = nh.serviceClient<nav_msgs::GetPlan>(service_name, true);
-	if(!make_plan_service)
-	{
-		ROS_FATAL("Could not initialize get plan service from %s (client name: %s)", service_name.c_str(), make_plan_service.getService().c_str());
-	}
-	ROS_INFO("Service connection to %s established.", make_plan_service.getService().c_str());
 
 	cost_cache.reset(new ModuleParamCache<double>("navigation/cost"));
 

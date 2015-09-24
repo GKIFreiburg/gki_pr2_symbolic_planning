@@ -1,0 +1,16 @@
+footprint: '[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]'
+footprint_padding: 0.01
+height: 10
+static_layer: {enabled: true, lethal_cost_threshold: 100}
+inflation_layer: {cost_scaling_factor: 10.0, enabled: true, inflation_radius: 0.55}
+origin_x: 0.0
+origin_y: 0.0
+plugins:
+- {name: static_layer, type: 'costmap_2d::StaticLayer'}
+- {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
+publish_frequency: 0.0
+resolution: 0.02
+robot_radius: 0.46
+transform_tolerance: 0.3
+update_frequency: 5.0
+width: 10

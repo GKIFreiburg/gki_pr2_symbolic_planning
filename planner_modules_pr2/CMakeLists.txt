@@ -28,10 +28,15 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   symbolic_planning_utils
   inverse_capability_map
+  gki_3dnav_planner
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(SBPL REQUIRED sbpl)
+#include_directories(${SBPL_INCLUDE_DIRS})
+#link_directories(${SBPL_LIBRARY_DIRS})
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -78,17 +83,17 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-  FILES
-  Empty.action
-)
+#add_action_files(
+#  FILES
+#  Empty.action
+#)
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs  # Or other packages containing msgs
-  actionlib_msgs
-)
+#generate_messages(
+#  DEPENDENCIES
+#  std_msgs  # Or other packages containing msgs
+#  actionlib_msgs
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -102,7 +107,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES planner_modules_pr2
-#  CATKIN_DEPENDS continual_planning_msgs moveit_msgs nav_msgs planner_benchmarks pluginlib tf tfd_modules tidyup_msgs tidyup_utils
+  CATKIN_DEPENDS sbpl pluginlib tf tfd_modules tidyup_msgs tidyup_utils
 #  DEPENDS system_lib
 )
 
@@ -138,6 +143,9 @@ target_link_libraries(test_pickup planner_modules_pr2 ${catkin_LIBRARIES})
 
 add_executable(test_near_table src/test_near_table.cpp)
 target_link_libraries(test_near_table planner_modules_pr2 ${catkin_LIBRARIES})
+
+add_executable(test_navigation src/test_navigation.cpp)
+target_link_libraries(test_navigation planner_modules_pr2 ${catkin_LIBRARIES})
 
 #############
 ## Install ##
