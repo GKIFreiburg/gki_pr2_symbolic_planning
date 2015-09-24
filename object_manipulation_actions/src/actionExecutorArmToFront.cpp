@@ -90,6 +90,10 @@ namespace object_manipulation_actions
 		pub_pose_.publish(pose);
 		// ROS_INFO_STREAM("ActionExecutorArmToFront::" << __func__ << ": Pose: " << pose);
 
+		arm_group->setGoalPositionTolerance(0.01);
+		arm_group->setGoalOrientationTolerance(0.01);
+		arm_group->setPlanningTime(10);
+		arm_group->setNumPlanningAttempts(100);
 		error_code = executeArmToFront(arm_group, pose);
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	}
