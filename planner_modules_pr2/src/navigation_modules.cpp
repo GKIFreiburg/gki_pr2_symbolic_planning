@@ -99,9 +99,7 @@ void navigation_init(int argc, char** argv)
 {
 	tf_listener.reset(new tf::TransformListener());
 	costmap.reset(new costmap_2d::Costmap2DROS("global_costmap", *(tf_listener.get())));
-	costmap->pause();
 	path_planner.reset(new gki_3dnav_planner::GKI3dNavPlanner("GKI3dNavPlanner", costmap.get()));
-	costmap->resume();
 
 	ros::NodeHandle nhPriv("~");
 	nhPriv.param("trans_speed", linear_velocity, linear_velocity);

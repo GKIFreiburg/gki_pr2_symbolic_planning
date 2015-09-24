@@ -15,34 +15,34 @@ int main(int argc, char** argv)
 	ros::Publisher error_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("/modules_test/failed_scene", 1, true);
 
 	vector<geometry_msgs::Pose2D> robot_poses;
-//	{
-//		robot_poses.push_back(geometry_msgs::Pose2D());
-//		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
-//		robot_pose.x = 4.7;
-//		robot_pose.y = 5.85;
-//		robot_pose.theta = -M_PI_2;
-//	}
-//	{
-//		robot_poses.push_back(geometry_msgs::Pose2D());
-//		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
-//		robot_pose.x = 1.3;
-//		robot_pose.y = 6.35;
-//		robot_pose.theta = -M_PI;
-//	}
 	{
 		robot_poses.push_back(geometry_msgs::Pose2D());
 		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
-		robot_pose.x = 4.7;
-		robot_pose.y = 7.85;
-		robot_pose.theta = M_PI_2;
+		robot_pose.x = 4.2;
+		robot_pose.y = 6.85;
+		robot_pose.theta = -M_PI_2;
 	}
 	{
 		robot_poses.push_back(geometry_msgs::Pose2D());
 		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
-		robot_pose.x = 3.7;
-		robot_pose.y = 7.85;
-		robot_pose.theta = M_PI_2;
+		robot_pose.x = 1.3;
+		robot_pose.y = 6.35;
+		robot_pose.theta = -M_PI;
 	}
+//	{
+//		robot_poses.push_back(geometry_msgs::Pose2D());
+//		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+//		robot_pose.x = 4.2;
+//		robot_pose.y = 7.85;
+//		robot_pose.theta = M_PI_2;
+//	}
+//	{
+//		robot_poses.push_back(geometry_msgs::Pose2D());
+//		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+//		robot_pose.x = 3.7;
+//		robot_pose.y = 7.85;
+//		robot_pose.theta = M_PI_2;
+//	}
 
 	double torso_height = 0.2;
 
@@ -62,12 +62,13 @@ int main(int argc, char** argv)
 			psu->updateArmToSidePosition(scene, "right_arm");
 			psu->updateArmToSidePosition(scene, "left_arm");
 			psu->updateRobotPose2D(scene, start_pose, torso_height);
-			psu->visualize(scene);
+			//psu->visualize(scene);
 			nav_msgs::GetPlan srv;
 			srv.request.goal.pose.position.x = goal_pose.x;
 			srv.request.goal.pose.position.y = goal_pose.y;
 			srv.request.goal.pose.position.z = 0;
 			srv.request.goal.pose.orientation = tf::createQuaternionMsgFromYaw(goal_pose.theta);
+			srv.request.goal.header.frame_id = scene->getPlanningFrame();
 			test_count++;
 			bool result = navigation::compute_value(scene, srv) < modules::INFINITE_COST;
 			if (result != true)
