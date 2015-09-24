@@ -12,7 +12,6 @@ actionlib
 continual_planning_executive
 move_base_msgs
 tidyup_utils
-planner_modules_pr2
 tfd_modules
 symbolic_planning_utils
 )

@@ -6,9 +6,8 @@
 #include <utility>
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
-//#include <sys/times.h>
-//#include <tf/tf.h>
-//#include <tf/transform_listener.h>
+
+#include <gki_3dnav_planner/3dnav_planner.h>
 
 #include "planner_modules_pr2/module_param_cache.h"
 #include "planner_modules_pr2/drive_pose_module.h"
@@ -29,19 +28,20 @@ namespace navigation
 // Distance measured from ground when torso is at minimum (= not lifted)
 const double MIN_TORSO_POSITION = 0.802;
 
-//ros::NodeHandle* g_NodeHandle = NULL;
-ros::ServiceClient make_plan_service;
+double cost_factor = 10;
 
 /// Plan requests are issued using this frame - so the poses from the planner are given in this frame (e.g. map)
 std::string world_frame;
-
-//double g_GoalTolerance = 0.5;
 
 double linear_velocity = 0.3;
 double angular_velocity = angles::from_degrees(30);
 
 // Using a cache of queried path costs to prevent calling the path planning service multiple times
 boost::shared_ptr<ModuleParamCache<double> > cost_cache;
+
+boost::shared_ptr<tf::TransformListener> tf_listener;
+boost::shared_ptr<costmap_2d::Costmap2DROS> costmap;
+boost::shared_ptr<gki_3dnav_planner::GKI3dNavPlanner> path_planner;
 
 string create_cache_key(
 		const geometry_msgs::Pose & startPose,
@@ -76,18 +76,16 @@ double get_plan_cost(const std::vector<geometry_msgs::PoseStamped>& plan)
 
 		lastPose = p;
 	}
-	return time;
+	return cost_factor * time;
 }
 
 double compute_value(planning_scene::PlanningScenePtr scene, nav_msgs::GetPlan& srv)
 {
-	if(make_plan_service.call(srv))
+	path_planner->makePlan(scene, srv.request.goal, srv.response.plan.poses);
+	if (!srv.response.plan.poses.empty())
 	{
-		if (!srv.response.plan.poses.empty())
-		{
-			// get plan cost
-			return get_plan_cost(srv.response.plan.poses);
-		}
+		// get plan cost
+		return get_plan_cost(srv.response.plan.poses);
 	}
 	return INFINITE_COST;
 }
@@ -101,20 +99,14 @@ using namespace planner_modules_pr2::navigation;
 
 void navigation_init(int argc, char** argv)
 {
+	tf_listener.reset(new tf::TransformListener());
+	costmap.reset(new costmap_2d::Costmap2DROS("global_costmap", *(tf_listener.get())));
+	world_frame = costmap->getGlobalFrameID();
+	path_planner.reset(new gki_3dnav_planner::GKI3dNavPlanner("GKI3dNavPlanner", costmap.get()));
+
 	ros::NodeHandle nhPriv("~");
 	nhPriv.param("trans_speed", linear_velocity, linear_velocity);
 	nhPriv.param("rot_speed", angular_velocity, angular_velocity);
-
-	// init service query for make plan
-	string service_name = "move_base_node/make_plan";
-	ros::NodeHandle nh;
-
-	make_plan_service = nh.serviceClient<nav_msgs::GetPlan>(service_name, true);
-	if(!make_plan_service)
-	{
-		ROS_FATAL("Could not initialize get plan service from %s (client name: %s)", service_name.c_str(), make_plan_service.getService().c_str());
-	}
-	ROS_INFO("Service connection to %s established.", make_plan_service.getService().c_str());
 
 	cost_cache.reset(new ModuleParamCache<double>("navigation/cost"));
 
@@ -127,22 +119,28 @@ double navigation_cost(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
-	ROS_INFO_STREAM(__PRETTY_FUNCTION__ << ": parameter count: "<<parameterList.size());
-	for (size_t i = 0; i < parameterList.size(); i++)
+	//ROS_INFO_STREAM(__FUNCTION__ << ": parameter count: "<<parameterList.size()<< " relaxed: "<<relaxed);
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position = 0.0;
+	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+
+	if (relaxed != 0)
 	{
-		ROS_INFO_STREAM(parameterList[i].value);
+		// cost querried by heuristic function. simplified computation: Euclidean distance
+		ROS_ASSERT(parameterList.size() == 1);
+		const string& table = parameterList[0].value;
+		geometry_msgs::Pose table_pose;
+		psu->readPose(table_pose, table, numericalFluentCallback);
+		double cost_estimate = cost_factor * hypot(table_pose.position.x-robot_pose.x, table_pose.position.y-robot_pose.y) / linear_velocity;
+		ROS_INFO_STREAM(__FUNCTION__ << ": estimated cost: "<<cost_estimate);
+		return cost_estimate;
 	}
 
 	// ([path-condition ?t])
 	// should be table grounded_place => param + 1 (due to grounding)
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& grounded_goal = parameterList[1].value;
-
-	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
-	geometry_msgs::Pose2D robot_pose;
-	double torso_position = 0.0;
-	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
-
 	nav_msgs::GetPlan srv;
 	srv.request.start.header.frame_id = world_frame;
 	srv.request.start.pose.position.x = robot_pose.x;
@@ -162,6 +160,7 @@ double navigation_cost(
 	double value;
 	if (cost_cache->get(cache_key, value))
 	{
+		ROS_INFO_STREAM(__FUNCTION__ << ": cached cost: "<<value);
 		return value;
 	}
 
@@ -173,6 +172,7 @@ double navigation_cost(
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	ROS_INFO_STREAM(__FUNCTION__ << ": computed cost: "<<value);
 
 	return value;
 }
