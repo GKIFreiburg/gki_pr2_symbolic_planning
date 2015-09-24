@@ -29,20 +29,20 @@ int main(int argc, char** argv)
 		robot_pose.y = 6.35;
 		robot_pose.theta = -M_PI;
 	}
-//	{
-//		robot_poses.push_back(geometry_msgs::Pose2D());
-//		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
-//		robot_pose.x = 4.2;
-//		robot_pose.y = 7.85;
-//		robot_pose.theta = M_PI_2;
-//	}
-//	{
-//		robot_poses.push_back(geometry_msgs::Pose2D());
-//		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
-//		robot_pose.x = 3.7;
-//		robot_pose.y = 7.85;
-//		robot_pose.theta = M_PI_2;
-//	}
+	{
+		robot_poses.push_back(geometry_msgs::Pose2D());
+		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+		robot_pose.x = 4.2;
+		robot_pose.y = 7.85;
+		robot_pose.theta = M_PI_2;
+	}
+	{
+		robot_poses.push_back(geometry_msgs::Pose2D());
+		geometry_msgs::Pose2D& robot_pose = robot_poses.back();
+		robot_pose.x = 3.7;
+		robot_pose.y = 7.85;
+		robot_pose.theta = M_PI_2;
+	}
 
 	double torso_height = 0.2;
 
