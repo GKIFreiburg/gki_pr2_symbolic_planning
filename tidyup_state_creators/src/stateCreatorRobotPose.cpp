@@ -3,6 +3,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <angles/angles.h>
 #include <symbolic_planning_utils/extractPose.h>
+#include <symbolic_planning_utils/load_tables.h>
+#include <symbolic_planning_utils/moveGroupInterface.h>
+#include <ros/package.h>
 
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::StateCreatorRobotPose,
 		continual_planning_executive::StateCreator)
@@ -26,15 +29,11 @@ StateCreatorRobotPose::StateCreatorRobotPose()
 		if (!nhPriv.getParam("nav_base_local_planner_ns",
 				base_local_planner_ns))
 		{
-			ROS_WARN(
-					"nav_target_tolerance_relative_to_move_base set, but nav_base_local_planner_ns not set - trying to estimate");
+			ROS_WARN("nav_target_tolerance_relative_to_move_base set, but nav_base_local_planner_ns not set - trying to estimate");
 			std::string local_planner;
-			if (!nh.getParam("move_base_node/base_local_planner", local_planner)
-					&& !nh.getParam("move_base/base_local_planner",
-							local_planner))
+			if (!nh.getParam("move_base_node/base_local_planner", local_planner) && !nh.getParam("move_base/base_local_planner", local_planner))
 			{
-				ROS_ERROR(
-						"move_base(_node)/base_local_planner not set - falling back to absolute mode.");
+				ROS_ERROR("move_base(_node)/base_local_planner not set - falling back to absolute mode.");
 			}
 			else
 			{
@@ -44,8 +43,7 @@ StateCreatorRobotPose::StateCreatorRobotPose()
 					base_local_planner_ns = local_planner;
 				else
 					base_local_planner_ns = local_planner.substr(x + 1);
-				ROS_INFO("Estimated base_local_planner_ns to %s.",
-						base_local_planner_ns.c_str());
+				ROS_INFO("Estimated base_local_planner_ns to %s.", base_local_planner_ns.c_str());
 			}
 		}
 
@@ -79,6 +77,43 @@ StateCreatorRobotPose::StateCreatorRobotPose()
 
 	ROS_INFO("Tolerance for accepting nav goals set to %f m, %f deg.",
 			_goalToleranceXY, angles::to_degrees(_goalToleranceYaw));
+
+	// LOAD Inverse Capability Maps
+    // first load tables from tables.dat file
+	// load table pose
+	std::vector<symbolic_planning_utils::LoadTables::TableLocation> tables;
+	if (!symbolic_planning_utils::LoadTables::getTables(tables))
+	{
+		ROS_ERROR("StateCreatorRobotPoseGrounding::%s: Could not load tables", __func__);
+		return;
+	}
+
+	// store table names and the corresponding inv_reach_map into a member variable
+	for (size_t i = 0; i < tables.size(); i++)
+	{
+		const std::string& tableName = tables[i].name;
+
+		// read path to inverse reachability maps from param
+		std::string package, relative_path;
+		if (!nh.getParam("continual_planning_executive/inverse_reachability_maps/" + tableName + "/package", package))
+		{
+			ROS_ERROR("StateCreatorRobotPoseGrounding::%s: Could not load package for surface: %s", __func__, tableName.c_str());
+			continue;
+		}
+		if (!nh.getParam("continual_planning_executive/inverse_reachability_maps/" + tableName + "/path", relative_path))
+		{
+			ROS_ERROR("StateCreatorRobotPoseGrounding::%s: Could not load relative path for surface: %s", __func__, tableName.c_str());
+			continue;
+		}
+
+		std::string pkg_path = ros::package::getPath(package);
+		std::string path = pkg_path + "/" + relative_path;
+
+		// store inverse capability maps into global variable
+		InverseCapabilityOcTree* tree = InverseCapabilityOcTree::readFile(path);
+		std::pair<std::string, InverseCapabilityOcTree*> icm = std::make_pair(tableName, tree);
+		inv_cap_maps_.insert(icm);
+	}
 }
 
 StateCreatorRobotPose::~StateCreatorRobotPose()
@@ -88,21 +123,15 @@ StateCreatorRobotPose::~StateCreatorRobotPose()
 void StateCreatorRobotPose::initialize(
 		const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() == 4);
+	ROS_ASSERT(arguments.size() == 5);
 
-	_robotPoseObject = arguments[0]; // robot_location
-	_robotPoseType = arguments[1];   // location
-	_atPredicate = arguments[2];     // robot-at
-	_locationType = arguments[3];    // location
+	robot_x_ 				   = arguments[0]; 		// robot-x
+	robot_y_				   = arguments[1];   	// robot-y
+	robot_theta_ 			   = arguments[2];     	// robot-theta
+	robot_torso_position_      = arguments[3];		// robot-torso-position
+	robot_at_				   = arguments[4];    	// robot-at
 
-	if (_robotPoseObject == "-")
-		_robotPoseObject = "";
-	if (_robotPoseType == "-")
-		_robotPoseType = "";
-	if (_atPredicate == "-")
-		_atPredicate = "";
-	if (_locationType == "-")
-		_locationType = "";
+	torso_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getTorsoGroup();
 }
 
 bool StateCreatorRobotPose::fillState(SymbolicState & state)
@@ -110,42 +139,25 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 	tf::StampedTransform transform;
 	try
 	{
-		_tf.lookupTransform("/map", "/base_link", ros::Time(0), transform);
+		tf_.lookupTransform("/map", "/base_link", ros::Time(0), transform);
 	} catch (tf::TransformException& ex)
 	{
 		ROS_ERROR("%s", ex.what());
 		return false;
 	}
 
-	// 1. Real robot location
-	if (!_robotPoseObject.empty())
-	{
-		ROS_ASSERT(!_robotPoseType.empty());
-		state.addObject(_robotPoseObject, _robotPoseType);
-		state.setNumericalFluent("x", _robotPoseObject,
-				transform.getOrigin().x());
-		state.setNumericalFluent("y", _robotPoseObject,
-				transform.getOrigin().y());
-		state.setNumericalFluent("z", _robotPoseObject,
-				transform.getOrigin().z());
-		state.setNumericalFluent("qx", _robotPoseObject,
-				transform.getRotation().x());
-		state.setNumericalFluent("qy", _robotPoseObject,
-				transform.getRotation().y());
-		state.setNumericalFluent("qz", _robotPoseObject,
-				transform.getRotation().z());
-		state.setNumericalFluent("qw", _robotPoseObject,
-				transform.getRotation().w());
-		state.setNumericalFluent("timestamp", _robotPoseObject,
-				ros::Time::now().toSec());
-		state.addObject("/map", "frameid");
-		state.setObjectFluent("frame-id", _robotPoseObject, "/map");
-	}
+	// 1. Update real robot pose
+	state.setNumericalFluent(robot_x_, "", transform.getOrigin().x());
+	state.setNumericalFluent(robot_y_, "", transform.getOrigin().y());
+	state.setNumericalFluent(robot_theta_, "", tf::getYaw(transform.getRotation()));
+	const std::vector<double>& jointValues = torso_group_->getCurrentJointValues();
+	ROS_ASSERT(jointValues.size() == 1);
+	state.setNumericalFluent(robot_torso_position_, "", jointValues[0]);
 
 	// 2.b check if we are at any _locations
 	pair<SymbolicState::TypedObjectConstIterator,
 			SymbolicState::TypedObjectConstIterator> targets =
-			state.getTypedObjects().equal_range(_locationType);
+			state.getTypedObjects().equal_range("manipulation_location");
 
 	double minDist = HUGE_VAL;
 	string nearestTarget = "";
@@ -157,8 +169,8 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 		ROS_DEBUG_STREAM(
 				"StateCreatorRobotPose::" << __func__ << ": ObjectType: " << it->first << " ObjectName: " << it->second);
 		string target = it->second;
-		if (target == _robotPoseObject)  // skip current robot location
-			continue;
+//		if (target == _robotPoseObject)  // skip current robot location
+//			continue;
 
 		geometry_msgs::PoseStamped targetPose;
 		if (!symbolic_planning_utils::extractPoseStampedFromSymbolicState(state,
@@ -188,7 +200,7 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 		ROS_INFO("Target %s dist: %f m ang: %f deg", target.c_str(), dDist,
 				angles::to_degrees(dAng));
 
-		if (!_atPredicate.empty())
+		if (!robot_at_.empty())
 		{
 			// Found a target!
 			if(dDist < _goalToleranceXY && fabs(dAng) < _goalToleranceYaw)
@@ -201,7 +213,7 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 					nearestTarget = target;
 				}
 			}
-			state.setBooleanPredicate(_atPredicate, target, false);
+			state.setBooleanPredicate(robot_at_, target, false);
 		}
 	}
 
@@ -209,29 +221,29 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 	if (nearestTarget != "")
 	{
 		ROS_INFO("(at) target %s !", nearestTarget.c_str());
-		state.setBooleanPredicate(_atPredicate, nearestTarget, true);
+		state.setBooleanPredicate(robot_at_, nearestTarget, true);
 		atLocations++;
 	}
 
 	ROS_INFO("Nearest target is %s (%f m).", nearestTarget.c_str(), minDist);
 
-	// 2.a Set the robot pose, if we are not already at another pose
-	if (!_atPredicate.empty() && !_robotPoseObject.empty())
-	{
-		if (atLocations == 0)
-		{
-			state.setBooleanPredicate(_atPredicate, _robotPoseObject, true);
-		}
-		else
-		{
-			state.setBooleanPredicate(_atPredicate, _robotPoseObject, false);
-			if (atLocations > 1)
-			{
-				ROS_WARN("We are at %d locations at the same time!.",
-						atLocations);
-			}
-		}
-	}
+//	// 2.a Set the robot pose, if we are not already at another pose
+//	if (!_atPredicate.empty() && !_robotPoseObject.empty())
+//	{
+//		if (atLocations == 0)
+//		{
+//			state.setBooleanPredicate(_atPredicate, _robotPoseObject, true);
+//		}
+//		else
+//		{
+//			state.setBooleanPredicate(_atPredicate, _robotPoseObject, false);
+//			if (atLocations > 1)
+//			{
+//				ROS_WARN("We are at %d locations at the same time!.",
+//						atLocations);
+//			}
+//		}
+//	}
 
 	return true;
 }

@@ -17,6 +17,7 @@ namespace putdown
 {
 
 boost::shared_ptr<ModuleParamCache<double> > cost_cache;
+boost::shared_ptr<ModuleParamCache<std::vector<double> > > putdown_poses_cache;
 
 double compute_value(
 		planning_scene::PlanningScenePtr scene,
@@ -30,6 +31,7 @@ double compute_value(
 		planner_modules_pr2::ManipulationPlanningPtr p = planner_modules_pr2::ManipulationPlanning::instance();
 		double cost = p->putdown(scene, object_name, arm_prefix, table);
 		ROS_INFO_STREAM(__PRETTY_FUNCTION__<<": done");
+
 		return cost;
 	}
 	catch (planner_modules_pr2::ManipulationException& ex)
@@ -92,6 +94,7 @@ void putdown_init(int argc, char** argv)
 {
 	ROS_INFO_STREAM(__PRETTY_FUNCTION__);
 	cost_cache.reset(new ModuleParamCache<double>("putdown/cost"));
+	putdown_poses_cache.reset(new ModuleParamCache<std::vector<double> >("putdown/poses"));
 }
 
 double can_putdown(
@@ -106,6 +109,7 @@ double can_putdown(
 	const string arm_prefix = arm_name.substr(0, arm_name.rfind("_arm"));
 	const string& table_name = parameterList[2].value;
 
+	// needed to create cache key
 	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
 	geometry_msgs::Pose2D robot_pose;
 	double torso_position = 0.0;
@@ -129,9 +133,77 @@ double can_putdown(
 	value = compute_value(scene, object_name, arm_prefix, table_name);
 	ros::WallTime compute_end_time = ros::WallTime::now();
 
+	psu->visualize(scene);
+//	ROS_WARN("1 SHOWING PUTDOWN PLANNING SCENE - WAIT 30 SECONDS");
+//	ros::Duration(30.0).sleep();
+
+
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+	// if value is infinite, meaning putdown failed -> no object in world, therefore return
+	if (value == modules::INFINITE_COST)
+		return value;
 
+	// store putdown pose of object in cache for effect module
+	EigenSTL::vector_Affine3d poses = scene->getWorld()->getObject(object_name)->shape_poses_;
+	ROS_ASSERT(poses.size() == 1);
+	geometry_msgs::Pose object_pose;
+	tf::poseEigenToMsg(poses[0], object_pose);
+	std::vector<double> pose;
+	pose.resize(7);
+	pose[0] = object_pose.position.x;
+	pose[1] = object_pose.position.y;
+	pose[2] = object_pose.position.z;
+	pose[3] = object_pose.orientation.x;
+	pose[4] = object_pose.orientation.y;
+	pose[5] = object_pose.orientation.z;
+	pose[6] = object_pose.orientation.w;
+
+	putdown_poses_cache->set(cache_key, pose, (compute_end_time - compute_start_time).toSec());
 	return value;
 }
 
+int putdown_effect(const modules::ParameterList& parameterList,
+		modules::predicateCallbackType predicateCallback,
+		modules::numericalFluentCallbackType numericalFluentCallback,
+		int relaxed,
+		vector<double> & writtenVars)
+{
+	ROS_ASSERT(parameterList.size() == 3);
+	const string& object_name = parameterList[0].value;
+	const string& arm_name = parameterList[1].value;
+	const string arm_prefix = arm_name.substr(0, arm_name.rfind("_arm"));
+	const string& table_name = parameterList[2].value;
+
+	// needed to create cache key
+	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
+	geometry_msgs::Pose2D robot_pose;
+	double torso_position = 0.0;
+	psu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+	MovableObjectsMap movableObjects;
+	GraspedObjectMap graspedObjects;
+	ObjectsOnTablesMap objectsOnTables;
+	psu->readObjects(predicateCallback, numericalFluentCallback, movableObjects, graspedObjects, objectsOnTables);
+
+	// cache
+	string cache_key = create_cache_key(object_name, arm_name, table_name, robot_pose, torso_position, movableObjects, objectsOnTables);
+
+	// look in cache
+	std::vector<double> object_pose;
+	if (!putdown_poses_cache->get(cache_key, object_pose))
+	{
+		ROS_ERROR("putdown_modules::%s: Could not find previously generated put down pose!", __func__);
+		return 0;
+	}
+
+	ROS_ASSERT(writtenVars.size() == object_pose.size());
+	ROS_ASSERT(writtenVars.size() == 7);
+	writtenVars[0] = object_pose[0];
+	writtenVars[1] = object_pose[1];
+	writtenVars[2] = object_pose[2];
+	writtenVars[3] = object_pose[3];
+	writtenVars[4] = object_pose[4];
+	writtenVars[5] = object_pose[5];
+	writtenVars[6] = object_pose[6];
+	return 1;
+}

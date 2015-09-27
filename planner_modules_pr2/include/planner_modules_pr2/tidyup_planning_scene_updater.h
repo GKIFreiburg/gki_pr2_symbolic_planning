@@ -97,7 +97,6 @@ private:
 			const geometry_msgs::Pose& grasp,
 			robot_state::RobotState& robot_state);
 
-
 	std::string logName;
 	geometry_msgs::Pose defaultAttachPose;
 	planning_scene_monitor::PlanningSceneMonitorPtr scene_monitor;

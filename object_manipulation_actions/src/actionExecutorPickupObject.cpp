@@ -45,8 +45,9 @@ ActionExecutorPickupObject::~ActionExecutorPickupObject()
 
 void ActionExecutorPickupObject::initialize(const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() >= 1);
+	ROS_ASSERT(arguments.size() >= 2);
 	action_name_ = arguments[0];
+	predicate_inspected_recently_ = arguments[1];
 }
 
 bool ActionExecutorPickupObject::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -122,12 +123,16 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 		error_code = arm_group->pick(collObj.id, grasps);
 		ROS_INFO_STREAM("ActionExecutorPickupObject::" << __func__ <<": Pickup object " << collObj.id << " action returned "
 				<< error_code);
+
+		// set predicate *-inspected-recently to false after successful grasp
+		currentState.setBooleanPredicate(predicate_inspected_recently_, mani_loc, false);
+
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	} else {
 		ROS_ERROR("ActionExecutorPickupObject: Generate grasp action did not finish before the time out.");
 		return false;
 	}
-	return true;
+
 }
 
 void ActionExecutorPickupObject::cancelAction()

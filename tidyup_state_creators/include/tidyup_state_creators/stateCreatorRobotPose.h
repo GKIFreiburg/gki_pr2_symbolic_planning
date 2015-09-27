@@ -5,6 +5,9 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <ros/ros.h>
+#include <moveit/move_group_interface/move_group.h>
+
+#include <inverse_capability_map/InverseCapabilityOcTree.h>
 
 namespace tidyup_state_creators
 {
@@ -42,15 +45,20 @@ namespace tidyup_state_creators
             virtual bool fillState(SymbolicState & state);
 
         protected:
-            tf::TransformListener _tf;
+            tf::TransformListener tf_;
 
             double _goalToleranceXY;
             double _goalToleranceYaw;
 
-            std::string _robotPoseObject;   ///< the name of the robot pose's object (e.g. robot_pose, or l0)
-            std::string _robotPoseType;     ///< the type of the _robotPoseObject - required if _robotPoseObject.
-            std::string _atPredicate;       ///< the name of the "at" predicate (e.g. at-base)
-            std::string _locationType;      ///< the type of location objects that a robot might be "at"
+            string robot_x_;
+            string robot_y_;
+            string robot_theta_;
+            string robot_torso_position_;
+            string robot_at_;
+
+            moveit::planning_interface::MoveGroup* torso_group_;
+
+            std::map<std::string, InverseCapabilityOcTree*> inv_cap_maps_;
     };
 
 };

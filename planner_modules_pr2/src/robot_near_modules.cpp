@@ -48,6 +48,7 @@ double compute_value(planning_scene::PlanningScenePtr scene, const string& table
 		ROS_ERROR_STREAM(__PRETTY_FUNCTION__<<": Could not find inverse reachability map for "<<table);
 		return modules::INFINITE_COST;
 	}
+
 	TableInverseReachabilityConstPtr irm = it->second;
 	// look if there is a match in inv cap map for given torso position in table frame
 	InverseCapability inv = irm->inverse_reachability->getNodeInverseCapability(transform_table_torso.getOrigin().x(), transform_table_torso.getOrigin().y(), transform_table_torso.getOrigin().z());
@@ -100,6 +101,7 @@ double robot_near_table(const modules::ParameterList & parameterList,
 	geometry_msgs::Pose2D robot_pose;
 	double torso_position = 0;
 	tpsu->readRobotPose2D(robot_pose, torso_position, numericalFluentCallback);
+
 	std::string cache_key = create_cache_key(table, robot_pose, torso_position);
 	double value;
 	if (cost_cache->get(cache_key, value))
@@ -112,6 +114,7 @@ double robot_near_table(const modules::ParameterList & parameterList,
 	planning_scene::PlanningScenePtr scene = tpsu->getCurrentScene(predicateCallback, numericalFluentCallback);
 	value = compute_value(scene, table);
 	ros::WallTime compute_end_time = ros::WallTime::now();
+	// ROS_INFO("robot-near-table: robot pose: x,y: %lf, %lf - result: %lf", robot_pose.x, robot_pose.y, value);
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());

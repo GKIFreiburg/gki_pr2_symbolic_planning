@@ -89,6 +89,8 @@ private:
 	object_surface_placements::CollisionMethod collision_mode;
 	double z_above_table;
 
+	std::map<std::string, moveit_msgs::CollisionObject> object_types_;
+
 };
 
 

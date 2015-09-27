@@ -30,6 +30,7 @@ namespace object_manipulation_actions
     	private:
 
 		std::string action_name_;
+		std::string predicate_inspected_recently_;
 		boost::shared_ptr<symbolic_planning_utils::PlanningSceneInterface> psi_;
 		boost::shared_ptr<object_surface_placements::PlacementGenerator> placement_gen_;
 

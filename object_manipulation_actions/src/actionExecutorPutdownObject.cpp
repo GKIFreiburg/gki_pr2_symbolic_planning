@@ -43,8 +43,9 @@ ActionExecutorPutdownObject::~ActionExecutorPutdownObject()
 
 void ActionExecutorPutdownObject::initialize(const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() >= 1);
+	ROS_ASSERT(arguments.size() >= 2);
 	action_name_ = arguments[0];
+	predicate_inspected_recently_ = arguments[1];
 }
 
 bool ActionExecutorPutdownObject::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -115,14 +116,16 @@ bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, Symb
     	return false;
     }
 
-
-    // arm_group->setPlannerId("RRTConnectkConfigDefault");
-	arm_group->setSupportSurfaceName(table);
+    arm_group->setSupportSurfaceName(table);
 
 	moveit::planning_interface::MoveItErrorCode error_code;
 	error_code = arm_group->place(attached_object.object.id, locs);
 	ROS_INFO_STREAM("ActionExecutorPutdownObject::" << __func__ <<": Place object " << attached_object.object.id << " action returned "
 			<< error_code);
+
+	// set predicate *-inspected-recently to false after successful putdown
+	currentState.setBooleanPredicate(predicate_inspected_recently_, mani_loc, false);
+
 	return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 }
 

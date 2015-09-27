@@ -82,4 +82,36 @@ namespace symbolic_planning_utils
 		return true;
 	}
 
+	bool comparePoses(const geometry_msgs::Pose& p1, const geometry_msgs::Pose& p2, double tolerance)
+	{
+		if (fabs(p1.position.x - p2.position.x) >= tolerance)
+			return false;
+		if (fabs(p1.position.y - p2.position.y) >= tolerance)
+			return false;
+		if (fabs(p1.position.z - p2.position.z) >= tolerance)
+			return false;
+		if (fabs(p1.orientation.x - p2.orientation.x) >= tolerance)
+			return false;
+		if (fabs(p1.orientation.y - p2.orientation.y) >= tolerance)
+			return false;
+		if (fabs(p1.orientation.z - p2.orientation.z) >= tolerance)
+			return false;
+		if (fabs(p1.orientation.w - p2.orientation.w) >= tolerance)
+			return false;
+
+		return true;
+	}
+
+	bool comparePoseStampeds(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2,
+			double tolerance)
+	{
+		if (p1.header.frame_id != p2.header.frame_id)
+			return false;
+		if (!comparePoses(p1.pose, p2.pose, tolerance))
+			return false;
+
+		return true;
+
+	}
+
 }

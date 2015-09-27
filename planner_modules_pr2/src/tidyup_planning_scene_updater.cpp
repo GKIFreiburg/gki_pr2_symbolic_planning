@@ -13,6 +13,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
 
 using std::vector;
 using std::map;
@@ -34,13 +35,18 @@ TidyupPlanningSceneUpdaterPtr TidyupPlanningSceneUpdater::instance()
 TidyupPlanningSceneUpdater::TidyupPlanningSceneUpdater() :
 		logName("[psu]")
 {
-	defaultAttachPose.position.x = 0.032;
-	defaultAttachPose.position.y = 0.015;
-	defaultAttachPose.position.z = 0.0;
-	defaultAttachPose.orientation.x = 0.707;
-	defaultAttachPose.orientation.y = -0.106;
-	defaultAttachPose.orientation.z = -0.690;
-	defaultAttachPose.orientation.w = 0.105;
+//	defaultAttachPose.position.x = 0.032;
+//	defaultAttachPose.position.y = 0.015;
+//	defaultAttachPose.position.z = 0.0;
+//	defaultAttachPose.orientation.x = 0.707;
+//	defaultAttachPose.orientation.y = -0.106;
+//	defaultAttachPose.orientation.z = -0.690;
+//	defaultAttachPose.orientation.w = 0.105;
+
+	// in frame: *_wrist_roll_link
+	defaultAttachPose.position.x = 0.18;
+	defaultAttachPose.position.z = -0.05;
+	defaultAttachPose.orientation.w = 1.0;
 
 	scene_monitor.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));
 	scene_monitor->requestPlanningSceneState("/get_planning_scene");
@@ -83,6 +89,7 @@ bool TidyupPlanningSceneUpdater::readObjects(
 	}
 	vector<const moveit::core::AttachedBody*> attachedObjects;
 	scene->getCurrentState().getAttachedBodies(attachedObjects);
+
 	for (vector<const moveit::core::AttachedBody*>::iterator it = attachedObjects.begin(); it != attachedObjects.end(); it++)
 	{
 		const string& objectName = (*it)->getName();
@@ -109,13 +116,13 @@ bool TidyupPlanningSceneUpdater::readObjects(
 		Predicate p = *it;
 		if (!p.value)
 			continue;
-		if (p.name == "on")
+		if (p.name == "object-on")
 		{
 			ROS_ASSERT(p.parameters.size() == 2);
 			// (on movable static)
 			objectsOnStatic.insert(make_pair(p.parameters.front().value, p.parameters.back().value));
 		}
-		else if (p.name == "grasped")
+		else if (p.name == "object-grasped")
 		{
 			ROS_ASSERT(p.parameters.size() == 2);
 			// (grasped object arm)
@@ -124,6 +131,7 @@ bool TidyupPlanningSceneUpdater::readObjects(
 			graspedObjects.insert(make_pair(objectName, make_pair(p.parameters.back().value, pose)));
 		}
 	}
+
 	return true;
 }
 
@@ -206,7 +214,7 @@ void TidyupPlanningSceneUpdater::updateObjects(
 {
 	collision_detection::WorldPtr world = scene->getWorldNonConst();
 
-	// update pose of movalbe object in the planning scene
+	// update pose of movable object in the planning scene
 	for (map<string, geometry_msgs::Pose>::const_iterator movabelObjectIt = movableObjects.begin(); movabelObjectIt != movableObjects.end(); movabelObjectIt++)
 	{
 		string object_name = movabelObjectIt->first;
@@ -251,19 +259,41 @@ void TidyupPlanningSceneUpdater::updateObjects(
 		{
 			// attach
 			collision_detection::World::ObjectConstPtr object = world->getObject(object_name);
-			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
+
+
+/* DEBUG OUTPUT
+			geometry_msgs::PoseStamped attached_pose;
+			attached_pose.header.frame_id = "r_wrist_roll_link";
+			attached_pose.pose.orientation.w = 1.0;
+			attached_pose.pose.position.x = 0.18;
+			attached_pose.pose.position.z = -0.05;
+
+			ros::NodeHandle nh;
+			ros::Publisher pub = nh.advertise<geometry_msgs::PoseStamped>("attached_pose",1, true);
+//			attached_pose.pose = defaultAttachPose;
+			pub.publish(attached_pose);
+			ROS_WARN("Publishing attachedPose to %s and wait 2 seconds", pub.getTopic().c_str());
+			ROS_WARN_STREAM(a);
+			ros::spinOnce();
+			ros::Duration(2.0).sleep();
+*/
+
+//			attachObject(arm_prefix, object_name, object->shapes_, defaultAttachPose, robot_state);
+			attachObject(arm_prefix, object_name, object->shapes_, graspedIt->second.second, robot_state);
 			world->removeObject(object_name);
 		}
 		else if (is_attached)
 		{
 			// if incorrect arm update arm
 			const moveit::core::AttachedBody* attachedObject = robot_state.getAttachedBody(object_name);
-			string attach_link_name = arm_prefix[0]+"_wrist_roll_link";
+			std::stringstream ss;
+			ss << arm_prefix[0];
+			std::string attach_link_name = ss.str() + "_wrist_roll_link";
 			if (attachedObject->getAttachedLinkName() != attach_link_name)
 			{
 				std::vector<shapes::ShapeConstPtr> shapes = attachedObject->getShapes();
 				robot_state.clearAttachedBody(object_name);
-				attachObject(arm_prefix, object_name, shapes, defaultAttachPose, robot_state);
+				attachObject(arm_prefix, object_name, shapes, graspedIt->second.second, robot_state);
 			}
 		}
 	}
@@ -385,8 +415,8 @@ void TidyupPlanningSceneUpdater::visualize(planning_scene::PlanningScenePtr scen
 void TidyupPlanningSceneUpdater::attachObject(
 		const string& arm_prefix,
 		const string& object,
-		const std::vector<shapes::ShapeConstPtr>&
-		shapes, const geometry_msgs::Pose& grasp,
+		const std::vector<shapes::ShapeConstPtr>&shapes,
+		const geometry_msgs::Pose& grasp,
 		robot_state::RobotState& robot_state)
 {
 	tf::Pose attach_pose_tf;
@@ -398,7 +428,11 @@ void TidyupPlanningSceneUpdater::attachObject(
 	const std::vector<std::string>& names = robot_state.getRobotModel()->getEndEffector(arm_prefix+"_eef")->getLinkModelNamesWithCollisionGeometry();
 	std::set<std::string> touch_links;
 	touch_links.insert(names.begin(), names.end());
-	std::string link_name = arm_prefix[0]+"_wrist_roll_link";
+	std::stringstream ss;
+	ss << arm_prefix[0];
+	std::string link_name = ss.str() + "_wrist_roll_link";
+	// std::string link_name = arm_prefix[0]+"_wrist_roll_link";
+	// output of link_name: lPoseFromState failed for object: %s
 	robot_state.attachBody(object, shapes, attach_trans, touch_links, link_name);
 }
 

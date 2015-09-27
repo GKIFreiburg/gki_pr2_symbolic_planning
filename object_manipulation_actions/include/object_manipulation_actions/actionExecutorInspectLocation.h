@@ -41,7 +41,8 @@ namespace object_manipulation_actions
         std::string action_topic_point_head_;
         std::string action_topic_ork_ps_;
         std::string pointing_frame_;
-        std::vector<std::string> predicate_names_;
+        std::string predicate_location_inspected_;
+        std::string predicate_table_inspected_recently_;
         std::string joint_name_head_yaw_;
 
         std::set<std::string> expected_objects_;
