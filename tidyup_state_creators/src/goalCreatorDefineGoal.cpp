@@ -21,7 +21,7 @@ namespace tidyup_state_creators
 
     bool GoalCreatorDefineGoal::fillStateAndGoal(SymbolicState & currentState, SymbolicState & goal)
     {
-    	goal.setForEachGoalStatement("table", "table-inspected", true);
+    	goal.setForEachGoalStatement("manipulation_location", "location-inspected", true);
     	goal.setForEachGoalStatement("movable_object", "object-inspected", true);
     	goal.setForEachGoalStatement("arm", "hand-free", true); // derived predicate
         return true;
