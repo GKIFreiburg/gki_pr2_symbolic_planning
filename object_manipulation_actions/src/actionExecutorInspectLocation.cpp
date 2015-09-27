@@ -23,16 +23,13 @@ namespace object_manipulation_actions
 
 void ActionExecutorInspectLocation::initialize(const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() >= 5);
-	action_name_ 				= arguments[0];
-	action_topic_ork_ps_     	= arguments[1];
-	action_topic_point_head_ 	= arguments[2];
+	ROS_ASSERT(arguments.size() == 6);
+	action_name_ 						 = arguments[0];
+	action_topic_ork_ps_     			 = arguments[1];
+	action_topic_point_head_ 			 = arguments[2];
 	pointing_frame_						 = arguments[3];
-
-	for (int i = 4; i < arguments.size(); i++)
-	{
-		predicate_names_.push_back(arguments[i]);
-	}
+	predicate_location_inspected_  		 = arguments[4];
+	predicate_table_inspected_recently_  = arguments[5];
 
 	actionTimeOut_ = ros::Duration(30.0);
 	joint_name_head_yaw_ = "head_pan_joint";
@@ -144,10 +141,8 @@ bool ActionExecutorInspectLocation::executeBlocking(const DurativeAction & a, Sy
 		return false;
 
 	// after detection is completed, set predicates: location-inspected and location_inspected-recently
-	for_each(const string& predicate, predicate_names_)
-	{
-		currentState.setBooleanPredicate(predicate, mani_loc, true);
-	}
+	currentState.setBooleanPredicate(predicate_location_inspected_, mani_loc, true);
+	currentState.setBooleanPredicate(predicate_table_inspected_recently_, table, true);
 
 	// Cut off _number from table detection and readd table to PS
 	renameTableCollisionObject(table);
