@@ -14,6 +14,8 @@ namespace navigation_actions
         ActionExecutorActionlib<move_base_msgs::MoveBaseAction, move_base_msgs::MoveBaseGoal,
             move_base_msgs::MoveBaseResult>::initialize(arguments);
 
+        // need this complicated arguments structure, due to move_base action server
+        // other possibility: use generic ActionExecutorInterface
         if(arguments.size() < 3)
             return;
 
@@ -56,11 +58,11 @@ namespace navigation_actions
         goal.target_pose.header.stamp = ros::Time::now();
 
         ROS_ASSERT(a.parameters.size() == 2);
-        string targetName = a.parameters[1];
+        string mani_loc = a.parameters[1];
 
         // extract nicer + warn.
         Predicate p;
-        p.parameters.push_back(targetName);
+        p.parameters.push_back(mani_loc);
         p.name = "frame-id";
         if(!current.hasObjectFluent(p, &goal.target_pose.header.frame_id))
             return false;
@@ -96,19 +98,19 @@ namespace navigation_actions
             const DurativeAction & a, SymbolicState & current)
     {
         ROS_ASSERT(a.parameters.size() == 2);
-        string startName = a.parameters[0];
-        string targetName = a.parameters[1];
+        string table 	= a.parameters[0];
+        string mani_loc = a.parameters[1];
 
         // start predicates are always applied independent of success
         for(std::vector<std::pair<std::string, bool> >::iterator it = _startPredicates.begin();
                 it != _startPredicates.end(); it++) {
-            current.setBooleanPredicate(it->first, startName, it->second);
+            current.setBooleanPredicate(it->first, table, it->second);
         }
 
         if(actionReturnState == actionlib::SimpleClientGoalState::SUCCEEDED) {
             for(std::vector<std::pair<std::string, bool> >::iterator it = _goalPredicates.begin();
                     it != _goalPredicates.end(); it++) {
-                current.setBooleanPredicate(it->first, targetName, it->second);
+                current.setBooleanPredicate(it->first, table, it->second);
             }
         }
     }
