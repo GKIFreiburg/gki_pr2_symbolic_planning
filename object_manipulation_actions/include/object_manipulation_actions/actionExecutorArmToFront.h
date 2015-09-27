@@ -26,6 +26,9 @@ namespace object_manipulation_actions
 			std::string rosparam_left_arm_to_front_;
 			ros::Publisher pub_pose_;
 
+			moveit::planning_interface::MoveGroup* left_arm_;
+			moveit::planning_interface::MoveGroup* right_arm_;
+
     		moveit::planning_interface::MoveItErrorCode executeArmToFront(
     				moveit::planning_interface::MoveGroup* group,
     				const geometry_msgs::PoseStamped& pose);

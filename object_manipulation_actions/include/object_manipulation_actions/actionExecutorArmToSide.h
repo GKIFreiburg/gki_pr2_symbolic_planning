@@ -26,6 +26,9 @@ namespace object_manipulation_actions
 			std::string named_target_right_arm_to_side_;
 			std::string named_target_left_arm_to_side_;
 
+			moveit::planning_interface::MoveGroup* left_arm_;
+			moveit::planning_interface::MoveGroup* right_arm_;
+
     		moveit::planning_interface::MoveItErrorCode executeArmToSide(
     				moveit::planning_interface::MoveGroup* group, const std::string& target);
 

@@ -28,6 +28,9 @@ namespace object_manipulation_actions
 
 		ros::NodeHandle n;
 		pub_pose_ = n.advertise<geometry_msgs::PoseStamped>("arm_to_front", 10, true);
+
+		left_arm_ = new moveit::planning_interface::MoveGroup("left_arm");
+		right_arm_ = new moveit::planning_interface::MoveGroup("right_arm");
 	}
 
 	bool ActionExecutorArmToFront::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -49,7 +52,8 @@ namespace object_manipulation_actions
 
 		if (StringUtil::startsWith(a.parameters[0], "left_"))
 		{
-			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+//			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+			arm_group = left_arm_;
 			if (!tidyup_utils::getPoseStampedFromParam(rosparam_left_arm_to_front_, pose))
 			{
 				ROS_WARN("ActionExecutorArmToFront::%s: Could not load arm configuration from param!", __func__);
@@ -65,7 +69,8 @@ namespace object_manipulation_actions
 		}
 		else if (StringUtil::startsWith(a.parameters[0], "right_"))
 		{
-			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+//			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+			arm_group = right_arm_;
 			if (!tidyup_utils::getPoseStampedFromParam(rosparam_right_arm_to_front_, pose))
 			{
 				ROS_WARN("ActionExecutorArmToFront::%s: Could not load arm configuration from param!", __func__);
@@ -90,10 +95,10 @@ namespace object_manipulation_actions
 		pub_pose_.publish(pose);
 		// ROS_INFO_STREAM("ActionExecutorArmToFront::" << __func__ << ": Pose: " << pose);
 
-		arm_group->setGoalPositionTolerance(0.01);
-		arm_group->setGoalOrientationTolerance(0.01);
-		arm_group->setPlanningTime(10);
-		arm_group->setNumPlanningAttempts(100);
+//		arm_group->setGoalPositionTolerance(0.01);
+//		arm_group->setGoalOrientationTolerance(0.01);
+//		arm_group->setPlanningTime(10);
+//		arm_group->setNumPlanningAttempts(100);
 		error_code = executeArmToFront(arm_group, pose);
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	}

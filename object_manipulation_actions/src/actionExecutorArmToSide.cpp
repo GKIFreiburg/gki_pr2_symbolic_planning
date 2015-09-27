@@ -19,6 +19,9 @@ namespace object_manipulation_actions
 		actionName_ 					= arguments[0]; 	// arm-to-side
 		named_target_right_arm_to_side_ = arguments[1];		// right_arm_to_side
 		named_target_left_arm_to_side_  = arguments[2];		// left_arm_to_side
+
+		left_arm_ = new moveit::planning_interface::MoveGroup("left_arm");
+		right_arm_ = new moveit::planning_interface::MoveGroup("right_arm");
 	}
 
 	bool ActionExecutorArmToSide::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -35,12 +38,14 @@ namespace object_manipulation_actions
 
 		if (StringUtil::startsWith(a.parameters[0], "left_"))
 		{
-			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+//			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getLeftArmGroup();
+			arm_group = left_arm_;
 			target = named_target_left_arm_to_side_;
 		}
 		else if (StringUtil::startsWith(a.parameters[0], "right_"))
 		{
-			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+//			arm_group = symbolic_planning_utils::MoveGroupInterface::getInstance()->getRightArmGroup();
+			arm_group = right_arm_;
 			target = named_target_right_arm_to_side_;
 		}
 		else
