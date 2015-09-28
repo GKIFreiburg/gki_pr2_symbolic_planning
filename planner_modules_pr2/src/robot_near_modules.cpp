@@ -94,6 +94,7 @@ double robot_near_table(const modules::ParameterList & parameterList,
 		modules::numericalFluentCallbackType numericalFluentCallback, int relaxed)
 {
 	ROS_ASSERT(parameterList.size() == 1);
+	ROS_INFO("robot_near_modules::%s: Robot start", __func__);
 	std::string table = parameterList[0].value;
 	planner_modules_pr2::TidyupPlanningSceneUpdaterPtr tpsu = TidyupPlanningSceneUpdater::instance();
 
@@ -106,6 +107,10 @@ double robot_near_table(const modules::ParameterList & parameterList,
 	double value;
 	if (cost_cache->get(cache_key, value))
 	{
+		if (value == modules::INFINITE_COST)
+			ROS_ERROR("robot_near_modules::%s: Robot (x: %lf, y: %lf, theta: %lf) NOT near table - no visualization", __func__, robot_pose.x, robot_pose.y, robot_pose.theta);
+		else
+			ROS_INFO("robot_near_modules::%s: Robot near table - no visualization", __func__);
 		return value;
 	}
 
@@ -118,6 +123,18 @@ double robot_near_table(const modules::ParameterList & parameterList,
 
 	// store in cache
 	cost_cache->set(cache_key, value, (compute_end_time - compute_start_time).toSec());
+
+	if (value == modules::INFINITE_COST)
+	{
+		ROS_ERROR("robot_near_modules::%s: Robot (x: %lf, y: %lf, theta: %lf) NOT near table", __func__, robot_pose.x, robot_pose.y, robot_pose.theta);
+		tpsu->visualize(scene);
+		ROS_INFO("VISUALIZATION, wait 5 seconds");
+		ros::Duration(5.0).sleep();
+	}
+	else
+		ROS_INFO("robot_near_modules::%s: Robot near table", __func__);
+
+
 
 	return value;
 }

@@ -133,10 +133,10 @@ double navigation_cost(
 	if (relaxed != 0)
 	{
 		// cost querried by heuristic function. simplified computation: Euclidean distance
-		ROS_ASSERT(parameterList.size() == 1);
-		geometry_msgs::Pose table_pose;
-		psu->readPose(table_pose, table, numericalFluentCallback);
-		double cost_estimate = cost_factor * hypot(table_pose.position.x-robot_pose.x, table_pose.position.y-robot_pose.y) / linear_velocity;
+		ROS_ASSERT(parameterList.size() == 2);
+		geometry_msgs::Pose manipulation_location;
+		psu->readPose(manipulation_location, table, numericalFluentCallback);
+		double cost_estimate = cost_factor * hypot(manipulation_location.position.x-robot_pose.x, manipulation_location.position.y-robot_pose.y) / linear_velocity;
 		ROS_INFO_STREAM(__FUNCTION__ << ": estimated cost: "<<cost_estimate);
 		return cost_estimate;
 	}
@@ -252,6 +252,7 @@ int navigation_effect(
 	ROS_ASSERT(parameterList.size() == 2);
 	const std::string& table 					= parameterList[0].value;
 	const std::string& manipulation_location 	= parameterList[1].value;
+	ROS_INFO("navigation_modules::%s: start", __func__);
 
 	TidyupPlanningSceneUpdaterPtr psu = TidyupPlanningSceneUpdater::instance();
 	geometry_msgs::Pose goalPose;

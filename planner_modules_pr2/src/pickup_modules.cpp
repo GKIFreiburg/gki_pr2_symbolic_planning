@@ -101,6 +101,7 @@ double can_pickup(
 		modules::numericalFluentCallbackType numericalFluentCallback,
 		int relaxed)
 {
+	ROS_INFO("pickup_modules::%s: Start", __func__);
 	ROS_ASSERT(parameterList.size() == 3);
 	const string& object_name = parameterList[0].value;
 	const string& arm_name = parameterList[1].value;
