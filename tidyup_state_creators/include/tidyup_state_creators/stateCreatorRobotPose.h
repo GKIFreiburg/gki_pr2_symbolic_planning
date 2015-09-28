@@ -54,7 +54,6 @@ namespace tidyup_state_creators
             string robot_y_;
             string robot_theta_;
             string robot_torso_position_;
-            string robot_at_;
 
             moveit::planning_interface::MoveGroup* torso_group_;
 

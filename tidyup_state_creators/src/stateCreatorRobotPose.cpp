@@ -15,6 +15,7 @@ namespace tidyup_state_creators
 
 StateCreatorRobotPose::StateCreatorRobotPose()
 {
+	torso_group_ = NULL;
 	ros::NodeHandle nhPriv("~");
 	ros::NodeHandle nh;
 	nhPriv.param("nav_target_tolerance_xy", _goalToleranceXY, 0.15);
@@ -123,13 +124,12 @@ StateCreatorRobotPose::~StateCreatorRobotPose()
 void StateCreatorRobotPose::initialize(
 		const std::deque<std::string> & arguments)
 {
-	ROS_ASSERT(arguments.size() == 5);
+	ROS_ASSERT(arguments.size() == 4);
 
 	robot_x_ 				   = arguments[0]; 		// robot-x
 	robot_y_				   = arguments[1];   	// robot-y
 	robot_theta_ 			   = arguments[2];     	// robot-theta
 	robot_torso_position_      = arguments[3];		// robot-torso-position
-	robot_at_				   = arguments[4];    	// robot-at
 
 	torso_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getTorsoGroup();
 }
@@ -199,51 +199,9 @@ bool StateCreatorRobotPose::fillState(SymbolicState & state)
 		double dAng = tf::getYaw(deltaTransform.getRotation());
 		ROS_INFO("Target %s dist: %f m ang: %f deg", target.c_str(), dDist,
 				angles::to_degrees(dAng));
-
-		if (!robot_at_.empty())
-		{
-			// Found a target!
-			if(dDist < _goalToleranceXY && fabs(dAng) < _goalToleranceYaw)
-			{
-				// FIXME also taking rotation into account
-				// Remember nearest target
-				if (dDist < minDist)
-				{
-					minDist = dDist;
-					nearestTarget = target;
-				}
-			}
-			state.setBooleanPredicate(robot_at_, target, false);
-		}
-	}
-
-	// If a nearest target is found, update state
-	if (nearestTarget != "")
-	{
-		ROS_INFO("(at) target %s !", nearestTarget.c_str());
-		state.setBooleanPredicate(robot_at_, nearestTarget, true);
-		atLocations++;
 	}
 
 	ROS_INFO("Nearest target is %s (%f m).", nearestTarget.c_str(), minDist);
-
-//	// 2.a Set the robot pose, if we are not already at another pose
-//	if (!_atPredicate.empty() && !_robotPoseObject.empty())
-//	{
-//		if (atLocations == 0)
-//		{
-//			state.setBooleanPredicate(_atPredicate, _robotPoseObject, true);
-//		}
-//		else
-//		{
-//			state.setBooleanPredicate(_atPredicate, _robotPoseObject, false);
-//			if (atLocations > 1)
-//			{
-//				ROS_WARN("We are at %d locations at the same time!.",
-//						atLocations);
-//			}
-//		}
-//	}
 
 	return true;
 }
