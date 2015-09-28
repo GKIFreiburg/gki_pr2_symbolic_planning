@@ -10,11 +10,6 @@
 #include "planner_modules_pr2/inverse_reachability_maps.h"
 #include <inverse_capability_map/InverseCapabilitySampling.h>
 
-// include for debugging
-#include <planner_modules_pr2/EmptyAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <geometry_msgs/PoseArray.h>
-
 namespace planner_modules_pr2
 {
 
