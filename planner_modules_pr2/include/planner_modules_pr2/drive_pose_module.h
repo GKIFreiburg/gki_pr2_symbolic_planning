@@ -7,9 +7,6 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <inverse_capability_map/InverseCapabilityOcTree.h>
 
-#include <actionlib/client/simple_action_client.h>
-#include <planner_modules_pr2/EmptyAction.h>
-
 namespace planner_modules_pr2
 {
 
