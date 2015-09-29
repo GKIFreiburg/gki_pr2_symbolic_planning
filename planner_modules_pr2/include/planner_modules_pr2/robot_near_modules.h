@@ -20,7 +20,7 @@ namespace planner_modules_pr2
 {
 namespace robot_near_table
 {
-double compute_value(planning_scene::PlanningScenePtr scene, const string& table);
+double compute_value(planning_scene::PlanningScenePtr scene, const string& table, const geometry_msgs::Pose& table_pose);
 string create_cache_key(const string& table, const geometry_msgs::Pose2D& robot_pose, double torso_position);
 } /* namespace robot_near_table */
 

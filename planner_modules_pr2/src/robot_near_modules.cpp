@@ -21,11 +21,9 @@ namespace robot_near_table
 {
 boost::shared_ptr< ModuleParamCache<double> > cost_cache;
 
-double compute_value(planning_scene::PlanningScenePtr scene, const string& table)
+double compute_value(planning_scene::PlanningScenePtr scene, const string& table, const geometry_msgs::Pose& table_pose)
 {
 	double result = INFINITE_COST;
-	// fetch surface pose from symbolic state
-	collision_detection::World::ObjectConstPtr table_obj = scene->getWorld()->getObject(table);
 
 	const robot_state::RobotState& robotState = scene->getCurrentState();
 	// get torso link pose in map frame
@@ -36,7 +34,7 @@ double compute_value(planning_scene::PlanningScenePtr scene, const string& table
 	// fetch torso pose and convert into table frame
 	tf::Pose transform_map_table;
 	tf::Pose transform_table_torso;
-	tf::poseEigenToTF(table_obj->shape_poses_.front(), transform_map_table);
+	tf::poseMsgToTF(table_pose, transform_map_table);
 
 	// transform from table to torso (torso pose in table frame)
 	transform_table_torso = transform_map_table.inverseTimes(transform_map_torso);
@@ -114,10 +112,14 @@ double robot_near_table(const modules::ParameterList & parameterList,
 		return value;
 	}
 
+	// fetch table pose from symbolic state
+	geometry_msgs::Pose table_pose;
+	tpsu->readPose(table_pose, table, numericalFluentCallback);
+
 	// compute value
 	ros::WallTime compute_start_time = ros::WallTime::now();
 	planning_scene::PlanningScenePtr scene = tpsu->getCurrentScene(predicateCallback, numericalFluentCallback);
-	value = compute_value(scene, table);
+	value = compute_value(scene, table, table_pose);
 	ros::WallTime compute_end_time = ros::WallTime::now();
 	// ROS_INFO("robot-near-table: robot pose: x,y: %lf, %lf - result: %lf", robot_pose.x, robot_pose.y, value);
 
