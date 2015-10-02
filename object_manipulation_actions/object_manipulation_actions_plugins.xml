@@ -30,17 +30,13 @@
   <class name="object_manipulation_actions/action_executor_arm_to_carry" type="object_manipulation_actions::ActionExecutorArmToCarry" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>An action executor that moves an arm to a carry position.</description>
   </class>
-  <!-- Grounding Stuff -->
-  <class name="object_manipulation_actions/action_executor_inspect_table_grounding" type="object_manipulation_actions::ActionExecutorInspectTableGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
+  <class name="object_manipulation_actions/action_executor_inspect_table" type="object_manipulation_actions::ActionExecutorInspectTable" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>Action executor for inspecting a table (detecting objects)</description>
   </class>
-  <class name="object_manipulation_actions/action_executor_lift_torso_grounding" type="object_manipulation_actions::ActionExecutorLiftTorsoGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for lifting torso when in front of table.</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_pickup_object_grounding" type="object_manipulation_actions::ActionExecutorPickupObjectGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
+  <class name="object_manipulation_actions/action_executor_pickup_object" type="object_manipulation_actions::ActionExecutorPickupObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>Action executor for picking up objects</description>
   </class>
-  <class name="object_manipulation_actions/action_executor_putdown_object_grounding" type="object_manipulation_actions::ActionExecutorPutdownObjectGrounding" base_class_type="continual_planning_executive::ActionExecutorInterface">
+  <class name="object_manipulation_actions/action_executor_putdown_object" type="object_manipulation_actions::ActionExecutorPutdownObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
     <description>Action executor for putting down objects</description>
   </class>
 </library>

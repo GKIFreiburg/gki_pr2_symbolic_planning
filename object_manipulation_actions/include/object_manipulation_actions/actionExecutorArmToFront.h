@@ -28,6 +28,9 @@ namespace object_manipulation_actions
 
 			moveit::planning_interface::MoveGroup* left_arm_;
 			moveit::planning_interface::MoveGroup* right_arm_;
+			moveit::planning_interface::MoveGroup* head_group_;
+
+			std::string joint_name_head_yaw_;
 
     		moveit::planning_interface::MoveItErrorCode executeArmToFront(
     				moveit::planning_interface::MoveGroup* group,

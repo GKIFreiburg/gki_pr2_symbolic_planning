@@ -31,6 +31,9 @@ namespace object_manipulation_actions
 
 		left_arm_ = new moveit::planning_interface::MoveGroup("left_arm");
 		right_arm_ = new moveit::planning_interface::MoveGroup("right_arm");
+		head_group_ = symbolic_planning_utils::MoveGroupInterface::getInstance()->getHeadGroup();
+
+		joint_name_head_yaw_ = "head_pan_joint";
 	}
 
 	bool ActionExecutorArmToFront::canExecute(const DurativeAction & a, const SymbolicState & currentState) const
@@ -40,12 +43,31 @@ namespace object_manipulation_actions
 
 	bool ActionExecutorArmToFront::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 	{
-		// DEFAULT_RIGHT_ARM_INSPECT_POSE = PoseStamped(Header(frame_id='/head_mount_kinect_rgb_link'),Pose(Point(0.48, -0.2, 0.0), Quaternion(-0.037, -0.031, 0.609, 0.792)))
-		// DEFAULT_LEFT_ARM_INSPECT_POSE = PoseStamped(Header(frame_id='/head_mount_kinect_rgb_link'),Pose(Point(0.48, 0.2, 0.0), Quaternion(-0.073, -0.047, -0.669, 0.738)))
+		moveit::planning_interface::MoveItErrorCode error_code;
+		// Point head straight forward
+		// first remember actual joint position
+		// store the joint value for the pointed head position
+		std::vector<double> current_joint_values = head_group_->getCurrentJointValues();
+		std::vector<std::string> joint_names = head_group_->getJoints();
+		double pointed_head_joint_value;
 
+		ROS_ASSERT(current_joint_values.size() == joint_names.size());
+		for (size_t i = 0; i < current_joint_values.size(); i++)
+		{
+			if (joint_names[i] == joint_name_head_yaw_)
+				pointed_head_joint_value = current_joint_values[i];
+		}
+
+		// move head to 0 position
+		if (!head_group_->setJointValueTarget(joint_name_head_yaw_, 0))
+			ROS_ERROR("ActionExecutorArmToFront::%s: joint values out of bounds!", __func__);
+		error_code = head_group_->move();
+		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
+			ROS_ERROR("ActionExecutorArmToFront::%s: Could not move head to initial position!", __func__);
+
+		// Move arm in front of camera
 		ROS_ASSERT(a.parameters.size() == 1);
 		moveit::planning_interface::MoveGroup* arm_group;
-		moveit::planning_interface::MoveItErrorCode error_code;
 		geometry_msgs::PoseStamped pose;
 		pose.header.frame_id = "head_mount_kinect_rgb_link";
 		pose.header.stamp = ros::Time::now();
@@ -95,12 +117,24 @@ namespace object_manipulation_actions
 		pub_pose_.publish(pose);
 		// ROS_INFO_STREAM("ActionExecutorArmToFront::" << __func__ << ": Pose: " << pose);
 
-//		arm_group->setGoalPositionTolerance(0.01);
-//		arm_group->setGoalOrientationTolerance(0.01);
-//		arm_group->setPlanningTime(10);
-//		arm_group->setNumPlanningAttempts(100);
 		error_code = executeArmToFront(arm_group, pose);
-		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
+		if (!error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS)
+		{
+			ROS_ERROR("ActionExecutorArmToFront::%s: Could not move arm in front of camera!", __func__);
+			return false;
+		}
+
+//		// move head back
+//		if (!head_group_->setJointValueTarget(joint_name_head_yaw_, pointed_head_joint_value))
+//			ROS_ERROR("ActionExecutorArmToFront::%s: joint values out of bounds!", __func__);
+//		error_code = head_group_->move();
+//		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
+//		{
+//			ROS_ERROR("ActionExecutorArmToFront::%s: Could not move head to initial position!", __func__);
+//			return false;
+//		}
+
+		return true;
 	}
 
 	void ActionExecutorArmToFront::cancelAction()

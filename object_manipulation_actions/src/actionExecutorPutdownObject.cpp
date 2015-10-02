@@ -35,6 +35,8 @@ ActionExecutorPutdownObject::ActionExecutorPutdownObject()
 	// which needs the initialize the robot description - takes time)
 	// psi_.reset(new symbolic_planning_utils::PlanningSceneMonitor());
 	psi_.reset(new symbolic_planning_utils::PlanningSceneService());
+
+	ROS_INFO("ActionExecutorPutdownObject::%s: Action executor is ready", __func__);
 }
 
 ActionExecutorPutdownObject::~ActionExecutorPutdownObject()
@@ -55,11 +57,10 @@ bool ActionExecutorPutdownObject::canExecute(const DurativeAction & a, const Sym
 
 bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 {
-	ROS_ASSERT(a.parameters.size() == 4);
+	ROS_ASSERT(a.parameters.size() == 3);
 	std::string movable_obj = a.parameters[0];
 	std::string arm 		= a.parameters[1];
 	std::string table 		= a.parameters[2];
-	std::string mani_loc 	= a.parameters[3];
 
 	moveit_msgs::CollisionObject surface_object;
 	if (!psi_->getObjectFromCollisionObjects(table, surface_object))
@@ -116,7 +117,9 @@ bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, Symb
     	return false;
     }
 
-    arm_group->setSupportSurfaceName(table);
+
+    // arm_group->setPlannerId("RRTConnectkConfigDefault");
+	arm_group->setSupportSurfaceName(table);
 
 	moveit::planning_interface::MoveItErrorCode error_code;
 	error_code = arm_group->place(attached_object.object.id, locs);
@@ -124,8 +127,7 @@ bool ActionExecutorPutdownObject::executeBlocking(const DurativeAction & a, Symb
 			<< error_code);
 
 	// set predicate *-inspected-recently to false after successful putdown
-	currentState.setBooleanPredicate(predicate_inspected_recently_, mani_loc, false);
-
+	currentState.setBooleanPredicate(predicate_inspected_recently_, table, false);
 	return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 }
 

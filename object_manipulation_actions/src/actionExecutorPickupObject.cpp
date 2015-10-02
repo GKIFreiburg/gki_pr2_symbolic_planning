@@ -31,7 +31,7 @@ ActionExecutorPickupObject::ActionExecutorPickupObject() :
 			"action server to start.", __func__);
 	actionGenerateGrasps_.waitForServer(); // will wait for infinite time
 
-	ROS_INFO("ActionExecutorInspectLocation::%s: Action client is ready", __func__);
+	ROS_INFO("ActionExecutorPickupObject::%s: Action client is ready", __func__);
 
 	// better use service calls rather than planningSceneMontior,
 	// which needs the initialize the robot description - takes time)
@@ -57,11 +57,10 @@ bool ActionExecutorPickupObject::canExecute(const DurativeAction & a, const Symb
 
 bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, SymbolicState & currentState)
 {
-	ROS_ASSERT(a.parameters.size() == 4);
+	ROS_ASSERT(a.parameters.size() == 3);
 	std::string movable_obj = a.parameters[0];
 	std::string arm 		= a.parameters[1];
 	std::string table 		= a.parameters[2];
-	std::string mani_loc 	= a.parameters[3];
 
 	moveit_msgs::GetPlanningScene::Request request;
 	moveit_msgs::GetPlanningScene::Response response;
@@ -125,7 +124,7 @@ bool ActionExecutorPickupObject::executeBlocking(const DurativeAction & a, Symbo
 				<< error_code);
 
 		// set predicate *-inspected-recently to false after successful grasp
-		currentState.setBooleanPredicate(predicate_inspected_recently_, mani_loc, false);
+		currentState.setBooleanPredicate(predicate_inspected_recently_, table, false);
 
 		return error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS;
 	} else {
