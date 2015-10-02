@@ -329,9 +329,6 @@ moveit_msgs::CollisionObject ManipulationPlanning::createCollisionObject(
 {
 	moveit_msgs::CollisionObject co;
 	co.id = name;
-	std::vector<std::string> strings = StringUtil::split(name, "_");
-	std::string object_type = strings[0];
-	ROS_WARN("ManipulationPlanning::%s: object type: %s DEBUG OUTPUT", __func__, object_type.c_str());
 	co.header.frame_id = scene->getPlanningFrame();
 	co.operation = moveit_msgs::CollisionObject::ADD;
 
@@ -350,52 +347,13 @@ moveit_msgs::CollisionObject ManipulationPlanning::createCollisionObject(
 	}
 
 	// fetching collision type
-	moveit_msgs::GetPlanningScene::Request req;
-	moveit_msgs::GetPlanningScene::Response res;
+	size_t pos = name.rfind("_");
+	std::string object_type = name.substr(0, pos);
+	std::string type_information_namespace = "/object_type_information";
+	bool type_info_available = ros::param::get(type_information_namespace+"/"+object_type+"/key", co.type.key);
+	type_info_available &= ros::param::get(type_information_namespace+"/"+object_type+"/db", co.type.db);
+	ROS_ASSERT_MSG(type_info_available, "ManipulationPlanning::%s: Could not lookup type to collision object %s", __func__, co.id.c_str());
 
-    req.components.components = moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_GEOMETRY |
-        moveit_msgs::PlanningSceneComponents::ROBOT_STATE_ATTACHED_OBJECTS;
-	if (!ros::service::call("get_planning_scene", req, res))
-	{
-		ROS_ERROR("ManipulationPlanning::%s: Could not fetch collision objects from real planning scene!", __func__);
-		moveit_msgs::CollisionObject obj;
-		return obj;
-	}
-
-	// storing real collision objects with key information
-	std::vector<moveit_msgs::CollisionObject>::const_iterator it;
-	for (it = res.scene.world.collision_objects.begin(); it != res.scene.world.collision_objects.end(); it++)
-	{
-		std::vector<std::string> co_name = StringUtil::split(it->id, "_");
-		std::string type = co_name[0];
-		object_types_[type] = *it;
-	}
-
-//	For the coke object
-//  key: e450b2cefae81e122a3504bd11001555
-//  db: {"collection":"object_recognition","root":"http://localhost:5984","type":"CouchDB"}
-	std::map<std::string, moveit_msgs::CollisionObject>::iterator fi = object_types_.find(object_type);
-	if (fi == object_types_.end())
-		ROS_ERROR("ManipulationPlanning::%s: Could not add key information to collision object %s", __func__, co.id.c_str());
-	else
-	{
-		ROS_WARN("ManipulationPlanning::%s: Successfully attached key to collision object %s", __func__, co.id.c_str());
-		co.type = fi->second.type;
-	}
-	ROS_ASSERT(co.type.key != "");
-
-
-//	if (!co.primitives.empty() || !co.meshes.empty() || !co.planes.empty())
-//	{
-//		if (scene->hasObjectType(co.id))
-//		{
-//			co.type = scene->getObjectType(co.id);
-//		}
-//		else
-//		{
-//			ROS_ERROR("ManipulationPlanning::%s: Could not add type to collision object, will lead to error!", __func__);
-//		}
-//	}
 	return co;
 }
 
