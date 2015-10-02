@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   tidyup_msgs
   geometry_msgs
   inverse_capability_map
+  rosbag
+  roslib
 )
 
 catkin_package(
@@ -41,10 +43,11 @@ add_library(tidyup_state_creators
     src/goalCreatorDefineGoal.cpp
     src/StateAccessException.cpp
     ### Grounding stuff ###
-    src/stateCreatorRobotPoseGrounding.cpp
     src/stateCreatorLiftTorsoGrounding.cpp
     src/goalCreatorTidyupInitializeGrounding.cpp
-    src/goalCreatorDefineGoalGrounding.cpp
+    src/goalCreatorDefineGoalTidyupExperiment.cpp
+    src/goalCreatorLoadTablesAsMeshIntoPlanningScene.cpp
+    src/stateCreatorFromPlanningSceneTidyupExperiment.cpp
 )
     
 target_link_libraries(tidyup_state_creators

@@ -33,14 +33,17 @@
   <!-- Grounding Stuff -->
   <class name="tidyup_state_creators/goal_creator_tidyup_initialize_grounding" type="tidyup_state_creators::GoalCreatorTidyupInitializeGrounding" base_class_type="continual_planning_executive::GoalCreator">
     <description>Loads the types from the domain file.</description>
-  </class>  
-  <class name="tidyup_state_creators/goal_creator_define_goal_grounding" type="tidyup_state_creators::GoalCreatorDefineGoalGrounding" base_class_type="continual_planning_executive::GoalCreator">
-    <description>Sets goal condition for grounding modules.</description>
-  </class>
-  <class name="tidyup_state_creators/state_creator_robot_pose_grounding" type="tidyup_state_creators::StateCreatorRobotPoseGrounding" base_class_type="continual_planning_executive::StateCreator">
-    <description>Sets the current robot pose in the state and possible robot-near-table predicates.</description>
   </class>
   <class name="tidyup_state_creators/state_creator_lift_torso_grounding" type="tidyup_state_creators::StateCreatorLiftTorsoGrounding" base_class_type="continual_planning_executive::StateCreator">
     <description>Writing torso position into current state.</description>
+  </class>
+  <class name="tidyup_state_creators/goal_creator_define_goal_tidyup_experiment" type="tidyup_state_creators::GoalCreatorDefineGoalTidyupExperiment" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Sets goal condition.</description>
+  </class>
+  <class name="tidyup_state_creators/state_creator_from_planning_scene_tidyup_experiment" type="tidyup_state_creators::StateCreatorFromPlanningSceneTidyupExperiment" base_class_type="continual_planning_executive::StateCreator">
+    <description>Asks the environment server for known collision objects and adds them to the current state.</description>
+  </class>
+  <class name="tidyup_state_creators/goal_creator_load_tables_as_mesh_into_planning_scene" type="tidyup_state_creators::GoalCreatorLoadTablesAsMeshIntoPlanningScene" base_class_type="continual_planning_executive::GoalCreator">
+    <description>Load the tables from tables.dat file and add them as collision objects into the planning scene.</description>
   </class>
 </library>

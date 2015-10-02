@@ -15,6 +15,12 @@
 #include <geometric_shapes/shape_messages.h>
 #include <geometric_shapes/shape_operations.h>
 
+#include <boost/foreach.hpp>
+#define foreach BOOST_FOREACH
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <ros/package.h>
+
 PLUGINLIB_EXPORT_CLASS(tidyup_state_creators::GoalCreatorLoadTablesIntoPlanningScene, continual_planning_executive::GoalCreator)
 
 namespace tidyup_state_creators
@@ -90,16 +96,16 @@ namespace tidyup_state_creators
 //			co.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = tl.sizez;
 //			co.primitive_poses.push_back(tl.pose.pose);
 
-			shapes::Box box = shapes::Box(tl.sizex, tl.sizey, tl.sizez);
-			shapes::Mesh* mesh = shapes::createMeshFromShape(box);
-			shapes::ShapeMsg mesh_msg;
-			shapes::constructMsgFromShape(mesh, mesh_msg);
-
-			co.meshes.resize(1);
-			co.meshes[0] = boost::get<shape_msgs::Mesh>(mesh_msg);
-			co.mesh_poses.push_back(tl.pose.pose);
-			co.operation = co.ADD;
-			planning_scene.world.collision_objects.push_back(co);
+//			shapes::Box box = shapes::Box(tl.sizex, tl.sizey, tl.sizez);
+//			shapes::Mesh* mesh = shapes::createMeshFromShape(box);
+//			shapes::ShapeMsg mesh_msg;
+//			shapes::constructMsgFromShape(mesh, mesh_msg);
+//
+//			co.meshes.resize(1);
+//			co.meshes[0] = boost::get<shape_msgs::Mesh>(mesh_msg);
+//			co.mesh_poses.push_back(tl.pose.pose);
+//			co.operation = co.ADD;
+//			planning_scene.world.collision_objects.push_back(co);
 
 			// Set colors
 			moveit_msgs::ObjectColor oc;
@@ -110,6 +116,65 @@ namespace tidyup_state_creators
             oc.color.a = 1.0;
             planning_scene.object_colors.push_back(oc);
 		}
+
+
+
+		ros::NodeHandle nh;
+
+	    rosbag::Bag bag;
+	    std::string fileName = ros::package::getPath("export_table_mesh");
+	    fileName += "/exports/table1.bag";
+	    bag.open(fileName, rosbag::bagmode::Read);
+
+	    std::string topic = "export_table";
+
+	    rosbag::View view(bag, rosbag::TopicQuery(topic));
+	    moveit_msgs::CollisionObject obj;
+	    foreach(rosbag::MessageInstance const m, view)
+	    {
+	        moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
+	        if (co != NULL)
+	        {
+	        	obj = *co;
+	        	ROS_INFO("Publishing Collision Object");
+	        	obj.operation = moveit_msgs::CollisionObject::ADD;
+	        	//ROS_WARN_STREAM(obj);
+	        }
+	    }
+	    obj.operation =  obj.ADD;
+	    planning_scene.world.collision_objects.push_back(obj);
+	    bag.close();
+
+	    rosbag::Bag bag2;
+	    std::string fileName2 = ros::package::getPath("export_table_mesh");
+	    fileName2 += "/exports/table2.bag";
+	    bag2.open(fileName2, rosbag::bagmode::Read);
+
+	    topic = "export_table";
+	    rosbag::View view2(bag2, rosbag::TopicQuery(topic));
+	    moveit_msgs::CollisionObject obj2;
+	    foreach(rosbag::MessageInstance const m, view2)
+	    {
+	        moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
+	        if (co != NULL)
+	        {
+	        	obj2 = *co;
+	        	ROS_INFO("Publishing Collision Object");
+	        	obj2.operation = moveit_msgs::CollisionObject::ADD;
+	        	//ROS_WARN_STREAM(obj);
+	        }
+	    }
+	    obj2.operation =  obj2.ADD;
+	    planning_scene.world.collision_objects.push_back(obj2);
+
+
+
+
+
+
+
+
+
 		pubPlanningScene_.publish(planning_scene);
 	}
 

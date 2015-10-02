@@ -36,6 +36,9 @@ namespace tidyup_state_creators
         currentState.addSuperType("arm", "arm");
         currentState.addSuperType("arm_state", "arm_state");
 
+        currentState.addSuperType("can", "movable_object");
+        currentState.addSuperType("cube", "movable_object");
+
         goal.addSuperType("pose", "pose");
         goal.addSuperType("frameid", "frameid");
         goal.addSuperType("location", "pose");
@@ -43,6 +46,9 @@ namespace tidyup_state_creators
         goal.addSuperType("movable_object", "pose");
         goal.addSuperType("arm", "arm");
         goal.addSuperType("arm_state", "arm_state");
+
+        goal.addSuperType("can", "movable_object");
+        goal.addSuperType("cube", "movable_object");
 
         currentState.printSuperTypes();
 
