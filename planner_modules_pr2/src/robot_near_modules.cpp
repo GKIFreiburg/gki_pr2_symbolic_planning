@@ -106,9 +106,9 @@ double robot_near_table(const modules::ParameterList & parameterList,
 	if (cost_cache->get(cache_key, value))
 	{
 		if (value == modules::INFINITE_COST)
-			ROS_ERROR("robot_near_modules::%s: Robot (x: %lf, y: %lf, theta: %lf) NOT near table - no visualization", __func__, robot_pose.x, robot_pose.y, robot_pose.theta);
+			ROS_WARN("robot_near_modules::%s: Robot (x: %lf, y: %lf, theta: %lf) NOT near surface %s - no visualization", __func__, robot_pose.x, robot_pose.y, robot_pose.theta, table.c_str());
 		else
-			ROS_INFO("robot_near_modules::%s: Robot near table - no visualization", __func__);
+			ROS_INFO("robot_near_modules::%s: Robot near surface %s - no visualization", __func__, table.c_str());
 		return value;
 	}
 
@@ -128,13 +128,13 @@ double robot_near_table(const modules::ParameterList & parameterList,
 
 	if (value == modules::INFINITE_COST)
 	{
-		ROS_ERROR("robot_near_modules::%s: Robot (x: %lf, y: %lf, theta: %lf) NOT near table", __func__, robot_pose.x, robot_pose.y, robot_pose.theta);
-		tpsu->visualize(scene);
-		ROS_INFO("VISUALIZATION, wait 5 seconds");
-		ros::Duration(5.0).sleep();
+		ROS_WARN("robot_near_modules::%s: Robot (x: %lf, y: %lf, theta: %lf) NOT near surface %s", __func__, robot_pose.x, robot_pose.y, robot_pose.theta, table.c_str());
+//		tpsu->visualize(scene);
+//		ROS_INFO("VISUALIZATION, wait 5 seconds");
+//		ros::Duration(5.0).sleep();
 	}
 	else
-		ROS_INFO("robot_near_modules::%s: Robot near table", __func__);
+		ROS_INFO("robot_near_modules::%s: Robot near surface %s", __func__, table.c_str());
 
 
 

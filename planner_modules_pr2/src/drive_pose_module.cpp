@@ -20,6 +20,7 @@ namespace drive_pose
 int number_draws_;
 double dev_x_, dev_y_, dev_z_, dev_theta_;
 double min_percent_of_max_;
+double min_torso_position_;
 Eigen::Matrix4d covariance_;
 
 // Cache storing the next free id of a surface
@@ -124,6 +125,7 @@ void drive_pose_init(int argc, char** argv)
 	nhPriv.param("irs/deviation_z", dev_z_, 0.5);
 	nhPriv.param("irs/deviation_theta", dev_theta_, M_PI / 4);
 	nhPriv.param("irs/min_percent_of_max", min_percent_of_max_, 0.0);
+	nhPriv.param("irs/min_torso_position", min_torso_position_, 0.012);
 
 	// declare covariances
 	double cov_x, cov_y, cov_z, cov_theta;
@@ -144,6 +146,7 @@ void drive_pose_init(int argc, char** argv)
 			"deviation in z: " << dev_z_ << "\n"
 			"deviation in theta: " << dev_theta_ << "\n"
 			"minimum percent of max: " << min_percent_of_max_ << "\n"
+			"minimum torso position: " << min_torso_position_ << "\n"
 	);
 
 	ROS_INFO("drive_pose_module::%s: Initialized drive pose Module.", __func__);
@@ -184,7 +187,8 @@ std::string determine_drive_pose(
 			InverseCapabilitySampling::drawBestOfXSamples(scene, it->second->inverse_reachability.get(), it->second->pose, number_draws_,
 					drive_pose_cache_,
 					covariance_,
-					min_percent_of_max_);
+					min_percent_of_max_,
+					min_torso_position_);
 	ROS_INFO_STREAM("Sampled Pose: Percent: " << sampled_pose.percent << "\n" << sampled_pose.pose);
 
 	int next_free_id = drive_pose_next_free_cache_[table];   // auto inits to 0
