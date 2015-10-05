@@ -350,9 +350,12 @@ moveit_msgs::CollisionObject ManipulationPlanning::createCollisionObject(
 	size_t pos = name.rfind("_");
 	std::string object_type = name.substr(0, pos);
 	std::string type_information_namespace = "/object_type_information";
-	bool type_info_available = ros::param::get(type_information_namespace+"/"+object_type+"/key", co.type.key);
-	type_info_available &= ros::param::get(type_information_namespace+"/"+object_type+"/db", co.type.db);
-	ROS_ASSERT_MSG(type_info_available, "ManipulationPlanning::%s: Could not lookup type to collision object %s", __func__, co.id.c_str());
+	if (ros::param::has(type_information_namespace+"/"+object_type+"/key"))
+	{
+		ros::param::get(type_information_namespace+"/"+object_type+"/key", co.type.key);
+		ros::param::get(type_information_namespace+"/"+object_type+"/db", co.type.db);
+		// ROS_ASSERT_MSG(type_info_available, "ManipulationPlanning::%s: Could not lookup type to collision object %s", __func__, co.id.c_str());
+	}
 
 	return co;
 }
