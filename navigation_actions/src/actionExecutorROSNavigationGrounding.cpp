@@ -16,11 +16,10 @@ namespace navigation_actions
     void ActionExecutorROSNavigationGrounding::initialize(const std::deque<std::string> & arguments)
     {
         // move-robot-to-table move_base table-inspected-recently sampled-torso-height
-        ROS_ASSERT(arguments.size() == 4);
+        ROS_ASSERT(arguments.size() == 3);
         action_name_ 						= arguments[0];
         action_topic_move_base_				= arguments[1];
         predicate_table_inspected_recently_ = arguments[2];
-        sampled_torso_height_ 				= arguments[3];
 
         action_move_base_  = new actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>(action_topic_move_base_, true);
 
@@ -82,6 +81,9 @@ namespace navigation_actions
 
 		if (!executeLiftTorso(target_pose))
 			return false;
+
+		// set inspect-recently to false
+		currentState.setBooleanPredicate(predicate_table_inspected_recently_, table, false);
 
 		return true;
 	}

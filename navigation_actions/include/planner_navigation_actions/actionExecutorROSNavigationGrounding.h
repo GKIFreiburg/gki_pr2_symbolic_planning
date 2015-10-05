@@ -33,7 +33,6 @@ namespace navigation_actions
             std::string action_name_;
             std::string action_topic_move_base_;
             std::string predicate_table_inspected_recently_;
-            std::string sampled_torso_height_;
 
             actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>* action_move_base_;
 
