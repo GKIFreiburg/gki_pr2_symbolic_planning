@@ -280,7 +280,7 @@ bool ActionExecutorInspectTable::executeTurnHead(const int degrees)
 void ActionExecutorInspectTable::renameTableCollisionObject(const std::string& tableName)
 {
 	moveit_msgs::CollisionObject tableCO;
-	forEach (const moveit_msgs::CollisionObject& co, psi_->getCollisionObjects())
+	for_each (const moveit_msgs::CollisionObject& co, psi_->getCollisionObjects())
 	{
 		if (StringUtil::startsWith(co.id, tableName))
 		{

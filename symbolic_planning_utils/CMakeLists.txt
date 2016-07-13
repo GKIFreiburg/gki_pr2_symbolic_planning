@@ -99,7 +99,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${GTEST_INCLUDE_DIRS}
+#  ${GTEST_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -168,7 +168,8 @@ target_link_libraries(symbolic_planning_utils
 ## Add gtest based cpp test target and link libraries
 #catkin_add_gtest(${PROJECT_NAME}-test 
 #	test/moveGroupInterfaceTest.cpp)
-if(CATKIN_ENABLE_TESTING)
+#if(CATKIN_ENABLE_TESTING)
+if(0)
 	find_package(GTest REQUIRED)
 	find_package(rostest REQUIRED)
 	

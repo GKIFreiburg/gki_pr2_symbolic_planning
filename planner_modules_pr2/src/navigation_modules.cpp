@@ -81,7 +81,7 @@ double get_plan_cost(const std::vector<geometry_msgs::PoseStamped>& plan)
 
 double compute_value(planning_scene::PlanningScenePtr scene, nav_msgs::GetPlan& srv)
 {
-	path_planner->makePlan(scene, srv.request.goal, srv.response.plan.poses);
+	path_planner->makePlanFromScene(scene, srv.request.goal, srv.response.plan.poses);
 	if (!srv.response.plan.poses.empty())
 	{
 		// get plan cost

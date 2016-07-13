@@ -28,7 +28,6 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${GTEST_INCLUDE_DIRS}
 )
  
 add_library(tidyup_state_creators
@@ -47,16 +46,17 @@ add_library(tidyup_state_creators
     src/goalCreatorTidyupInitializeGrounding.cpp
     src/goalCreatorDefineGoalTidyupExperiment.cpp
     src/goalCreatorLoadTablesAsMeshIntoPlanningScene.cpp
-    src/stateCreatorFromPlanningSceneTidyupExperiment.cpp
+    src/stateCreatorFromPlanningSceneTidyupExperiment.cpp 
 )
     
 target_link_libraries(tidyup_state_creators
   ${catkin_LIBRARIES}
 )
 
-if (CATKIN_ENABLE_TESTING)
+#if (CATKIN_ENABLE_TESTING)
+if (0)
 	find_package(GTest REQUIRED)
-	
+	include_directories(${GTEST_INCLUDE_DIRS})	
 	catkin_add_gtest(${PROJECT_NAME}-test test/stateCreatorFromPlanningSceneTest.cpp src/stateCreatorFromPlanningScene.cpp)
 	target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} ${GTEST_LIBRARIES} pthread)
 endif()

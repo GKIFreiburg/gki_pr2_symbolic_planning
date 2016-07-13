@@ -107,7 +107,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES planner_modules_pr2
-  CATKIN_DEPENDS pluginlib tf tfd_modules tidyup_msgs tidyup_utils
+  CATKIN_DEPENDS pluginlib tf tfd_modules tidyup_msgs tidyup_utils gki_3dnav_planner
 #  DEPENDS system_lib
 )
 
