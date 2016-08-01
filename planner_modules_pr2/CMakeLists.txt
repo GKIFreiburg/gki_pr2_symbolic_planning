@@ -33,10 +33,10 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-#find_package(PkgConfig REQUIRED)
-#pkg_check_modules(SBPL REQUIRED sbpl)
-#include_directories(${SBPL_INCLUDE_DIRS})
-#link_directories(${SBPL_LIBRARY_DIRS})
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SBPL REQUIRED sbpl)
+include_directories(${SBPL_INCLUDE_DIRS})
+link_directories(${SBPL_LIBRARY_DIRS})
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
