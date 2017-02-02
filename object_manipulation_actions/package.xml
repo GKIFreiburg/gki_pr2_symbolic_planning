@@ -2,7 +2,7 @@
   <name>object_manipulation_actions</name>
   <version>0.0.0</version>
   <description>object_manipulation_actions contains action executors to interact with small objects on tables.</description>
-  <maintainer email="dornhege@informatik.uni-freiburg.de">Christian Dornhege, Andreas Hertle</maintainer>
+  <maintainer email="hertle@informatik.uni-freiburg.de">Christian Dornhege, Andreas Hertle</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/object_manipulation_actions</url>
   
@@ -20,8 +20,6 @@
   <build_depend>tfd_modules</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
-#  <build_depend>state_transformer</build_depend>
-#  <build_depend>pr2_controller_msgs</build_depend>
   <build_depend>ork_to_planning_scene</build_depend>
   <build_depend>ork_to_planning_scene_msgs</build_depend>
   <build_depend>symbolic_planning_utils</build_depend>
@@ -38,8 +36,6 @@
   <run_depend>tfd_modules</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
-#  <run_depend>state_transformer</run_depend>
-#  <run_depend>pr2_controller_msgs</run_depend>
   <run_depend>ork_to_planning_scene</run_depend>
   <run_depend>ork_to_planning_scene_msgs</run_depend>
   <run_depend>symbolic_planning_utils</run_depend>

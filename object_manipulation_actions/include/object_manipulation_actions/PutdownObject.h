@@ -12,12 +12,12 @@
 namespace object_manipulation_actions
 {
 
-	class ActionExecutorPutdownObject: public continual_planning_executive::ActionExecutorInterface
+	class PutdownObject: public continual_planning_executive::ActionExecutorInterface
 	{
     	public:
 
-		ActionExecutorPutdownObject();
-		~ActionExecutorPutdownObject();
+		PutdownObject();
+		~PutdownObject();
 
 		virtual void initialize(const std::deque<std::string> & arguments);
 

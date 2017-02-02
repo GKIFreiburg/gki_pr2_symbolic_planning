@@ -10,12 +10,12 @@
 namespace object_manipulation_actions
 {
 
-    class ActionExecutorLiftTorso : public continual_planning_executive::ActionExecutorInterface
+    class LiftTorso : public continual_planning_executive::ActionExecutorInterface
     {
         public:
 
-    	ActionExecutorLiftTorso();
-		~ActionExecutorLiftTorso();
+    	LiftTorso();
+		~LiftTorso();
 
 		virtual void initialize(const std::deque<std::string> & arguments);
 

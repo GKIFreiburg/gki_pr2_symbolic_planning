@@ -17,7 +17,7 @@
 
 namespace object_manipulation_actions
 {
-    class ActionExecutorInspectTable : public continual_planning_executive::ActionExecutorInterface
+    class InspectTable : public continual_planning_executive::ActionExecutorInterface
     {
         public:
 

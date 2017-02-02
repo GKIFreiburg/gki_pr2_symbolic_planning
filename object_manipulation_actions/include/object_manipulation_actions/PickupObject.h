@@ -15,12 +15,12 @@
 
 namespace object_manipulation_actions
 {
-    class ActionExecutorPickupObject : public continual_planning_executive::ActionExecutorInterface
+    class PickupObject : public continual_planning_executive::ActionExecutorInterface
     {
         public:
 
-    	ActionExecutorPickupObject();
-		~ActionExecutorPickupObject();
+    	PickupObject();
+		~PickupObject();
 
 		virtual void initialize(const std::deque<std::string> & arguments);
 

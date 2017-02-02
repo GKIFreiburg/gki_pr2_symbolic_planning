@@ -7,12 +7,12 @@
 namespace object_manipulation_actions
 {
 
-    class ActionExecutorInspectObject : public continual_planning_executive::ActionExecutorInterface
+    class InspectObject : public continual_planning_executive::ActionExecutorInterface
     {
         public:
 
-    	ActionExecutorInspectObject();
-		~ActionExecutorInspectObject();
+    	InspectObject();
+		~InspectObject();
 
 		virtual void initialize(const std::deque<std::string> & arguments);
 

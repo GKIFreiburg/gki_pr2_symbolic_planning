@@ -1,42 +1,35 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <library path="lib/libobject_manipulation_actions">
-  <class name="object_manipulation_actions/action_executor_pickup_object" type="object_manipulation_actions::ActionExecutorPickupObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for picking up objects</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_putdown_object" type="object_manipulation_actions::ActionExecutorPutdownObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for putting down objects</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_inspect_location" type="object_manipulation_actions::ActionExecutorInspectLocation" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for inspecting a location (detecting objects)</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_detect_expected_objects" type="object_manipulation_actions::ActionExecutorDetectExpectedObjects" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>
-      Action executor for detecting objects on a table. 
-      Objects already in the symbolic state are expected to be redetected, thus preserving the object id.
-          </description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_arm_to_side" type="object_manipulation_actions::ActionExecutorArmToSide" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for moving an arm to the side</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_arm_to_front" type="object_manipulation_actions::ActionExecutorArmToFront" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for moving an arm to the front</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_inspect_object" type="object_manipulation_actions::ActionExecutorInspectObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for analyzing an object in front of the camera.</description>
-  </class>
-    <class name="object_manipulation_actions/action_executor_lift_torso" type="object_manipulation_actions::ActionExecutorLiftTorso" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for lifting torso when in front of table.</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_arm_to_carry" type="object_manipulation_actions::ActionExecutorArmToCarry" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>An action executor that moves an arm to a carry position.</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_inspect_table" type="object_manipulation_actions::ActionExecutorInspectTable" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for inspecting a table (detecting objects)</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_pickup_object" type="object_manipulation_actions::ActionExecutorPickupObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for picking up objects</description>
-  </class>
-  <class name="object_manipulation_actions/action_executor_putdown_object" type="object_manipulation_actions::ActionExecutorPutdownObject" base_class_type="continual_planning_executive::ActionExecutorInterface">
-    <description>Action executor for putting down objects</description>
-  </class>
+	<class name="object_manipulation_actions/arm_to_side" type="object_manipulation_actions::ArmToSide"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for moving an arm to the side
+		</description>
+	</class>
+	<class name="object_manipulation_actions/arm_to_front" type="object_manipulation_actions::ArmToFront"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for moving an arm to the front
+		</description>
+	</class>
+	<class name="object_manipulation_actions/inspect_object" type="object_manipulation_actions::InspectObject"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for analyzing an object in front of the
+			camera.</description>
+	</class>
+	<class name="object_manipulation_actions/lift_torso" type="object_manipulation_actions::LiftTorso"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for lifting torso when in front of table.
+		</description>
+	</class>
+	<class name="object_manipulation_actions/inspect_table" type="object_manipulation_actions::InspectTable"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for inspecting a table (detecting
+			objects)</description>
+	</class>
+	<class name="object_manipulation_actions/pickup_object" type="object_manipulation_actions::PickupObject"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for picking up objects</description>
+	</class>
+	<class name="object_manipulation_actions/putdown_object" type="object_manipulation_actions::PutdownObject"
+		base_class_type="continual_planning_executive::ActionExecutorInterface">
+		<description>Action executor for putting down objects</description>
+	</class>
 </library>
