@@ -92,7 +92,7 @@ std::string createPoseParamString(const geometry_msgs::Pose & pose, double precP
 std::string createPoseParamString(const geometry_msgs::Pose2D& pose, double torso_position, double precPose = 0.01, double precTheta = 0.01);
 
 /// Split a named id (e.g. robot0) in name and id (robot, 0).
-bool splitNamedId(const string & namedId, string & name, int & id);
+bool splitNamedId(const std::string & namedId, std::string & name, int & id);
 
 #include "module_param_cache.hpp"
 

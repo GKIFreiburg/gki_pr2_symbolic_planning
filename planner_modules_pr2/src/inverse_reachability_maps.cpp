@@ -11,6 +11,7 @@
 #include <ros/package.h>
 #include <boost/foreach.hpp>
 #define forEach BOOST_FOREACH
+#include <inverse_capability_map/Visualization.h>
 
 namespace planner_modules_pr2
 {
@@ -40,6 +41,9 @@ InverseReachabilityMaps::InverseReachabilityMaps()
 		return;
 	}
 
+	inverse_capability_map::Visualization visualizer;
+	visualizer.markerType = inverse_capability_map::Visualization::POINTS;
+
 	// store table names and poses into global variable
 	forEach (const symbolic_planning_utils::LoadTables::TableLocation& table, tables)
 	{
@@ -64,7 +68,14 @@ InverseReachabilityMaps::InverseReachabilityMaps()
 		boost::shared_ptr<InverseCapabilityOcTree> inverse_reachability(InverseCapabilityOcTree::readFile(path));
 		TableInverseReachabilityConstPtr tableInfo(new TableInverseReachability(table.pose, inverse_reachability));
 		map.insert(std::make_pair(table.name, tableInfo));
+
+		// create markers for visualization
+		visualizer.visualize(*(tableInfo->inverse_reachability), markers);
+		markers.markers.back().header.frame_id = table.name;
+		markers.markers.back().ns = table.name;
 	}
+	vis_publisher = nhPriv.advertise<visualization_msgs::MarkerArray>("irm_visualization", 1, true);
+	vis_publisher.publish(markers);
 }
 
 InverseReachabilityMaps::~InverseReachabilityMaps()

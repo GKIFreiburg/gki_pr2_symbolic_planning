@@ -11,7 +11,7 @@ namespace symbolic_planning_utils
 	{
 		ros::NodeHandle nh;
 		ROS_INFO("PlanningSceneService::%s: Waiting for GetPlanningScene "
-				"service server to start.", __func__);
+				"server to start.", __func__);
 		getPlanningSceneClient_ = nh.serviceClient<moveit_msgs::GetPlanningScene>(move_group::GET_PLANNING_SCENE_SERVICE_NAME);
 		getPlanningSceneClient_.waitForExistence();
 

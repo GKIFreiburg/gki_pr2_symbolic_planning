@@ -16,7 +16,7 @@
 #include <geometric_shapes/shape_operations.h>
 
 #include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
+#define for_each BOOST_FOREACH
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <ros/package.h>
@@ -30,11 +30,11 @@ namespace tidyup_state_creators
 		ros::NodeHandle nh;
 		pubPlanningScene_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
 
-	    ROS_INFO("GoalCreatorLoadTablesAsMeshIntoPlanningScene::%s: Waiting for planning_scene publisher "
-	    		"to have subscribers.", __func__);
-	    while(pubPlanningScene_.getNumSubscribers() < 1) {
-	        ros::Duration(0.5).sleep();
-	    }
+		ROS_INFO("GoalCreatorLoadTablesAsMeshIntoPlanningScene::%s: Waiting for planning_scene publisher "
+				"to have subscribers.", __func__);
+		while(pubPlanningScene_.getNumSubscribers() < 1) {
+			ros::Duration(0.5).sleep();
+		}
 	}
 
 	GoalCreatorLoadTablesAsMeshIntoPlanningScene::~GoalCreatorLoadTablesAsMeshIntoPlanningScene()
@@ -58,20 +58,20 @@ namespace tidyup_state_creators
 		loadTablesIntoPlanningScene(tables);
 
 		// Add tables to current state.
-		forEach(const TableLocation& tl, tables)
+		for_each(const TableLocation& tl, tables)
 		{
 			const string& tablename = tl.name;
 			currentState.addObject(tablename, type_table_);
 			currentState.setNumericalFluent("timestamp", tablename, tl.pose.header.stamp.toSec());
-            currentState.addObject(tl.pose.header.frame_id, "frameid");
-            currentState.setObjectFluent("frame-id", tablename, tl.pose.header.frame_id);
-            currentState.setNumericalFluent("x", tablename, tl.pose.pose.position.x);
-            currentState.setNumericalFluent("y", tablename, tl.pose.pose.position.y);
-            currentState.setNumericalFluent("z", tablename, tl.pose.pose.position.z);
-            currentState.setNumericalFluent("qx", tablename, tl.pose.pose.orientation.x);
-            currentState.setNumericalFluent("qy", tablename, tl.pose.pose.orientation.y);
-            currentState.setNumericalFluent("qz", tablename, tl.pose.pose.orientation.z);
-            currentState.setNumericalFluent("qw", tablename, tl.pose.pose.orientation.w);
+			currentState.addObject(tl.pose.header.frame_id, "frameid");
+			currentState.setObjectFluent("frame-id", tablename, tl.pose.header.frame_id);
+			currentState.setNumericalFluent("x", tablename, tl.pose.pose.position.x);
+			currentState.setNumericalFluent("y", tablename, tl.pose.pose.position.y);
+			currentState.setNumericalFluent("z", tablename, tl.pose.pose.position.z);
+			currentState.setNumericalFluent("qx", tablename, tl.pose.pose.orientation.x);
+			currentState.setNumericalFluent("qy", tablename, tl.pose.pose.orientation.y);
+			currentState.setNumericalFluent("qz", tablename, tl.pose.pose.orientation.z);
+			currentState.setNumericalFluent("qw", tablename, tl.pose.pose.orientation.w);
 		}
 
 		return true;
@@ -80,10 +80,10 @@ namespace tidyup_state_creators
 	void GoalCreatorLoadTablesAsMeshIntoPlanningScene::loadTablesIntoPlanningScene(const std::vector<TableLocation>& tables)
 	{
 		ros::NodeHandle nhPriv("~");
-	    moveit_msgs::PlanningScene planning_scene;
-	    planning_scene.is_diff = true;
+		moveit_msgs::PlanningScene planning_scene;
+		planning_scene.is_diff = true;
 
-		forEach(const TableLocation& tl, tables)
+		for_each(const TableLocation& tl, tables)
 		{
 			std::string param = "table_meshes/" + tl.name;
 			std::string param_package = param + "/package";
@@ -113,7 +113,7 @@ namespace tidyup_state_creators
 
 			rosbag::View view(bag, rosbag::TopicQuery(topic));
 			moveit_msgs::CollisionObject obj;
-			foreach(rosbag::MessageInstance const m, view)
+			for_each(rosbag::MessageInstance const m, view)
 			{
 				moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
 				if (co != NULL)
@@ -127,11 +127,11 @@ namespace tidyup_state_creators
 			// Set colors
 			moveit_msgs::ObjectColor oc;
 			oc.id = obj.id;
-            oc.color.r = 0.67;
-            oc.color.g = 0.33;
-            oc.color.b = 0.0;
-            oc.color.a = 1.0;
-            planning_scene.object_colors.push_back(oc);
+			oc.color.r = 0.67;
+			oc.color.g = 0.33;
+			oc.color.b = 0.0;
+			oc.color.a = 1.0;
+			planning_scene.object_colors.push_back(oc);
 			bag.close();
 		}
 		pubPlanningScene_.publish(planning_scene);

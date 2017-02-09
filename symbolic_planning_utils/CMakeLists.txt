@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 	moveit_ros_planning_interface
 	tf
 	roscpp
+	rosbag
 )
 
 ## System dependencies are found with CMake's conventions

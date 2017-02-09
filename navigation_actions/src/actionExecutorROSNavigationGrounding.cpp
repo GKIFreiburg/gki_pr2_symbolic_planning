@@ -153,27 +153,29 @@ namespace navigation_actions
 		// Note that we are just planning, not asking move_group
 		// to actually move the robot.
 		moveit::planning_interface::MoveGroup::Plan my_plan;
-		ROS_DEBUG("ActionExecutorROSNavigationGrounding::%s: planning torso motion...", __func__);
 
-        error_code = torso_group_->plan(my_plan);
-		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
+		for (int exec_count = 0; exec_count < 5; exec_count)
 		{
-			ROS_WARN("ActionExecutorROSNavigationGrounding::%s: Ups, something with torso motion planning went wrong.", __func__);
-			return false;
+			ROS_DEBUG("ActionExecutorROSNavigationGrounding::%s: planning torso motion...", __func__);
+			error_code = torso_group_->plan(my_plan);
+			if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
+			{
+				ROS_ERROR_STREAM("ActionExecutorROSNavigationGrounding::"<<__func__<<" planning failed: "<<error_code);
+				continue;
+			}
+
+			ROS_DEBUG("ActionExecutorROSNavigationGrounding::%s: executing torso motion...", __func__);
+			error_code = torso_group_->execute(my_plan);
+			if (error_code == moveit::planning_interface::MoveItErrorCode::SUCCESS)
+			{
+				// planning was successful
+				ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Lift Torso Action finished.", __func__);
+				return true;
+			}
 		}
 
-		// planning was successful
-		ROS_DEBUG("ActionExecutorROSNavigationGrounding::%s: executing torso motion...", __func__);
-		error_code = torso_group_->execute(my_plan);
-		if (error_code != moveit::planning_interface::MoveItErrorCode::SUCCESS)
-		{
-			ROS_WARN("ActionExecutorROSNavigationGrounding::%s: Ups, something with torso motion execution went wrong.", __func__);
-			return false;
-		}
-
-
-		ROS_INFO("ActionExecutorROSNavigationGrounding::%s: Lift Torso Action finished.", __func__);
-		return true;
+		ROS_ERROR_STREAM("ActionExecutorROSNavigationGrounding::"<<__func__<<" execution failed: "<<error_code);
+		return false;
 	}
 };
 

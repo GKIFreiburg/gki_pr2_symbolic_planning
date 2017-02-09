@@ -19,6 +19,7 @@
 #  <build_depend>state_transformer</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>tidyup_msgs</build_depend>
+  <build_depend>inverse_capability_map</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>
@@ -29,6 +30,7 @@
 #  <run_depend>state_transformer</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>tidyup_msgs</run_depend>
+  <run_depend>inverse_capability_map</run_depend>
 
   <export>
       <continual_planning_executive plugin="${prefix}/tidyup_state_creators_plugins.xml" />

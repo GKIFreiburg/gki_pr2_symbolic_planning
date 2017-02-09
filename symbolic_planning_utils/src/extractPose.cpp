@@ -6,7 +6,7 @@ namespace symbolic_planning_utils
 {
 	bool extractPoseStampedFromSymbolicState(const SymbolicState & state, const std::string & object,
 		geometry_msgs::PoseStamped & pose)
-   {
+	{
 		// first get xyz, qxyzw from state
 		Predicate p;
 		p.parameters.push_back(object);

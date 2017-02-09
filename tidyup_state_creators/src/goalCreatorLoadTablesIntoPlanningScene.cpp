@@ -16,7 +16,7 @@
 #include <geometric_shapes/shape_operations.h>
 
 #include <boost/foreach.hpp>
-#define foreach BOOST_FOREACH
+#define for_each BOOST_FOREACH
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <ros/package.h>
@@ -30,11 +30,11 @@ namespace tidyup_state_creators
 		ros::NodeHandle nh;
 		pubPlanningScene_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
 
-	    ROS_INFO("GoalCreatorLoadTablesIntoPlanningScene::%s: Waiting for planning_scene publisher "
-	    		"to have subscribers.", __func__);
-	    while(pubPlanningScene_.getNumSubscribers() < 1) {
-	        ros::Duration(0.5).sleep();
-	    }
+		ROS_INFO("GoalCreatorLoadTablesIntoPlanningScene::%s: Waiting for planning_scene publisher "
+				"to have subscribers.", __func__);
+		while(pubPlanningScene_.getNumSubscribers() < 1) {
+			ros::Duration(0.5).sleep();
+		}
 	}
 
 	GoalCreatorLoadTablesIntoPlanningScene::~GoalCreatorLoadTablesIntoPlanningScene()
@@ -58,20 +58,20 @@ namespace tidyup_state_creators
 		loadTablesIntoPlanningScene(tables);
 
 		// Add tables to current state.
-		forEach(const TableLocation& tl, tables)
+		for_each(const TableLocation& tl, tables)
 		{
 			const string& tablename = tl.name;
 			currentState.addObject(tablename, type_table_);
 			currentState.setNumericalFluent("timestamp", tablename, tl.pose.header.stamp.toSec());
-            currentState.addObject(tl.pose.header.frame_id, "frameid");
-            currentState.setObjectFluent("frame-id", tablename, tl.pose.header.frame_id);
-            currentState.setNumericalFluent("x", tablename, tl.pose.pose.position.x);
-            currentState.setNumericalFluent("y", tablename, tl.pose.pose.position.y);
-            currentState.setNumericalFluent("z", tablename, tl.pose.pose.position.z);
-            currentState.setNumericalFluent("qx", tablename, tl.pose.pose.orientation.x);
-            currentState.setNumericalFluent("qy", tablename, tl.pose.pose.orientation.y);
-            currentState.setNumericalFluent("qz", tablename, tl.pose.pose.orientation.z);
-            currentState.setNumericalFluent("qw", tablename, tl.pose.pose.orientation.w);
+			currentState.addObject(tl.pose.header.frame_id, "frameid");
+			currentState.setObjectFluent("frame-id", tablename, tl.pose.header.frame_id);
+			currentState.setNumericalFluent("x", tablename, tl.pose.pose.position.x);
+			currentState.setNumericalFluent("y", tablename, tl.pose.pose.position.y);
+			currentState.setNumericalFluent("z", tablename, tl.pose.pose.position.z);
+			currentState.setNumericalFluent("qx", tablename, tl.pose.pose.orientation.x);
+			currentState.setNumericalFluent("qy", tablename, tl.pose.pose.orientation.y);
+			currentState.setNumericalFluent("qz", tablename, tl.pose.pose.orientation.z);
+			currentState.setNumericalFluent("qw", tablename, tl.pose.pose.orientation.w);
 		}
 
 		return true;
@@ -79,10 +79,10 @@ namespace tidyup_state_creators
 
 	void GoalCreatorLoadTablesIntoPlanningScene::loadTablesIntoPlanningScene(const std::vector<TableLocation>& tables)
 	{
-	    moveit_msgs::PlanningScene planning_scene;
-	    planning_scene.is_diff = true;
+		moveit_msgs::PlanningScene planning_scene;
+		planning_scene.is_diff = true;
 
-		forEach(const TableLocation& tl, tables)
+		for_each(const TableLocation& tl, tables)
 		{
 			// Create collision object for each table
 			moveit_msgs::CollisionObject co;
@@ -110,62 +110,62 @@ namespace tidyup_state_creators
 			// Set colors
 			moveit_msgs::ObjectColor oc;
 			oc.id = co.id;
-            oc.color.r = 0.67;
-            oc.color.g = 0.33;
-            oc.color.b = 0.0;
-            oc.color.a = 1.0;
-            planning_scene.object_colors.push_back(oc);
+			oc.color.r = 0.67;
+			oc.color.g = 0.33;
+			oc.color.b = 0.0;
+			oc.color.a = 1.0;
+			planning_scene.object_colors.push_back(oc);
 		}
 
 
 
 		ros::NodeHandle nh;
 
-	    rosbag::Bag bag;
-	    std::string fileName = ros::package::getPath("export_table_mesh");
-	    fileName += "/exports/table1.bag";
-	    bag.open(fileName, rosbag::bagmode::Read);
+		rosbag::Bag bag;
+		std::string fileName = ros::package::getPath("export_table_mesh");
+		fileName += "/exports/table1.bag";
+		bag.open(fileName, rosbag::bagmode::Read);
 
-	    std::string topic = "export_table";
+		std::string topic = "export_table";
 
-	    rosbag::View view(bag, rosbag::TopicQuery(topic));
-	    moveit_msgs::CollisionObject obj;
-	    foreach(rosbag::MessageInstance const m, view)
-	    {
-	        moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
-	        if (co != NULL)
-	        {
-	        	obj = *co;
-	        	ROS_INFO("Publishing Collision Object");
-	        	obj.operation = moveit_msgs::CollisionObject::ADD;
-	        	//ROS_WARN_STREAM(obj);
-	        }
-	    }
-	    obj.operation =  obj.ADD;
-	    planning_scene.world.collision_objects.push_back(obj);
-	    bag.close();
+		rosbag::View view(bag, rosbag::TopicQuery(topic));
+		moveit_msgs::CollisionObject obj;
+		for_each(rosbag::MessageInstance const m, view)
+		{
+			moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
+			if (co != NULL)
+			{
+				obj = *co;
+				ROS_INFO("Publishing Collision Object");
+				obj.operation = moveit_msgs::CollisionObject::ADD;
+				//ROS_WARN_STREAM(obj);
+			}
+		}
+		obj.operation =  obj.ADD;
+		planning_scene.world.collision_objects.push_back(obj);
+		bag.close();
 
-	    rosbag::Bag bag2;
-	    std::string fileName2 = ros::package::getPath("export_table_mesh");
-	    fileName2 += "/exports/table2.bag";
-	    bag2.open(fileName2, rosbag::bagmode::Read);
+		rosbag::Bag bag2;
+		std::string fileName2 = ros::package::getPath("export_table_mesh");
+		fileName2 += "/exports/table2.bag";
+		bag2.open(fileName2, rosbag::bagmode::Read);
 
-	    topic = "export_table";
-	    rosbag::View view2(bag2, rosbag::TopicQuery(topic));
-	    moveit_msgs::CollisionObject obj2;
-	    foreach(rosbag::MessageInstance const m, view2)
-	    {
-	        moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
-	        if (co != NULL)
-	        {
-	        	obj2 = *co;
-	        	ROS_INFO("Publishing Collision Object");
-	        	obj2.operation = moveit_msgs::CollisionObject::ADD;
-	        	//ROS_WARN_STREAM(obj);
-	        }
-	    }
-	    obj2.operation =  obj2.ADD;
-	    planning_scene.world.collision_objects.push_back(obj2);
+		topic = "export_table";
+		rosbag::View view2(bag2, rosbag::TopicQuery(topic));
+		moveit_msgs::CollisionObject obj2;
+		for_each(rosbag::MessageInstance const m, view2)
+		{
+			moveit_msgs::CollisionObject::ConstPtr co = m.instantiate<moveit_msgs::CollisionObject>();
+			if (co != NULL)
+			{
+				obj2 = *co;
+				ROS_INFO("Publishing Collision Object");
+				obj2.operation = moveit_msgs::CollisionObject::ADD;
+				//ROS_WARN_STREAM(obj);
+			}
+		}
+		obj2.operation =  obj2.ADD;
+		planning_scene.world.collision_objects.push_back(obj2);
 
 
 

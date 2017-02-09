@@ -21,9 +21,9 @@ namespace symbolic_planning_utils
 //		FRIEND_TEST(moveGroupInterfaceTest, MoveGroupInterface);
 		MoveGroupInterface();
 
-		// Copy constructor must be private to prevent any additional creation of the object
-		FRIEND_TEST(moveGroupInterfaceTest, copyConstructor);
-		MoveGroupInterface(const MoveGroupInterface* mgi);
+//		// Copy constructor must be private to prevent any additional creation of the object
+//		FRIEND_TEST(moveGroupInterfaceTest, copyConstructor);
+//		MoveGroupInterface(const MoveGroupInterface* mgi);
 
 		// Assignment operator must also be private to prevent any additional creation of the object
 		FRIEND_TEST(moveGroupInterfaceTest, assignmentOperator);
@@ -42,6 +42,9 @@ namespace symbolic_planning_utils
 		moveit::planning_interface::MoveGroup* getArmsGroup();
 		moveit::planning_interface::MoveGroup* getHeadGroup();
 		moveit::planning_interface::MoveGroup* getTorsoGroup();
+
+	moveit::planning_interface::MoveItErrorCode planExecuteVerify(
+			moveit::planning_interface::MoveGroup* group, const std::string& rosout_name);
 	};
 };
 

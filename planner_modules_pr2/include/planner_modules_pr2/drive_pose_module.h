@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Pose2D.h>
 #include <inverse_capability_map/InverseCapabilityOcTree.h>
 
 namespace planner_modules_pr2
@@ -12,6 +13,9 @@ namespace planner_modules_pr2
 
 namespace drive_pose
 {
+
+void convert_pose(const geometry_msgs::Pose& in, geometry_msgs::Pose2D& out);
+void convert_pose(const geometry_msgs::Pose2D& in, geometry_msgs::Pose& out);
 
 // Look up surface id in cache and return corresponding pose
 bool lookup_pose_from_surface_id(const std::string& surface,

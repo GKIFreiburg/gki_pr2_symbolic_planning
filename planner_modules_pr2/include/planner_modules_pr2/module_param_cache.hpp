@@ -48,7 +48,9 @@ void ModuleParamCache<ValueType>::set(const std::string& key, ValueType value, d
 {
 //    ROS_INFO("[cache]: writing to cache: %s -> %f", key.c_str(), value);
 	if (s_Debug)
+	{
 //		std::cout << "ModuleParamCache: adding " << key << " -> " << value << std::endl;
+	}
 	if (allowCachingToParamServer)
 	{
 		typename std::map<std::string, ValueType>::iterator it = _localCache.find(key);

@@ -13,6 +13,8 @@
 #include <string>
 #include <geometry_msgs/PoseStamped.h>
 #include <inverse_capability_map/InverseCapabilityOcTree.h>
+#include <inverse_capability_map/Visualization.h>
+#include <ros/ros.h>
 
 namespace planner_modules_pr2
 {
@@ -55,6 +57,8 @@ private:
 	InverseReachabilityMaps();
 
 	InverseReachabilityMap map;
+	ros::Publisher vis_publisher;
+	visualization_msgs::MarkerArray markers;
 };
 
 } /* namespace planner_modules_pr2 */
